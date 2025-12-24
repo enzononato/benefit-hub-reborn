@@ -8,42 +8,39 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
-import { BeneficiosPorTipo } from '@/types';
-import { getBenefitLabel, getBenefitColor } from '@/lib/benefits';
-import { formatCurrency } from '@/lib/formatters';
+
+interface MonthlyData {
+  month: string;
+  solicitacoes: number;
+  aprovadas: number;
+  recusadas: number;
+}
 
 interface BenefitsChartProps {
-  data: BeneficiosPorTipo[];
+  data: MonthlyData[];
 }
 
 const BenefitsChart: React.FC<BenefitsChartProps> = ({ data }) => {
-  const chartData = data.map((item) => ({
-    name: getBenefitLabel(item.tipo),
-    valor: item.valor,
-    quantidade: item.quantidade,
-    fill: getBenefitColor(item.tipo),
-  }));
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Benefícios por Tipo</CardTitle>
+        <CardTitle>Solicitações por Mês</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
-                dataKey="name"
+                dataKey="month"
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 tickLine={{ stroke: 'hsl(var(--muted-foreground))' }}
               />
               <YAxis
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 tickLine={{ stroke: 'hsl(var(--muted-foreground))' }}
-                tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip
                 contentStyle={{
@@ -51,9 +48,11 @@ const BenefitsChart: React.FC<BenefitsChartProps> = ({ data }) => {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [formatCurrency(value), 'Valor']}
               />
-              <Bar dataKey="valor" radius={[4, 4, 0, 0]} />
+              <Legend />
+              <Bar dataKey="solicitacoes" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="aprovadas" name="Aprovadas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="recusadas" name="Recusadas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
