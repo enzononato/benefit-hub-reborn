@@ -47,10 +47,16 @@ interface BenefitRequest {
   created_at: string;
   profile?: {
     full_name: string;
+    unit_id?: string | null;
     unit?: {
       name: string;
     } | null;
   } | null;
+}
+
+interface Unit {
+  id: string;
+  name: string;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -68,10 +74,12 @@ const benefitIcons: Record<BenefitType, React.ComponentType<{ className?: string
 export default function Solicitacoes() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [requests, setRequests] = useState<BenefitRequest[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
+  const [unitFilter, setUnitFilter] = useState<string>(searchParams.get('unit') || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<BenefitRequest | null>(null);
@@ -79,12 +87,14 @@ export default function Solicitacoes() {
 
   useEffect(() => {
     fetchRequests();
+    fetchUnits();
   }, []);
 
   // Sync URL params with filters
   useEffect(() => {
     const urlStatus = searchParams.get('status');
     const urlType = searchParams.get('benefit_type');
+    const urlUnit = searchParams.get('unit');
     
     if (urlStatus && urlStatus !== statusFilter) {
       setStatusFilter(urlStatus);
@@ -92,7 +102,18 @@ export default function Solicitacoes() {
     if (urlType && urlType !== typeFilter) {
       setTypeFilter(urlType);
     }
+    if (urlUnit && urlUnit !== unitFilter) {
+      setUnitFilter(urlUnit);
+    }
   }, [searchParams]);
+
+  const fetchUnits = async () => {
+    const { data } = await supabase
+      .from('units')
+      .select('id, name')
+      .order('name');
+    setUnits(data || []);
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -111,7 +132,7 @@ export default function Solicitacoes() {
       const userIds = [...new Set(requestsData?.map(r => r.user_id) || [])];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, full_name, unit:units(name)')
+        .select('user_id, full_name, unit_id, unit:units(name)')
         .in('user_id', userIds);
 
       const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
@@ -133,12 +154,13 @@ export default function Solicitacoes() {
     setSearch('');
     setStatusFilter('all');
     setTypeFilter('all');
+    setUnitFilter('all');
     setDateRange(undefined);
     setSearchParams({});
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = search || statusFilter !== 'all' || typeFilter !== 'all' || dateRange;
+  const hasActiveFilters = search || statusFilter !== 'all' || typeFilter !== 'all' || unitFilter !== 'all' || dateRange;
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch =
@@ -155,6 +177,9 @@ export default function Solicitacoes() {
 
     const matchesType = typeFilter === 'all' || request.benefit_type === typeFilter;
 
+    // Unit filter
+    const matchesUnit = unitFilter === 'all' || request.profile?.unit_id === unitFilter;
+
     // Date range filter
     let matchesDate = true;
     if (dateRange?.from) {
@@ -164,7 +189,7 @@ export default function Solicitacoes() {
       matchesDate = isWithinInterval(requestDate, { start: from, end: to });
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesDate;
+    return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
@@ -242,6 +267,26 @@ export default function Solicitacoes() {
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 {Object.entries(benefitTypeLabels).map(([key, label]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={unitFilter} onValueChange={(v) => {
+              setUnitFilter(v);
+              const newParams = new URLSearchParams(searchParams);
+              if (v !== 'all') {
+                newParams.set('unit', v);
+              } else {
+                newParams.delete('unit');
+              }
+              setSearchParams(newParams);
+            }}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Revenda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as revendas</SelectItem>
+                {units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
