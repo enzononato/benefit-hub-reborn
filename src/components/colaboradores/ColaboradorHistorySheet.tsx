@@ -30,13 +30,12 @@ const statusLabels: Record<BenefitStatus, string> = {
   em_analise: 'Em Análise',
   aprovada: 'Aprovada',
   recusada: 'Recusada',
-  concluida: 'Concluída',
 };
 
 const statusFilterOptions: { value: string; label: string }[] = [
   { value: 'aberta', label: 'Aberta' },
   { value: 'em_analise', label: 'Em Análise' },
-  { value: 'aprovada_concluida', label: 'Aprovada' },
+  { value: 'aprovada', label: 'Aprovada' },
   { value: 'recusada', label: 'Recusada' },
 ];
 
@@ -62,12 +61,7 @@ export function ColaboradorHistorySheet({
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      let matchesStatus = statusFilter === 'all';
-      if (statusFilter === 'aprovada_concluida') {
-        matchesStatus = req.status === 'aprovada' || req.status === 'concluida';
-      } else if (statusFilter !== 'all') {
-        matchesStatus = req.status === statusFilter;
-      }
+      const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
       const matchesType = typeFilter === 'all' || req.benefit_type === typeFilter;
       return matchesStatus && matchesType;
     });
@@ -301,7 +295,7 @@ export function ColaboradorHistorySheet({
                     )}
                   </div>
 
-                  {(request.status === 'aprovada' || request.status === 'concluida') &&
+                  {request.status === 'aprovada' &&
                    request.total_installments && request.total_installments > 1 && (
                     <div className="flex items-center justify-between gap-2 rounded-md bg-primary/5 border border-primary/20 p-3 mt-2">
                       <div className="flex items-center gap-2">
@@ -346,7 +340,7 @@ export function ColaboradorHistorySheet({
                     </div>
                   )}
 
-                  {(request.status === 'concluida' || request.status === 'aprovada') && request.pdf_url && (
+                  {request.status === 'aprovada' && request.pdf_url && (
                     <Button
                       variant="outline"
                       size="sm"

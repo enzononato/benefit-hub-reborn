@@ -558,12 +558,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "gestor" | "colaborador" | "agente_dp"
-      benefit_status:
-        | "aberta"
-        | "em_analise"
-        | "aprovada"
-        | "concluida"
-        | "recusada"
+      benefit_status: "aberta" | "em_analise" | "aprovada" | "recusada"
       benefit_type:
         | "autoescola"
         | "farmacia"
@@ -700,13 +695,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gestor", "colaborador", "agente_dp"],
-      benefit_status: [
-        "aberta",
-        "em_analise",
-        "aprovada",
-        "concluida",
-        "recusada",
-      ],
+      benefit_status: ["aberta", "em_analise", "aprovada", "recusada"],
       benefit_type: [
         "autoescola",
         "farmacia",
