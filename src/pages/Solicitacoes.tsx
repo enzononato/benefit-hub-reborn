@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw } from 'lucide-react';
+import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -258,6 +258,39 @@ export default function Solicitacoes() {
     setCurrentPage(1);
   };
 
+  const exportToCSV = () => {
+    const headers = ['Protocolo', 'Colaborador', 'CPF', 'Telefone', 'Revenda', 'Tipo', 'Status', 'Valor Solicitado', 'Data', 'Detalhes'];
+    
+    const rows = filteredRequests.map(request => [
+      request.protocol,
+      request.profile?.full_name || '',
+      request.profile?.cpf || '',
+      request.profile?.phone || '',
+      request.profile?.unit?.name || '',
+      benefitTypeLabels[request.benefit_type] || request.benefit_type,
+      statusLabels[request.status] || request.status,
+      request.requested_value?.toFixed(2) || '',
+      format(new Date(request.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+      request.details || ''
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `solicitacoes_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${filteredRequests.length} solicitações exportadas`);
+  };
+
   const hasActiveFilters = search || statusFilter !== 'all' || typeFilter !== 'all' || unitFilter !== 'all' || dateRange;
 
   const filteredRequests = requests.filter(request => {
@@ -309,6 +342,10 @@ export default function Solicitacoes() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV} disabled={loading || filteredRequests.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
             <Button variant="outline" size="sm" onClick={fetchRequests} disabled={loading}>
               <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
               Atualizar
