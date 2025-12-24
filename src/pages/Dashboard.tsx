@@ -2,14 +2,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { BenefitsChart } from '@/components/dashboard/BenefitsChart';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { BenefitTypeChart } from '@/components/dashboard/BenefitTypeChart';
+import { BenefitCategoryCards } from '@/components/dashboard/BenefitCategoryCards';
+import { RecentRequests } from '@/components/dashboard/RecentRequests';
+import { AgentPerformanceChart } from '@/components/dashboard/AgentPerformanceChart';
+import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType } from '@/types/benefits';
 import { benefitTypes } from '@/data/mockData';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 
 const filteredBenefitTypes = benefitTypes.filter(t => t !== 'outros') as BenefitType[];
 
@@ -29,30 +33,63 @@ interface RequestData {
   created_at: string;
 }
 
-const COLORS = ['hsl(267, 83%, 57%)', 'hsl(142, 76%, 36%)', 'hsl(199, 89%, 48%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(187, 85%, 43%)'];
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
+  const [filters, setFilters] = useState<DashboardFilters>({
+    unitId: null,
+    benefitType: null,
+    status: null,
+    startDate: null,
+    endDate: null,
+  });
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [filters]);
 
   const fetchDashboardData = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('benefit_requests')
         .select('status, benefit_type, user_id, created_at');
+
+      if (filters.benefitType) {
+        query = query.eq('benefit_type', filters.benefitType);
+      }
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching dashboard data:', error);
         return;
       }
 
-      const filteredData = data || [];
+      let filteredData = data || [];
+
+      if (filters.unitId && filteredData.length > 0) {
+        const userIds = [...new Set(filteredData.map(r => r.user_id))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('unit_id', filters.unitId)
+          .in('user_id', userIds);
+
+        const validUserIds = new Set(profilesData?.map(p => p.user_id) || []);
+        filteredData = filteredData.filter(r => validUserIds.has(r.user_id));
+      }
+
       setAllRequests(filteredData);
 
       const total = filteredData.length;
@@ -78,8 +115,8 @@ export default function Dashboard() {
   };
 
   const monthlyData = useMemo(() => {
-    const end = new Date();
-    const start = subMonths(end, 5);
+    const end = filters.endDate || new Date();
+    const start = filters.startDate || subMonths(end, 5);
 
     const months: { month: string; solicitacoes: number; aprovadas: number; recusadas: number }[] = [];
     const currentDate = startOfMonth(start);
@@ -105,28 +142,11 @@ export default function Dashboard() {
     }
 
     return months;
-  }, [allRequests]);
-
-  const benefitLabels: Record<BenefitType, string> = {
-    autoescola: 'Autoescola',
-    farmacia: 'Farmácia',
-    oficina: 'Oficina',
-    vale_gas: 'Vale Gás',
-    papelaria: 'Papelaria',
-    otica: 'Ótica',
-    outros: 'Outros',
-  };
-
-  const pieData = benefitTypeData.map((item, index) => ({
-    name: benefitLabels[item.type],
-    value: item.count,
-    color: COLORS[index % COLORS.length],
-  }));
+  }, [allRequests, filters.startDate, filters.endDate]);
 
   return (
     <MainLayout>
       <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
             Dashboard
@@ -138,115 +158,26 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Grid - 6 KPI Cards */}
+        <DashboardFiltersComponent filters={filters} onFiltersChange={setFilters} />
+
         <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard
-            title="Total"
-            value={stats.total}
-            icon={FileText}
-            onClick={() => navigate('/solicitacoes')}
-          />
-          <StatCard
-            title="Hoje"
-            value={stats.today}
-            icon={TrendingUp}
-            onClick={() => navigate('/solicitacoes')}
-          />
-          <StatCard
-            title="Aberto"
-            value={stats.abertos}
-            icon={FolderOpen}
-            variant="info"
-            onClick={() => navigate('/solicitacoes?status=aberta')}
-          />
-          <StatCard
-            title="Análise"
-            value={stats.emAnalise}
-            icon={Clock}
-            variant="warning"
-            onClick={() => navigate('/solicitacoes?status=em_analise')}
-          />
-          <StatCard
-            title="Aprovadas"
-            value={stats.aprovados}
-            icon={CheckCircle}
-            variant="success"
-            onClick={() => navigate('/solicitacoes?status=aprovada,concluida')}
-          />
-          <StatCard
-            title="Reprovadas"
-            value={stats.reprovados}
-            icon={XCircle}
-            variant="destructive"
-            onClick={() => navigate('/solicitacoes?status=recusada')}
-          />
+          <StatCard title="Total" value={stats.total} icon={FileText} onClick={() => navigate('/solicitacoes')} />
+          <StatCard title="Hoje" value={stats.today} icon={TrendingUp} onClick={() => navigate('/solicitacoes')} />
+          <StatCard title="Aberto" value={stats.abertos} icon={FolderOpen} variant="info" onClick={() => navigate('/solicitacoes?status=aberta')} />
+          <StatCard title="Análise" value={stats.emAnalise} icon={Clock} variant="warning" onClick={() => navigate('/solicitacoes?status=em_analise')} />
+          <StatCard title="Aprovadas" value={stats.aprovados} icon={CheckCircle} variant="success" onClick={() => navigate('/solicitacoes?status=aprovada')} />
+          <StatCard title="Reprovadas" value={stats.reprovados} icon={XCircle} variant="destructive" onClick={() => navigate('/solicitacoes?status=recusada')} />
         </div>
 
-        {/* Charts Grid */}
+        <BenefitCategoryCards data={benefitTypeData} />
+
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Solicitações por Mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="solicitacoes" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="aprovadas" name="Aprovadas" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="recusadas" name="Recusadas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Solicitações por Tipo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <BenefitsChart data={monthlyData} />
+          <BenefitTypeChart data={benefitTypeData} />
         </div>
+
+        <AgentPerformanceChart />
+        <RecentRequests />
       </div>
     </MainLayout>
   );

@@ -58,13 +58,13 @@ export interface Log {
 }
 
 export const benefitTypeLabels: Record<BenefitType, string> = {
-  autoescola: 'Autoescola',
-  farmacia: 'Farmácia',
-  oficina: 'Oficina',
-  vale_gas: 'Vale Gás',
-  papelaria: 'Papelaria',
-  otica: 'Ótica',
-  outros: 'Outros',
+  autoescola: '🚗 Autoescola',
+  farmacia: '💊 Farmácia',
+  oficina: '🔧 Oficina',
+  vale_gas: '⛽ Vale Gás',
+  papelaria: '📝 Papelaria',
+  otica: '👓 Ótica',
+  outros: '📋 Outros',
 };
 
 export const statusLabels: Record<BenefitStatus, string> = {
@@ -72,10 +72,9 @@ export const statusLabels: Record<BenefitStatus, string> = {
   em_analise: 'Em Análise',
   aprovada: 'Aprovado',
   recusada: 'Recusado',
-  concluida: 'Aprovado', // Concluída é exibida como Aprovado na UI
+  concluida: 'Aprovado',
 };
 
-// Status labels for filters (sem concluida)
 export const statusFilterLabels: Record<Exclude<BenefitStatus, 'concluida'>, string> = {
   aberta: 'Aberto',
   em_analise: 'Em Análise',
@@ -83,14 +82,13 @@ export const statusFilterLabels: Record<Exclude<BenefitStatus, 'concluida'>, str
   recusada: 'Reprovado',
 };
 
-// Benefit types without "outros" for filters
 export const benefitTypeFilterLabels: Record<Exclude<BenefitType, 'outros'>, string> = {
-  autoescola: 'Autoescola',
-  farmacia: 'Farmácia',
-  oficina: 'Oficina',
-  vale_gas: 'Vale Gás',
-  papelaria: 'Papelaria',
-  otica: 'Ótica',
+  autoescola: '🚗 Autoescola',
+  farmacia: '💊 Farmácia',
+  oficina: '🔧 Oficina',
+  vale_gas: '⛽ Vale Gás',
+  papelaria: '📝 Papelaria',
+  otica: '👓 Ótica',
 };
 
 export const roleLabels: Record<UserRole, string> = {
