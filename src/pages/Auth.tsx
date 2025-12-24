@@ -1,153 +1,63 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { Gift, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import revalleLogo from '@/assets/revalle-logo.png';
 
-const Auth: React.FC = () => {
+export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  React.useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+  useEffect(() => {
+    if (isAuthenticated) navigate('/', { replace: true });
+  }, [isAuthenticated, navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: 'Erro ao entrar',
-        description: error.message === 'Invalid login credentials' 
-          ? 'E-mail ou senha incorretos' 
-          : error.message,
-        variant: 'destructive',
-      });
-    } else {
-      navigate('/dashboard');
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await signUp(email, password);
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: 'Erro ao cadastrar',
-        description: error.message === 'User already registered'
-          ? 'Este e-mail já está cadastrado'
-          : error.message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Cadastro realizado!',
-        description: 'Verifique seu e-mail para confirmar o cadastro.',
-      });
-    }
+    if (!email || !password) { toast.error('Por favor, preencha todos os campos'); return; }
+    setIsLoading(true);
+    try {
+      const { error } = await login(email, password);
+      if (error) toast.error(error);
+      else { toast.success('Login realizado com sucesso!'); navigate('/', { replace: true }); }
+    } catch { toast.error('Erro ao fazer login.'); }
+    finally { setIsLoading(false); }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Gift className="h-6 w-6 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+      <Card className="w-full max-w-md shadow-xl border-border/50">
+        <CardHeader className="space-y-1">
+          <div className="flex justify-center">
+            <img src={revalleLogo} alt="Revalle" className="h-14 w-14 rounded-2xl shadow-lg" />
           </div>
-          <CardTitle className="text-2xl">Benefit Hub Pro</CardTitle>
-          <CardDescription>
-            Gerencie os benefícios dos seus colaboradores
-          </CardDescription>
+          <CardTitle className="text-2xl text-center">Acessar Painel</CardTitle>
+          <CardDescription className="text-center">Entre com suas credenciais para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="register">Cadastrar</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-login">E-mail</Label>
-                  <Input
-                    id="email-login"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-login">Senha</Label>
-                  <Input
-                    id="password-login"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Entrar
-                </Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="register">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-register">E-mail</Label>
-                  <Input
-                    id="email-register"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password-register">Senha</Label>
-                  <Input
-                    id="password-register"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Cadastrar
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} className="h-11" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} className="h-11" />
+            </div>
+            <Button type="submit" className="w-full h-11 text-base font-medium" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</> : 'Entrar'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default Auth;
+}
