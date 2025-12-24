@@ -1,9 +1,87 @@
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
+/**
+ * Formata número de telefone com máscara brasileira
+ */
+export function formatPhone(value: string): string {
+  if (!value) return '';
+  const numbers = value.replace(/\D/g, '');
+  if (numbers.length === 0) return '';
+  if (numbers.length <= 2) return `(${numbers}`;
+  if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  if (numbers.length <= 11) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+}
+
+/**
+ * Remove máscara do telefone
+ */
+export function unformatPhone(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+/**
+ * Gera link do WhatsApp
+ */
+export function getWhatsAppLink(phone: string): string {
+  const numbers = phone.replace(/\D/g, '');
+  const phoneWithCountry = numbers.startsWith('55') ? numbers : `55${numbers}`;
+  return `https://wa.me/${phoneWithCountry}`;
+}
+
+/**
+ * Calcula tempo relativo (ex: "há 2 dias")
+ */
+export function getRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - targetDate.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'Agora';
+  if (diffMins < 60) return `Há ${diffMins} min`;
+  if (diffHours < 24) return `Há ${diffHours}h`;
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays < 7) return `Há ${diffDays} dias`;
+  if (diffDays < 30) return `Há ${Math.floor(diffDays / 7)} sem`;
+  return `Há ${Math.floor(diffDays / 30)} mês`;
+}
+
+/**
+ * Calcula SLA - tempo em aberto formatado (ex: "3h 42min")
+ */
+export function getSLATime(date: Date | string): string {
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - targetDate.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 60) return `${diffMins}min`;
+  if (diffHours < 24) {
+    const mins = diffMins % 60;
+    return `${diffHours}h ${mins}min`;
+  }
+  if (diffDays < 7) {
+    const hours = diffHours % 24;
+    return `${diffDays}d ${hours}h`;
+  }
+  return `${diffDays}d`;
+}
+
+/**
+ * Formata valor em moeda brasileira (R$)
+ */
+export function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return 'R$ 0,00';
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return 'R$ 0,00';
+  return numValue.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(value);
-};
+  });
+}
 
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -17,14 +95,6 @@ export const formatDate = (dateString: string): string => {
 export const formatCPF = (cpf: string): string => {
   const cleaned = cpf.replace(/\D/g, '');
   return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-};
-
-export const formatPhone = (phone: string): string => {
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 11) {
-    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  }
-  return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
 };
 
 export const cleanCPF = (cpf: string): string => {
