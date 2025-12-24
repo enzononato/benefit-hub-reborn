@@ -1,76 +1,59 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
 
-type AppRole = Database['public']['Enums']['app_role'];
+type SystemRole = 'admin' | 'gestor' | 'agente_dp';
 
-export interface UserWithRole {
+export interface SystemUser {
   id: string;
   user_id: string;
   full_name: string;
   email: string;
-  cpf: string | null;
-  phone: string | null;
-  position: string | null;
-  departamento: string | null;
-  unit_id: string | null;
-  unit_name: string | null;
+  role: SystemRole;
   created_at: string;
-  role: AppRole;
-  role_id: string;
 }
 
 export const useUsuarios = () => {
-  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          full_name,
-          email,
-          cpf,
-          phone,
-          position,
-          departamento,
-          unit_id,
-          created_at
-        `)
-        .order('full_name');
 
-      if (profilesError) throw profilesError;
-
+      // Fetch only system roles (admin, gestor, agente_dp)
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('id, user_id, role');
+        .select('user_id, role')
+        .in('role', ['admin', 'gestor', 'agente_dp']);
 
       if (rolesError) throw rolesError;
 
-      const { data: units, error: unitsError } = await supabase
-        .from('units')
-        .select('id, name');
+      if (!roles || roles.length === 0) {
+        setUsers([]);
+        return;
+      }
 
-      if (unitsError) throw unitsError;
+      const systemUserIds = roles.map(r => r.user_id);
 
-      const unitsMap = new Map(units?.map(u => [u.id, u.name]) || []);
-      const rolesMap = new Map(roles?.map(r => [r.user_id, { role: r.role, id: r.id }]) || []);
+      // Fetch profiles only for system users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, email, full_name, created_at')
+        .in('user_id', systemUserIds)
+        .order('created_at', { ascending: false });
 
-      const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
-        const roleData = rolesMap.get(profile.user_id);
-        return {
-          ...profile,
-          unit_name: profile.unit_id ? unitsMap.get(profile.unit_id) || null : null,
-          role: roleData?.role || 'colaborador',
-          role_id: roleData?.id || '',
-        };
-      });
+      if (profilesError) throw profilesError;
+
+      const usersWithRoles: SystemUser[] = (profiles || [])
+        .map((profile) => {
+          const userRole = roles.find((r) => r.user_id === profile.user_id);
+          return {
+            ...profile,
+            role: userRole?.role as SystemRole,
+          };
+        })
+        .filter(u => u.role);
 
       setUsers(usersWithRoles);
     } catch (error: any) {
@@ -80,54 +63,88 @@ export const useUsuarios = () => {
     }
   }, []);
 
-  const updateUserRole = async (userId: string, roleId: string, newRole: AppRole) => {
+  const createUser = async (data: { email: string; password: string; fullName: string; role: SystemRole }) => {
     try {
-      if (roleId) {
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole })
-          .eq('id', roleId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: newRole });
-        if (error) throw error;
-      }
+      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          action: 'create',
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
+          role: data.role,
+        },
+      });
 
-      setUsers(prev =>
-        prev.map(u =>
-          u.user_id === userId ? { ...u, role: newRole } : u
-        )
-      );
-      toast.success('Papel do usuário atualizado');
+      if (error) throw error;
+      if (!result?.success) throw new Error(result?.error || 'Erro ao criar usuário');
+
+      toast.success('Usuário criado com sucesso!');
+      await fetchUsers();
       return { error: null };
     } catch (error: any) {
-      toast.error('Erro ao atualizar papel', { description: error.message });
+      toast.error('Erro ao criar usuário', { description: error.message });
       return { error };
     }
   };
 
-  const updateUserProfile = async (profileId: string, updates: {
-    full_name?: string;
-    phone?: string;
-    position?: string;
-    departamento?: string;
-    unit_id?: string | null;
-  }) => {
+  const updateUserRole = async (userId: string, newRole: SystemRole) => {
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', profileId);
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
 
       if (error) throw error;
 
-      await fetchUsers();
-      toast.success('Perfil atualizado com sucesso');
+      setUsers(prev =>
+        prev.map(u => (u.user_id === userId ? { ...u, role: newRole } : u))
+      );
+      toast.success('Permissão atualizada com sucesso!');
       return { error: null };
     } catch (error: any) {
-      toast.error('Erro ao atualizar perfil', { description: error.message });
+      toast.error('Erro ao atualizar permissão', { description: error.message });
+      return { error };
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          action: 'delete',
+          userId,
+        },
+      });
+
+      if (error) throw error;
+      if (!result?.success) throw new Error(result?.error || 'Erro ao remover usuário');
+
+      setUsers(prev => prev.filter(u => u.user_id !== userId));
+      toast.success('Usuário removido com sucesso!');
+      return { error: null };
+    } catch (error: any) {
+      toast.error('Erro ao remover usuário', { description: error.message });
+      return { error };
+    }
+  };
+
+  const changePassword = async (userId: string, newPassword: string) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
+        body: {
+          action: 'changePassword',
+          userId,
+          newPassword,
+        },
+      });
+
+      if (error) throw error;
+      if (!result?.success) throw new Error(result?.error || 'Erro ao alterar senha');
+
+      toast.success('Senha alterada com sucesso!');
+      return { error: null };
+    } catch (error: any) {
+      toast.error('Erro ao alterar senha', { description: error.message });
       return { error };
     }
   };
@@ -140,7 +157,9 @@ export const useUsuarios = () => {
     users,
     loading,
     fetchUsers,
+    createUser,
     updateUserRole,
-    updateUserProfile,
+    deleteUser,
+    changePassword,
   };
 };

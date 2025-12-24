@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useUsuarios, UserWithRole } from '@/hooks/useUsuarios';
-import { useUnidades } from '@/hooks/useUnidades';
+import { useUsuarios, SystemUser } from '@/hooks/useUsuarios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -27,185 +28,296 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Search, Pencil, RefreshCw, Users, Filter } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn, formatCPF, formatPhone } from '@/lib/utils';
-import type { Database } from '@/integrations/supabase/types';
+import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-type AppRole = Database['public']['Enums']['app_role'];
+type SystemRole = 'admin' | 'gestor' | 'agente_dp';
 
-const roleLabels: Record<AppRole, string> = {
+const roleLabels: Record<SystemRole, string> = {
   admin: 'Administrador',
   gestor: 'Gestor',
-  agente_dp: 'Agente DP',
-  colaborador: 'Colaborador',
+  agente_dp: 'Agente de DP',
 };
 
-const roleColors: Record<AppRole, string> = {
-  admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  gestor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  agente_dp: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  colaborador: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+const roleColors: Record<SystemRole, string> = {
+  admin: 'bg-destructive/10 text-destructive border-destructive/20',
+  gestor: 'bg-warning/10 text-warning border-warning/20',
+  agente_dp: 'bg-primary/10 text-primary border-primary/20',
 };
 
 export default function Usuarios() {
-  const { users, loading, fetchUsers, updateUserRole, updateUserProfile } = useUsuarios();
-  const { units } = useUnidades();
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const { users, loading, fetchUsers, createUser, updateUserRole, deleteUser, changePassword } = useUsuarios();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+
   const [formData, setFormData] = useState({
+    email: '',
+    password: '',
     full_name: '',
-    phone: '',
-    position: '',
-    departamento: '',
-    unit_id: '',
-    role: '' as AppRole,
-  });
-  const [saving, setSaving] = useState(false);
-
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
-      (user.cpf && user.cpf.includes(search));
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    return matchesSearch && matchesRole;
+    role: 'gestor' as SystemRole,
   });
 
-  const handleOpenEdit = (user: UserWithRole) => {
-    setEditingUser(user);
-    setFormData({
-      full_name: user.full_name,
-      phone: user.phone || '',
-      position: user.position || '',
-      departamento: user.departamento || '',
-      unit_id: user.unit_id || '',
-      role: user.role,
-    });
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async () => {
-    if (!editingUser) return;
-
-    setSaving(true);
-
-    // Update profile
-    await updateUserProfile(editingUser.id, {
-      full_name: formData.full_name,
-      phone: formData.phone || undefined,
-      position: formData.position || undefined,
-      departamento: formData.departamento || undefined,
-      unit_id: formData.unit_id || null,
-    });
-
-    // Update role if changed
-    if (formData.role !== editingUser.role) {
-      await updateUserRole(editingUser.user_id, editingUser.role_id, formData.role);
+  const handleCreateUser = async () => {
+    if (!formData.email || !formData.password || !formData.full_name) {
+      return;
     }
 
-    setSaving(false);
-    setDialogOpen(false);
+    setFormLoading(true);
+    const { error } = await createUser({
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.full_name,
+      role: formData.role,
+    });
+
+    if (!error) {
+      setIsCreateDialogOpen(false);
+      setFormData({ email: '', password: '', full_name: '', role: 'gestor' });
+    }
+    setFormLoading(false);
   };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUser) return;
+
+    setFormLoading(true);
+    const { error } = await updateUserRole(selectedUser.user_id, formData.role);
+
+    if (!error) {
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+    }
+    setFormLoading(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    setFormLoading(true);
+    const { error } = await deleteUser(selectedUser.user_id);
+
+    if (!error) {
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+    }
+    setFormLoading(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!selectedUser || !newPassword || newPassword.length < 6) return;
+
+    setFormLoading(true);
+    const { error } = await changePassword(selectedUser.user_id, newPassword);
+
+    if (!error) {
+      setIsPasswordDialogOpen(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    }
+    setFormLoading(false);
+  };
+
+  const openEditDialog = (user: SystemUser) => {
+    setSelectedUser(user);
+    setFormData({ ...formData, role: user.role });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (user: SystemUser) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const openPasswordDialog = (user: SystemUser) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    setIsPasswordDialogOpen(true);
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Usuários</h1>
-            <p className="mt-1 text-muted-foreground">
-              Gerencie os usuários do sistema ({users.length} total)
+            <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
+            <p className="text-muted-foreground">
+              Gerencie os usuários e suas permissões no sistema
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
-            <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
-            Atualizar
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Usuário</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados para criar um novo usuário no sistema.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Nome Completo *</Label>
+                  <Input
+                    id="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Digite o email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Digite a senha"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Permissão</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value: SystemRole) => setFormData({ ...formData, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a permissão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="gestor">Gestor</SelectItem>
+                      <SelectItem value="agente_dp">Agente de DP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateUser} disabled={formLoading}>
+                  {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar Usuário
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, email ou CPF..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filtrar por papel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os papéis</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="gestor">Gestor</SelectItem>
-                <SelectItem value="agente_dp">Agente DP</SelectItem>
-                <SelectItem value="colaborador">Colaborador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Search */}
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        <div className="rounded-xl border border-border bg-card overflow-x-auto">
+        {/* Table */}
+        <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Papel</TableHead>
-                <TableHead>Criado em</TableHead>
+                <TableHead>Permissão</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <div className="flex items-center justify-center">
-                      <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                    <Users className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                    {search || roleFilter !== 'all' ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <UserCog className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-muted-foreground">Nenhum usuário encontrado</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>{user.cpf ? formatCPF(user.cpf) : '-'}</TableCell>
-                    <TableCell>{user.phone ? formatPhone(user.phone) : '-'}</TableCell>
-                    <TableCell>{user.unit_name || '-'}</TableCell>
+                    <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={cn('font-normal', roleColors[user.role])}>
+                      <Badge variant="outline" className={cn(roleColors[user.role])}>
                         {roleLabels[user.role]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {format(new Date(user.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                    </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(user)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openPasswordDialog(user)}
+                          title="Alterar senha"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(user)}
+                          title="Editar permissão"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDeleteDialog(user)}
+                          title="Remover usuário"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -213,103 +325,102 @@ export default function Usuarios() {
             </TableBody>
           </Table>
         </div>
-      </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription>Atualize os dados do usuário e seu papel no sistema.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+        {/* Edit Role Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Permissão</DialogTitle>
+              <DialogDescription>
+                Altere a permissão do usuário {selectedUser?.full_name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Nome completo</Label>
-                <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, full_name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="position">Cargo</Label>
-                <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
-                  placeholder="Ex: Analista"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="departamento">Departamento</Label>
-                <Input
-                  id="departamento"
-                  value={formData.departamento}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, departamento: e.target.value }))}
-                  placeholder="Ex: RH"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="unit_id">Unidade</Label>
-                <Select
-                  value={formData.unit_id}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, unit_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma unidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
-                    {units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Papel</Label>
+                <Label htmlFor="edit-role">Permissão</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value as AppRole }))}
+                  onValueChange={(value: SystemRole) => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um papel" />
+                    <SelectValue placeholder="Selecione a permissão" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="gestor">Gestor</SelectItem>
-                    <SelectItem value="agente_dp">Agente DP</SelectItem>
-                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="agente_dp">Agente de DP</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving || !formData.full_name.trim()}>
-              {saving ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateRole} disabled={formLoading}>
+                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover Usuário</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover o usuário {selectedUser?.full_name}?
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteUser}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Remover
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Change Password Dialog */}
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Alterar Senha</DialogTitle>
+              <DialogDescription>
+                Digite a nova senha para o usuário {selectedUser?.full_name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Digite a nova senha (mínimo 6 caracteres)"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleChangePassword} disabled={formLoading || newPassword.length < 6}>
+                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Alterar Senha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </MainLayout>
   );
 }
