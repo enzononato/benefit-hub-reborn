@@ -197,7 +197,7 @@ export function BenefitDetailsSheet({
       }
 
       const finalStatus: BenefitStatus =
-        status === "aprovada" ? "concluida" : "recusada";
+        status === "aprovada" ? "aprovada" : "recusada";
 
       const parsedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
       const parsedInstallments = parseInt(totalInstallments) || 1;
@@ -240,7 +240,7 @@ export function BenefitDetailsSheet({
   const isPending = request.status === "aberta" || request.status === "em_analise";
   const isApproved = status === "aprovada";
   const isRejected = status === "recusada";
-  const isClosed = request.status === "concluida" || request.status === "recusada";
+  const isClosed = request.status === "aprovada" || request.status === "recusada";
 
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;

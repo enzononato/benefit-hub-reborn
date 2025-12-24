@@ -18,7 +18,7 @@ export function StatsCards({ requests }: StatsCardsProps) {
     today: requests.filter(r => new Date(r.created_at) >= today).length,
     abertos: requests.filter(r => r.status === 'aberta').length,
     emAndamento: requests.filter(r => r.status === 'em_analise' || r.status === 'aprovada').length,
-    encerrados: requests.filter(r => r.status === 'concluida' || r.status === 'recusada').length,
+    encerrados: requests.filter(r => r.status === 'aprovada' || r.status === 'recusada').length,
   };
 
   const cards = [

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { BenefitStatus, statusLabels } from '@/types/benefits';
-import { Clock, Search, CheckCircle, XCircle, Trophy } from 'lucide-react';
+import { Clock, Search, CheckCircle, XCircle } from 'lucide-react';
 
 interface StatusBadgeProps {
   status: BenefitStatus;
@@ -27,10 +27,6 @@ const statusConfig: Record<BenefitStatus, {
   recusada: {
     styles: 'bg-destructive/15 text-destructive border-destructive/30',
     icon: XCircle,
-  },
-  concluida: {
-    styles: 'bg-success/15 text-success border-success/30',
-    icon: Trophy,
   },
 };
 

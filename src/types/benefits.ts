@@ -1,7 +1,7 @@
 // Alinhado com os enums do banco de dados Supabase
 export type BenefitType = 'autoescola' | 'farmacia' | 'oficina' | 'vale_gas' | 'papelaria' | 'otica' | 'outros';
 
-export type BenefitStatus = 'aberta' | 'em_analise' | 'aprovada' | 'recusada' | 'concluida';
+export type BenefitStatus = 'aberta' | 'em_analise' | 'aprovada' | 'recusada';
 
 export type UserRole = 'colaborador' | 'gestor' | 'admin';
 
@@ -72,10 +72,9 @@ export const statusLabels: Record<BenefitStatus, string> = {
   em_analise: 'Em Análise',
   aprovada: 'Aprovado',
   recusada: 'Recusado',
-  concluida: 'Aprovado',
 };
 
-export const statusFilterLabels: Record<Exclude<BenefitStatus, 'concluida'>, string> = {
+export const statusFilterLabels: Record<BenefitStatus, string> = {
   aberta: 'Aberto',
   em_analise: 'Em Análise',
   aprovada: 'Aprovado',
