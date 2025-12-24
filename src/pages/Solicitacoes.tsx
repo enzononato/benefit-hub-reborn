@@ -70,7 +70,7 @@ export default function Solicitacoes() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -78,11 +78,16 @@ export default function Solicitacoes() {
     fetchRequests();
   }, []);
 
-  // Sync URL params with status filter
+  // Sync URL params with filters
   useEffect(() => {
     const urlStatus = searchParams.get('status');
+    const urlType = searchParams.get('benefit_type');
+    
     if (urlStatus && urlStatus !== statusFilter) {
       setStatusFilter(urlStatus);
+    }
+    if (urlType && urlType !== typeFilter) {
+      setTypeFilter(urlType);
     }
   }, [searchParams]);
 
@@ -217,7 +222,16 @@ export default function Solicitacoes() {
                 <SelectItem value="recusada">Recusado</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={typeFilter} onValueChange={(v) => {
+              setTypeFilter(v);
+              const newParams = new URLSearchParams(searchParams);
+              if (v !== 'all') {
+                newParams.set('benefit_type', v);
+              } else {
+                newParams.delete('benefit_type');
+              }
+              setSearchParams(newParams);
+            }}>
               <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
