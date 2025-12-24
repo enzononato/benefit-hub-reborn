@@ -1,18 +1,32 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { BeneficiosPorTipo } from '@/types';
-import { getBenefitLabel, getBenefitColor } from '@/lib/benefits';
+import { BenefitType, benefitTypeLabels } from '@/types/benefits';
+
+interface BenefitTypeData {
+  type: BenefitType;
+  count: number;
+}
 
 interface BenefitTypeChartProps {
-  data: BeneficiosPorTipo[];
+  data: BenefitTypeData[];
 }
+
+const COLORS: Record<BenefitType, string> = {
+  autoescola: 'hsl(var(--chart-1))',
+  farmacia: 'hsl(var(--chart-2))',
+  oficina: 'hsl(var(--chart-3))',
+  vale_gas: 'hsl(var(--chart-4))',
+  papelaria: 'hsl(var(--chart-5))',
+  otica: 'hsl(var(--primary))',
+  outros: 'hsl(var(--muted-foreground))',
+};
 
 const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
   const chartData = data.map((item) => ({
-    name: getBenefitLabel(item.tipo),
-    value: item.quantidade,
-    color: getBenefitColor(item.tipo),
+    name: benefitTypeLabels[item.type],
+    value: item.count,
+    color: COLORS[item.type],
   }));
 
   return (
