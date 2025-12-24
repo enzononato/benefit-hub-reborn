@@ -28,12 +28,7 @@ export function DeleteColaboradorDialog({ profileId, userId, name, onSuccess }: 
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Sessão expirada. Faça login novamente.');
-        return;
-      }
-
+      // Log deletion before actually deleting
       await supabase.rpc('create_system_log', {
         p_action: 'collaborator_deleted',
         p_entity_type: 'profile',
@@ -44,26 +39,23 @@ export function DeleteColaboradorDialog({ profileId, userId, name, onSuccess }: 
         },
       });
 
-      const response = await fetch(
-        `https://wyhlezxtfhoolrvuqhfy.supabase.co/functions/v1/admin-user-management`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            action: 'delete',
-            userId: userId,
-          }),
-        }
-      );
+      // Delete user_roles first
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao excluir colaborador');
+      if (roleError) {
+        console.error('Error deleting user_roles:', roleError);
       }
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', profileId);
+
+      if (profileError) throw profileError;
 
       toast.success('Colaborador excluído com sucesso!');
       onSuccess?.();
