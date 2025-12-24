@@ -34,6 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
 
 interface BenefitRequest {
   id: string;
@@ -73,6 +74,8 @@ export default function Solicitacoes() {
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRequest, setSelectedRequest] = useState<BenefitRequest | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -301,6 +304,7 @@ export default function Solicitacoes() {
               <TableRow>
                 <TableHead>Protocolo</TableHead>
                 <TableHead>Colaborador</TableHead>
+                <TableHead>Revenda</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Data</TableHead>
@@ -313,6 +317,7 @@ export default function Solicitacoes() {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -321,7 +326,7 @@ export default function Solicitacoes() {
                 ))
               ) : paginatedRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Nenhuma solicitação encontrada
                   </TableCell>
                 </TableRow>
@@ -332,6 +337,9 @@ export default function Solicitacoes() {
                     <TableRow key={request.id} className="animate-fade-in">
                       <TableCell className="font-medium font-mono text-sm">{request.protocol}</TableCell>
                       <TableCell>{request.profile?.full_name || 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {request.profile?.unit?.name || 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4 text-muted-foreground" />
@@ -345,7 +353,14 @@ export default function Solicitacoes() {
                         {format(new Date(request.created_at), "dd/MM/yyyy", { locale: ptBR })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setDetailsOpen(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -367,6 +382,12 @@ export default function Solicitacoes() {
           />
         )}
       </div>
+
+      <SolicitacaoDetailsSheet 
+        open={detailsOpen} 
+        onOpenChange={setDetailsOpen} 
+        request={selectedRequest} 
+      />
     </MainLayout>
   );
 }
