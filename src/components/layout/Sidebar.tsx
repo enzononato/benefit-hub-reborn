@@ -1,116 +1,124 @@
-import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
-  Users,
   FileText,
-  Menu,
-  X,
+  Users,
+  Building2,
+  Settings,
+  MessageSquare,
   LogOut,
   Moon,
   Sun,
-  Gift,
+  UserCog,
+  ClipboardList,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import revalleLogo from '@/assets/revalle-logo.png';
 
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Users, label: 'Colaboradores', path: '/colaboradores' },
-  { icon: FileText, label: 'Solicitações', path: '/solicitacoes' },
-];
-
-interface SidebarProps {
-  collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  showOpenCount?: boolean;
+  allowedRoles: AppRole[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
+const navigation: NavItem[] = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, allowedRoles: ['admin', 'gestor', 'agente_dp'] },
+  { name: 'Protocolos', href: '/solicitacoes', icon: FileText, showOpenCount: true, allowedRoles: ['admin', 'gestor', 'agente_dp'] },
+  { name: 'Colaboradores', href: '/colaboradores', icon: Users, allowedRoles: ['admin', 'gestor', 'agente_dp'] },
+  { name: 'Unidades', href: '/unidades', icon: Building2, allowedRoles: ['admin', 'gestor'] },
+  { name: 'Usuários', href: '/usuarios', icon: UserCog, allowedRoles: ['admin'] },
+  { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, allowedRoles: ['admin'] },
+  { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, badge: 'Em Dev', allowedRoles: ['admin'] },
+  { name: 'Configurações', href: '/configuracoes', icon: Settings, badge: 'Em Dev', allowedRoles: ['admin'] },
+];
+
+const roleLabels: Record<AppRole, string> = {
+  admin: 'Administrador',
+  gestor: 'Gestor',
+  agente_dp: 'Agente de DP',
+  colaborador: 'Colaborador',
+};
+
+export function Sidebar() {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { userName, userRole, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [openProtocolsCount, setOpenProtocolsCount] = useState(0);
+
+  useEffect(() => {
+    const fetchOpenProtocolsCount = async () => {
+      const { count, error } = await supabase
+        .from('benefit_requests')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['aberta', 'em_analise']);
+      if (!error && count !== null) setOpenProtocolsCount(count);
+    };
+    fetchOpenProtocolsCount();
+  }, []);
+
+  const handleSignOut = async () => {
+    await logout();
+    toast.success('Você saiu da sua conta');
+  };
+
+  const userInitials = userName?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
+  const displayName = userName || 'Usuário';
+  const displayRole = userRole ? roleLabels[userRole] : 'Colaborador';
+  const filteredNavigation = navigation.filter(item => userRole && item.allowedRoles.includes(userRole));
 
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-sidebar-background border-r border-sidebar-border transition-all duration-300',
-        collapsed ? 'w-16' : 'w-64'
-      )}
-    >
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border">
       <div className="flex h-full flex-col">
-        <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              <Gift className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold text-sidebar-foreground">
-                Benefit Hub
-              </span>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed(!collapsed)}
-            className="text-sidebar-foreground"
-          >
-            {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
-          </Button>
+        <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
+          <img src={revalleLogo} alt="Revalle" className="h-9 w-9 object-cover rounded-lg" />
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-sidebar-foreground">Revalle</h1>
+            <p className="text-xs text-sidebar-muted">Gestão de Protocolos</p>
+          </div>
         </div>
-
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {filteredNavigation.map((item) => {
+            const isActive = location.pathname === item.href;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+              <Link key={item.name} to={item.href} className={cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all', isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent')}>
+                <item.icon className="h-5 w-5" />
+                <span className="flex-1">{item.name}</span>
+                {item.showOpenCount && openProtocolsCount > 0 && <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/20 text-primary">{openProtocolsCount}</span>}
+                {item.badge && <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-warning/20 text-warning">{item.badge}</span>}
               </Link>
             );
           })}
         </nav>
-
-        <div className="border-t border-sidebar-border p-2 space-y-1">
-          <Button
-            variant="ghost"
-            onClick={toggleTheme}
-            className={cn(
-              'w-full justify-start gap-3 text-sidebar-foreground',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5 shrink-0" />
-            ) : (
-              <Sun className="h-5 w-5 shrink-0" />
-            )}
-            {!collapsed && <span>{theme === 'light' ? 'Modo Escuro' : 'Modo Claro'}</span>}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={signOut}
-            className={cn(
-              'w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>Sair</span>}
-          </Button>
+        <div className="border-t border-sidebar-border p-4 space-y-3">
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-sm text-sidebar-muted">Tema</span>
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
+              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Button>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg p-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sm font-semibold">{userInitials}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName}</p>
+              <p className="text-xs text-sidebar-muted">{displayRole}</p>
+            </div>
+            <button onClick={handleSignOut} className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-muted" title="Sair">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>
   );
-};
+}
 
 export default Sidebar;
