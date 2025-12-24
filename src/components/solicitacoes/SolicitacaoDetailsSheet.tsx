@@ -47,6 +47,8 @@ interface SolicitacaoDetailsSheetProps {
     reviewed_by?: string | null;
     reviewed_at?: string | null;
     reviewer_name?: string | null;
+    account_id?: number | null;
+    conversation_id?: number | null;
     profile?: {
       full_name: string;
       cpf?: string | null;
@@ -154,6 +156,44 @@ export function SolicitacaoDetailsSheet({
     }
   };
 
+  const sendWebhook = async (
+    webhookStatus: "aprovado" | "reprovado",
+    motivo?: string,
+    mensagemRh?: string
+  ) => {
+    try {
+      const webhookData = {
+        protocolo: request.protocol,
+        nome_colaborador: request.profile?.full_name || "N/A",
+        telefone_whatsapp: request.profile?.phone || "",
+        status: webhookStatus,
+        motivo: motivo || null,
+        account_id: request.account_id || null,
+        conversation_id: request.conversation_id || null,
+        mensagem_rh: mensagemRh || null,
+      };
+
+      console.log("Enviando webhook:", webhookData);
+
+      const response = await fetch(
+        "https://n8n.revalle.com.br/webhook/aprovacao",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookData),
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Erro no webhook:", response.status, response.statusText);
+      } else {
+        console.log("Webhook enviado com sucesso");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar webhook:", error);
+    }
+  };
+
   const handleSend = async () => {
     setLoading(true);
     try {
@@ -192,6 +232,13 @@ export function SolicitacaoDetailsSheet({
         .eq("id", request.id);
 
       if (updateError) throw updateError;
+
+      // Enviar webhook após atualização bem-sucedida
+      await sendWebhook(
+        status === "aprovada" ? "aprovado" : "reprovado",
+        status === "recusada" ? rejectionReason : undefined,
+        closingMessage
+      );
 
       toast.success("Solicitação atualizada com sucesso!");
       onOpenChange(false);

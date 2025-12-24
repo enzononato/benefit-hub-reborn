@@ -54,6 +54,8 @@ interface BenefitRequest {
   reviewed_by?: string | null;
   reviewed_at?: string | null;
   reviewer_name?: string | null;
+  account_id?: number | null;
+  conversation_id?: number | null;
   profile?: {
     full_name: string;
     cpf?: string | null;
