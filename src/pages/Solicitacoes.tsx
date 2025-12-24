@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Calendar } from '@/components/ui/calendar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
+import { toast } from 'sonner';
 
 interface BenefitRequest {
   id: string;
@@ -45,8 +47,17 @@ interface BenefitRequest {
   details: string | null;
   requested_value: number | null;
   created_at: string;
+  pdf_url?: string | null;
+  pdf_file_name?: string | null;
+  rejection_reason?: string | null;
+  closing_message?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  reviewer_name?: string | null;
   profile?: {
     full_name: string;
+    cpf?: string | null;
+    phone?: string | null;
     unit_id?: string | null;
     unit?: {
       name: string;
@@ -84,6 +95,9 @@ export default function Solicitacoes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<BenefitRequest | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingViewRequest, setPendingViewRequest] = useState<{ id: string; index: number } | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -132,7 +146,7 @@ export default function Solicitacoes() {
       const userIds = [...new Set(requestsData?.map(r => r.user_id) || [])];
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, full_name, unit_id, unit:units(name)')
+        .select('user_id, full_name, cpf, phone, unit_id, unit:units(name)')
         .in('user_id', userIds);
 
       const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
@@ -147,6 +161,90 @@ export default function Solicitacoes() {
       console.error('Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDetails = async (requestId: string, index: number) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return;
+
+    // Se status é 'aberta', mostrar confirmação antes de mudar para 'em_analise'
+    if (request.status === 'aberta') {
+      setPendingViewRequest({ id: requestId, index });
+      setConfirmDialogOpen(true);
+      return;
+    }
+
+    await openRequestDetails(request, index);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!pendingViewRequest) return;
+
+    const request = requests.find(r => r.id === pendingViewRequest.id);
+    if (!request) {
+      setConfirmDialogOpen(false);
+      setPendingViewRequest(null);
+      return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+
+    const { error: updateError } = await supabase
+      .from('benefit_requests')
+      .update({
+        status: 'em_analise',
+        reviewed_by: userData?.user?.id,
+        reviewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', pendingViewRequest.id);
+
+    if (updateError) {
+      console.error('Error updating status:', updateError);
+      toast.error('Erro ao atualizar status');
+    } else {
+      // Update local state
+      setRequests((prev) => prev.map((r) => 
+        r.id === pendingViewRequest.id ? { ...r, status: 'em_analise' as BenefitStatus } : r
+      ));
+      toast.info('Status alterado para "Em Análise"');
+    }
+
+    const updatedRequest = { ...request, status: 'em_analise' as BenefitStatus };
+    await openRequestDetails(updatedRequest, pendingViewRequest.index);
+    setConfirmDialogOpen(false);
+    setPendingViewRequest(null);
+  };
+
+  const openRequestDetails = async (request: BenefitRequest, index: number) => {
+    // Fetch reviewer name if exists
+    let reviewerName = null;
+    if (request.reviewed_by) {
+      const { data: reviewerData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', request.reviewed_by)
+        .maybeSingle();
+      reviewerName = reviewerData?.full_name || null;
+    }
+
+    const combinedData = {
+      ...request,
+      reviewer_name: reviewerName,
+    };
+
+    setSelectedRequest(combinedData);
+    setCurrentIndex(index);
+    setDetailsOpen(true);
+  };
+
+  const handleNavigate = async (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+
+    if (newIndex >= 0 && newIndex < filteredRequests.length) {
+      const request = filteredRequests[newIndex];
+      await handleViewDetails(request.id, newIndex);
     }
   };
 
@@ -376,10 +474,11 @@ export default function Solicitacoes() {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedRequests.map((request) => {
+                paginatedRequests.map((request, idx) => {
                   const Icon = benefitIcons[request.benefit_type] || HelpCircle;
+                  const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + idx;
                   return (
-                    <TableRow key={request.id} className="animate-fade-in">
+                    <TableRow key={request.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium font-mono text-sm">{request.protocol}</TableCell>
                       <TableCell>{request.profile?.full_name || 'N/A'}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -401,10 +500,9 @@ export default function Solicitacoes() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setDetailsOpen(true);
-                          }}
+                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => handleViewDetails(request.id, globalIndex)}
+                          title="Ver detalhes"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -431,7 +529,24 @@ export default function Solicitacoes() {
       <SolicitacaoDetailsSheet 
         open={detailsOpen} 
         onOpenChange={setDetailsOpen} 
-        request={selectedRequest} 
+        request={selectedRequest}
+        onSuccess={fetchRequests}
+        currentIndex={currentIndex}
+        totalItems={filteredRequests.length}
+        onNavigate={handleNavigate}
+      />
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={(open) => {
+          setConfirmDialogOpen(open);
+          if (!open) setPendingViewRequest(null);
+        }}
+        title="Iniciar análise?"
+        description="Ao visualizar esta solicitação, o status será alterado para 'Em Análise'. O colaborador será notificado sobre esta mudança. Deseja continuar?"
+        confirmLabel="Sim, iniciar análise"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmStatusChange}
       />
     </MainLayout>
   );
