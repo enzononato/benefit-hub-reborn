@@ -383,7 +383,6 @@ export default function Solicitacoes() {
                 <SelectItem value="aberta">Aberto</SelectItem>
                 <SelectItem value="em_analise">Em Análise</SelectItem>
                 <SelectItem value="aprovada">Aprovado</SelectItem>
-                <SelectItem value="concluida">Concluído</SelectItem>
                 <SelectItem value="recusada">Recusado</SelectItem>
               </SelectContent>
             </Select>
