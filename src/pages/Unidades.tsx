@@ -1,220 +1,219 @@
-import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useUnidades, Unit } from '@/hooks/useUnidades';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Plus, Search, Pencil, Trash2, RefreshCw, Building2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Building2, Users, FileText, MapPin } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import { NewUnidadeDialog } from '@/components/unidades/NewUnidadeDialog';
+import { ManageUnidadeDialog } from '@/components/unidades/ManageUnidadeDialog';
+import { formatCnpj } from '@/lib/utils';
+
+interface Unit {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface UnitWithStats extends Unit {
+  collaborators_count: number;
+  requests_count: number;
+}
 
 export default function Unidades() {
-  const { units, loading, fetchUnits, createUnit, updateUnit, deleteUnit } = useUnidades();
-  const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
-  const [formData, setFormData] = useState({ name: '', code: '' });
-  const [saving, setSaving] = useState(false);
+  const { data: units, isLoading, refetch } = useQuery({
+    queryKey: ['units-with-stats'],
+    queryFn: async () => {
+      // Buscar unidades
+      const { data: unitsData, error: unitsError } = await supabase
+        .from('units')
+        .select('*')
+        .order('name');
 
-  const filteredUnits = units.filter(
-    (unit) =>
-      unit.name.toLowerCase().includes(search.toLowerCase()) ||
-      unit.code.toLowerCase().includes(search.toLowerCase())
-  );
+      if (unitsError) throw unitsError;
 
-  const handleOpenCreate = () => {
-    setEditingUnit(null);
-    setFormData({ name: '', code: '' });
-    setDialogOpen(true);
-  };
+      if (!unitsData || unitsData.length === 0) {
+        return [];
+      }
 
-  const handleOpenEdit = (unit: Unit) => {
-    setEditingUnit(unit);
-    setFormData({ name: unit.name, code: unit.code });
-    setDialogOpen(true);
-  };
+      // Buscar contagens de colaboradores por unidade com paginação
+      let allProfiles: { unit_id: string | null }[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-  const handleOpenDelete = (unit: Unit) => {
-    setUnitToDelete(unit);
-    setDeleteDialogOpen(true);
-  };
+      while (hasMore) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('unit_id')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.code.trim()) return;
-    
-    setSaving(true);
-    if (editingUnit) {
-      await updateUnit(editingUnit.id, formData);
-    } else {
-      await createUnit(formData);
-    }
-    setSaving(false);
-    setDialogOpen(false);
-  };
+        if (profilesData && profilesData.length > 0) {
+          allProfiles = [...allProfiles, ...profilesData];
+          hasMore = profilesData.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
 
-  const handleDelete = async () => {
-    if (!unitToDelete) return;
-    await deleteUnit(unitToDelete.id);
-    setDeleteDialogOpen(false);
-    setUnitToDelete(null);
-  };
+      // Buscar solicitações com paginação
+      let allRequests: { user_id: string }[] = [];
+      page = 0;
+      hasMore = true;
+
+      while (hasMore) {
+        const { data: requestsData } = await supabase
+          .from('benefit_requests')
+          .select('user_id')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (requestsData && requestsData.length > 0) {
+          allRequests = [...allRequests, ...requestsData];
+          hasMore = requestsData.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Buscar profiles para requests com paginação
+      let allProfilesForRequests: { user_id: string; unit_id: string | null }[] = [];
+      page = 0;
+      hasMore = true;
+
+      while (hasMore) {
+        const { data: profilesForRequests } = await supabase
+          .from('profiles')
+          .select('user_id, unit_id')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (profilesForRequests && profilesForRequests.length > 0) {
+          allProfilesForRequests = [...allProfilesForRequests, ...profilesForRequests];
+          hasMore = profilesForRequests.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Contar colaboradores por unidade
+      const collaboratorsCounts: Record<string, number> = {};
+      allProfiles.forEach(profile => {
+        if (profile.unit_id) {
+          collaboratorsCounts[profile.unit_id] = (collaboratorsCounts[profile.unit_id] || 0) + 1;
+        }
+      });
+
+      // Contar solicitações por unidade
+      const requestsCounts: Record<string, number> = {};
+      allRequests.forEach(request => {
+        const profile = allProfilesForRequests.find(p => p.user_id === request.user_id);
+        if (profile?.unit_id) {
+          requestsCounts[profile.unit_id] = (requestsCounts[profile.unit_id] || 0) + 1;
+        }
+      });
+
+      // Combinar dados
+      return unitsData.map(unit => ({
+        ...unit,
+        collaborators_count: collaboratorsCounts[unit.id] || 0,
+        requests_count: requestsCounts[unit.id] || 0,
+      })) as UnitWithStats[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Unidades</h1>
+              <p className="mt-1 text-muted-foreground">
+                Gerencie as unidades da empresa
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Unidades</h1>
             <p className="mt-1 text-muted-foreground">
-              Gerencie as unidades cadastradas ({units.length} total)
+              Gerencie as unidades da empresa
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchUnits} disabled={loading}>
-              <RefreshCw className={cn('h-4 w-4 mr-2', loading && 'animate-spin')} />
-              Atualizar
-            </Button>
-            <Button size="sm" onClick={handleOpenCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Unidade
-            </Button>
-          </div>
+          <NewUnidadeDialog onSuccess={() => refetch()} />
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou código..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Criado em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    <div className="flex items-center justify-center">
-                      <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {units && units.length > 0 ? (
+            units.map((unit, index) => (
+              <div
+                key={unit.id}
+                className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300"
+              >
+                <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Building2 className="h-6 w-6 shrink-0" />
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredUnits.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                    <Building2 className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                    {search ? 'Nenhuma unidade encontrada' : 'Nenhuma unidade cadastrada'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUnits.map((unit) => (
-                  <TableRow key={unit.id}>
-                    <TableCell className="font-medium">{unit.name}</TableCell>
-                    <TableCell>
-                      <code className="rounded bg-muted px-2 py-1 text-sm">{unit.code}</code>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(unit.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(unit)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(unit)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg text-foreground truncate">{unit.name}</h3>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{formatCnpj(unit.code)}</span>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-medium truncate">Colaboradores</span>
+                      </div>
+                      <p className="mt-1 text-2xl font-bold text-foreground">
+                        {unit.collaborators_count}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-medium truncate">Solicitações</span>
+                      </div>
+                      <p className="mt-1 text-2xl font-bold text-foreground">
+                        {unit.requests_count}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <ManageUnidadeDialog unit={unit} onSuccess={() => refetch()} />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Nenhuma unidade cadastrada
+            </div>
+          )}
         </div>
       </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingUnit ? 'Editar Unidade' : 'Nova Unidade'}</DialogTitle>
-            <DialogDescription>
-              {editingUnit ? 'Atualize os dados da unidade.' : 'Preencha os dados para criar uma nova unidade.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Unidade Centro"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="code">Código</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                placeholder="Ex: UC01"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit} disabled={saving || !formData.name.trim() || !formData.code.trim()}>
-              {saving ? 'Salvando...' : editingUnit ? 'Salvar' : 'Criar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title="Excluir Unidade"
-        description={`Tem certeza que deseja excluir a unidade "${unitToDelete?.name}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Excluir"
-        onConfirm={handleDelete}
-        variant="destructive"
-      />
     </MainLayout>
   );
 }
