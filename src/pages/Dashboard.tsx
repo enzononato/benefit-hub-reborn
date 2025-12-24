@@ -1,6 +1,6 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import StatCard from '@/components/dashboard/StatCard';
+import { StatCard } from '@/components/dashboard/StatCard';
 import BenefitsChart from '@/components/dashboard/BenefitsChart';
 import BenefitTypeChart from '@/components/dashboard/BenefitTypeChart';
 import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
@@ -24,7 +24,7 @@ const Dashboard: React.FC = () => {
             title="Total de Colaboradores"
             value={mockDashboardStats.totalColaboradores}
             icon={Users}
-            trend={{ value: 5, positive: true }}
+            trend={{ value: 5, isPositive: true }}
           />
           <StatCard
             title="Tipos de Benefícios"
@@ -35,13 +35,13 @@ const Dashboard: React.FC = () => {
             title="Solicitações Pendentes"
             value={mockDashboardStats.solicitacoesPendentes}
             icon={Clock}
-            trend={{ value: 12, positive: false }}
+            trend={{ value: 12, isPositive: false }}
           />
           <StatCard
             title="Valor Total em Benefícios"
             value={formatCurrency(mockDashboardStats.valorTotalBeneficios)}
             icon={DollarSign}
-            trend={{ value: 8, positive: true }}
+            trend={{ value: 8, isPositive: true }}
           />
         </div>
 
