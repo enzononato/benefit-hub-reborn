@@ -2,14 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
-import { Car, Pill, Wrench, Fuel, BookOpen, Glasses, HelpCircle } from 'lucide-react';
+import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap: Record<BenefitType, React.ElementType> = {
   autoescola: Car,
   farmacia: Pill,
   oficina: Wrench,
-  vale_gas: Fuel,
+  vale_gas: Cylinder,
   papelaria: BookOpen,
   otica: Glasses,
   outros: HelpCircle,
