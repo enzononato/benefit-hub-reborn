@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -30,6 +33,18 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -56,6 +71,28 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          muted: "hsl(var(--sidebar-muted))",
+        },
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+        },
+        benefit: {
+          autoescola: "hsl(var(--benefit-autoescola))",
+          "autoescola-icon": "hsl(var(--benefit-autoescola-icon))",
+          farmacia: "hsl(var(--benefit-farmacia))",
+          "farmacia-icon": "hsl(var(--benefit-farmacia-icon))",
+          oficina: "hsl(var(--benefit-oficina))",
+          "oficina-icon": "hsl(var(--benefit-oficina-icon))",
+          "vale-gas": "hsl(var(--benefit-vale-gas))",
+          "vale-gas-icon": "hsl(var(--benefit-vale-gas-icon))",
+          papelaria: "hsl(var(--benefit-papelaria))",
+          "papelaria-icon": "hsl(var(--benefit-papelaria-icon))",
+          otica: "hsl(var(--benefit-otica))",
+          "otica-icon": "hsl(var(--benefit-otica-icon))",
         },
       },
       borderRadius: {
@@ -65,20 +102,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
