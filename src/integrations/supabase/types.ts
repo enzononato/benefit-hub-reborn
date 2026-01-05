@@ -14,10 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_comments: {
+        Row: {
+          alert_id: string
+          content: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_comments_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          asset_id: string
+          created_at: string
+          description: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          status: Database["public"]["Enums"]["alert_status"]
+          title: string
+          unit_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          asset_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          title: string
+          unit_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          asset_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          title?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_status_history: {
+        Row: {
+          asset_id: string
+          health: number | null
+          id: string
+          notes: string | null
+          recorded_at: string
+          status: Database["public"]["Enums"]["asset_status"]
+        }
+        Insert: {
+          asset_id: string
+          health?: number | null
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          status: Database["public"]["Enums"]["asset_status"]
+        }
+        Update: {
+          asset_id?: string
+          health?: number | null
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          status?: Database["public"]["Enums"]["asset_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_status_history_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          created_at: string
+          description: string | null
+          health: number
+          id: string
+          ip_address: string | null
+          last_check: string | null
+          last_communication: string | null
+          location: string | null
+          name: string
+          sla_target: number | null
+          status: Database["public"]["Enums"]["asset_status"]
+          type: Database["public"]["Enums"]["asset_type"]
+          unit_id: string
+          updated_at: string
+          zabbix_host_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          health?: number
+          id?: string
+          ip_address?: string | null
+          last_check?: string | null
+          last_communication?: string | null
+          location?: string | null
+          name: string
+          sla_target?: number | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          type: Database["public"]["Enums"]["asset_type"]
+          unit_id: string
+          updated_at?: string
+          zabbix_host_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          health?: number
+          id?: string
+          ip_address?: string | null
+          last_check?: string | null
+          last_communication?: string | null
+          location?: string | null
+          name?: string
+          sla_target?: number | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          type?: Database["public"]["Enums"]["asset_type"]
+          unit_id?: string
+          updated_at?: string
+          zabbix_host_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       benefit_requests: {
         Row: {
           account_id: number | null
           approved_value: number | null
+          attachment_file_name: string | null
+          attachment_url: string | null
           benefit_type: Database["public"]["Enums"]["benefit_type"]
           closed_at: string | null
           closed_by: string | null
@@ -42,6 +233,8 @@ export type Database = {
         Insert: {
           account_id?: number | null
           approved_value?: number | null
+          attachment_file_name?: string | null
+          attachment_url?: string | null
           benefit_type: Database["public"]["Enums"]["benefit_type"]
           closed_at?: string | null
           closed_by?: string | null
@@ -66,6 +259,8 @@ export type Database = {
         Update: {
           account_id?: number | null
           approved_value?: number | null
+          attachment_file_name?: string | null
+          attachment_url?: string | null
           benefit_type?: Database["public"]["Enums"]["benefit_type"]
           closed_at?: string | null
           closed_by?: string | null
@@ -180,6 +375,69 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          model: string | null
+          notes: string | null
+          related_asset_id: string | null
+          responsible_user: string | null
+          sector: string | null
+          serial_number: string | null
+          status: Database["public"]["Enums"]["inventory_status"]
+          type: Database["public"]["Enums"]["inventory_type"]
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          notes?: string | null
+          related_asset_id?: string | null
+          responsible_user?: string | null
+          sector?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"]
+          type: Database["public"]["Enums"]["inventory_type"]
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          notes?: string | null
+          related_asset_id?: string | null
+          responsible_user?: string | null
+          sector?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"]
+          type?: Database["public"]["Enums"]["inventory_type"]
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_related_asset_id_fkey"
+            columns: ["related_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logs: {
         Row: {
           action: string
@@ -209,6 +467,59 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      maintenance_schedules: {
+        Row: {
+          asset_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          scheduled_date: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          scheduled_date: string
+          started_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          scheduled_date?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_schedules_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -436,6 +747,44 @@ export type Database = {
           },
         ]
       }
+      request_messages: {
+        Row: {
+          benefit_request_id: string
+          created_at: string
+          id: string
+          message: string
+          sender_id: string
+          sender_name: string | null
+          sent_via: string | null
+        }
+        Insert: {
+          benefit_request_id: string
+          created_at?: string
+          id?: string
+          message: string
+          sender_id: string
+          sender_name?: string | null
+          sent_via?: string | null
+        }
+        Update: {
+          benefit_request_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          sender_id?: string
+          sender_name?: string | null
+          sent_via?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_messages_benefit_request_id_fkey"
+            columns: ["benefit_request_id"]
+            isOneToOne: false
+            referencedRelation: "benefit_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sla_configs: {
         Row: {
           benefit_type: string
@@ -463,27 +812,84 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       units: {
         Row: {
+          city: string | null
           code: string
           created_at: string
           id: string
+          is_active: boolean
           name: string
+          state: string | null
           updated_at: string
         }
         Insert: {
+          city?: string | null
           code: string
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
+          state?: string | null
           updated_at?: string
         }
         Update: {
+          city?: string | null
           code?: string
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
+          state?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_module_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          module: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -504,6 +910,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_unit_access: {
+        Row: {
+          created_at: string
+          id: string
+          unit_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          unit_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          unit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_unit_access_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -542,11 +977,16 @@ export type Database = {
         Returns: string
       }
       get_my_unit_id: { Args: never; Returns: string }
+      get_user_unit_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_unit_access: {
+        Args: { _unit_id: string; _user_id: string }
         Returns: boolean
       }
       is_admin_or_gestor: { Args: never; Returns: boolean }
@@ -557,16 +997,51 @@ export type Database = {
       }
     }
     Enums: {
+      alert_severity: "critical" | "warning" | "info"
+      alert_status: "active" | "acknowledged" | "resolved"
       app_role: "admin" | "gestor" | "colaborador" | "agente_dp"
+      asset_status: "operational" | "warning" | "critical" | "maintenance"
+      asset_type:
+        | "server"
+        | "switch"
+        | "link"
+        | "radio"
+        | "firewall"
+        | "nvr"
+        | "nobreak"
       benefit_status: "aberta" | "em_analise" | "aprovada" | "recusada"
       benefit_type:
+        | "alteracao_ferias"
+        | "aviso_folga_falta"
+        | "atestado"
+        | "contracheque"
+        | "abono_horas"
+        | "alteracao_horario"
+        | "outros"
+        | "operacao_domingo"
+        | "relatorio_ponto"
         | "autoescola"
         | "farmacia"
         | "oficina"
         | "vale_gas"
         | "papelaria"
         | "otica"
-        | "outros"
+        | "plano_odontologico"
+        | "plano_saude"
+        | "vale_transporte"
+        | "relato_anomalia"
+      inventory_status: "active" | "maintenance" | "disposed"
+      inventory_type:
+        | "pc"
+        | "monitor"
+        | "printer"
+        | "camera"
+        | "phone"
+        | "nobreak_inventory"
+        | "access_switch"
+        | "other"
+        | "catraca"
+        | "notebook"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -694,16 +1169,53 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["critical", "warning", "info"],
+      alert_status: ["active", "acknowledged", "resolved"],
       app_role: ["admin", "gestor", "colaborador", "agente_dp"],
+      asset_status: ["operational", "warning", "critical", "maintenance"],
+      asset_type: [
+        "server",
+        "switch",
+        "link",
+        "radio",
+        "firewall",
+        "nvr",
+        "nobreak",
+      ],
       benefit_status: ["aberta", "em_analise", "aprovada", "recusada"],
       benefit_type: [
+        "alteracao_ferias",
+        "aviso_folga_falta",
+        "atestado",
+        "contracheque",
+        "abono_horas",
+        "alteracao_horario",
+        "outros",
+        "operacao_domingo",
+        "relatorio_ponto",
         "autoescola",
         "farmacia",
         "oficina",
         "vale_gas",
         "papelaria",
         "otica",
-        "outros",
+        "plano_odontologico",
+        "plano_saude",
+        "vale_transporte",
+        "relato_anomalia",
+      ],
+      inventory_status: ["active", "maintenance", "disposed"],
+      inventory_type: [
+        "pc",
+        "monitor",
+        "printer",
+        "camera",
+        "phone",
+        "nobreak_inventory",
+        "access_switch",
+        "other",
+        "catraca",
+        "notebook",
       ],
     },
   },
