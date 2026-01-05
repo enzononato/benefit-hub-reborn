@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download } from 'lucide-react';
+import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -331,42 +331,152 @@ export default function Solicitacoes() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Stats calculation
+  const statsData = {
+    total: requests.length,
+    aberta: requests.filter(r => r.status === 'aberta').length,
+    em_analise: requests.filter(r => r.status === 'em_analise').length,
+    aprovada: requests.filter(r => r.status === 'aprovada').length,
+    recusada: requests.filter(r => r.status === 'recusada').length,
+  };
+
   return (
     <MainLayout>
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
-              Solicitações
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Gerencie todas as solicitações de benefícios
-            </p>
+      <div className="space-y-6">
+        {/* Header with gradient */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <ClipboardList className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold">
+                  Solicitações
+                </h1>
+                <p className="mt-1 text-sm text-white/80">
+                  Gerencie todas as solicitações de benefícios
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={exportToCSV} 
+                disabled={loading || filteredRequests.length === 0}
+                className="bg-white/20 hover:bg-white/30 text-white border-0"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={fetchRequests} 
+                disabled={loading}
+                className="bg-white/20 hover:bg-white/30 text-white border-0"
+              >
+                <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+                Atualizar
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV} disabled={loading || filteredRequests.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={fetchRequests} disabled={loading}>
-              <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-              Atualizar
-            </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div 
+            className={cn(
+              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
+              "bg-gradient-to-br from-info/10 to-info/5 border border-info/20"
+            )}
+            onClick={() => { setStatusFilter('aberta'); setSearchParams({ status: 'aberta' }); }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Abertas</p>
+                <p className="text-2xl font-bold text-info">{statsData.aberta}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
+                <Clock className="h-5 w-5 text-info" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-info to-info/50" />
+          </div>
+
+          <div 
+            className={cn(
+              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
+              "bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20"
+            )}
+            onClick={() => { setStatusFilter('em_analise'); setSearchParams({ status: 'em_analise' }); }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Em Análise</p>
+                <p className="text-2xl font-bold text-warning">{statsData.em_analise}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
+                <Search className="h-5 w-5 text-warning" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-warning to-warning/50" />
+          </div>
+
+          <div 
+            className={cn(
+              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
+              "bg-gradient-to-br from-success/10 to-success/5 border border-success/20"
+            )}
+            onClick={() => { setStatusFilter('aprovada'); setSearchParams({ status: 'aprovada' }); }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Aprovadas</p>
+                <p className="text-2xl font-bold text-success">{statsData.aprovada}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-success to-success/50" />
+          </div>
+
+          <div 
+            className={cn(
+              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
+              "bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20"
+            )}
+            onClick={() => { setStatusFilter('recusada'); setSearchParams({ status: 'recusada' }); }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Recusadas</p>
+                <p className="text-2xl font-bold text-destructive">{statsData.recusada}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                <XCircle className="h-5 w-5 text-destructive" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-destructive to-destructive/50" />
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por protocolo, nome ou detalhes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por protocolo, nome ou detalhes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 bg-background"
+                />
+              </div>
             <Select value={statusFilter} onValueChange={(v) => {
               setStatusFilter(v);
               if (v !== 'all') {
@@ -476,20 +586,21 @@ export default function Solicitacoes() {
               </Button>
             </div>
           )}
+          </div>
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Protocolo</TableHead>
-                <TableHead>Colaborador</TableHead>
-                <TableHead>Revenda</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">Protocolo</TableHead>
+                <TableHead className="font-semibold">Colaborador</TableHead>
+                <TableHead className="font-semibold">Revenda</TableHead>
+                <TableHead className="font-semibold">Tipo</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Data</TableHead>
+                <TableHead className="text-right font-semibold">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -507,25 +618,62 @@ export default function Solicitacoes() {
                 ))
               ) : paginatedRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhuma solicitação encontrada
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <ClipboardList className="h-10 w-10 text-muted-foreground/50" />
+                      <p>Nenhuma solicitação encontrada</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedRequests.map((request, idx) => {
                   const Icon = benefitIcons[request.benefit_type] || HelpCircle;
                   const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + idx;
+                  
+                  // Get benefit color based on type
+                  const getBenefitColor = (type: BenefitType) => {
+                    const colors: Record<string, string> = {
+                      autoescola: 'bg-benefit-autoescola text-benefit-autoescola-icon',
+                      farmacia: 'bg-benefit-farmacia text-benefit-farmacia-icon',
+                      oficina: 'bg-benefit-oficina text-benefit-oficina-icon',
+                      vale_gas: 'bg-benefit-vale-gas text-benefit-vale-gas-icon',
+                      papelaria: 'bg-benefit-papelaria text-benefit-papelaria-icon',
+                      otica: 'bg-benefit-otica text-benefit-otica-icon',
+                    };
+                    return colors[type] || 'bg-muted text-muted-foreground';
+                  };
+
                   return (
-                    <TableRow key={request.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium font-mono text-sm">{request.protocol}</TableCell>
-                      <TableCell>{request.profile?.full_name || 'N/A'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {request.profile?.unit?.name || 'N/A'}
+                    <TableRow 
+                      key={request.id} 
+                      className="group hover:bg-primary/5 transition-all duration-200 cursor-pointer"
+                      onClick={() => handleViewDetails(request.id, globalIndex)}
+                    >
+                      <TableCell>
+                        <span className="font-mono text-sm font-medium text-primary">
+                          {request.protocol}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <span className="hidden sm:inline">{benefitTypeLabels[request.benefit_type]}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-sm">
+                            {request.profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <span className="font-medium">{request.profile?.full_name || 'N/A'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
+                          {request.profile?.unit?.name || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className={cn(
+                          "inline-flex items-center gap-2 rounded-full px-2.5 py-1",
+                          getBenefitColor(request.benefit_type)
+                        )}>
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium hidden sm:inline">{benefitTypeLabels[request.benefit_type]}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -538,8 +686,11 @@ export default function Solicitacoes() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                          onClick={() => handleViewDetails(request.id, globalIndex)}
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(request.id, globalIndex);
+                          }}
                           title="Ver detalhes"
                         >
                           <Eye className="h-4 w-4" />
