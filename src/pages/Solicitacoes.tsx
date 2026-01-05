@@ -109,12 +109,9 @@ export default function Solicitacoes() {
   const getSlaStatus = (request: BenefitRequest) => {
     const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     
-    // For completed requests, show only the time it took (no dot)
+    // For completed requests, show nothing in SLA column
     if (request.status === 'aprovada' || request.status === 'recusada') {
-      const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
-      const hoursToComplete = differenceInHours(endDate, new Date(request.created_at));
-      
-      return { status: 'completed', label: `${hoursToComplete}h`, dotColor: null };
+      return null;
     }
 
     if (!config) {
@@ -710,6 +707,7 @@ export default function Solicitacoes() {
                       <TableCell>
                         {(() => {
                           const sla = getSlaStatus(request);
+                          if (!sla) return <span className="text-muted-foreground">—</span>;
                           return (
                             <div className="flex items-center gap-2">
                               {sla.dotColor && (
