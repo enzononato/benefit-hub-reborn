@@ -48,6 +48,7 @@ interface BenefitRequest {
   details: string | null;
   requested_value: number | null;
   created_at: string;
+  closed_at?: string | null;
   pdf_url?: string | null;
   pdf_file_name?: string | null;
   rejection_reason?: string | null;
@@ -106,12 +107,27 @@ export default function Solicitacoes() {
 
   // Helper to calculate SLA status
   const getSlaStatus = (request: BenefitRequest) => {
-    // Only show SLA for open/in analysis requests
+    const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
+    
+    // For completed requests, show the time it took to close
     if (request.status === 'aprovada' || request.status === 'recusada') {
-      return { status: 'completed', label: '—', dotColor: 'bg-muted' };
+      const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
+      const hoursToComplete = differenceInHours(endDate, new Date(request.created_at));
+      
+      if (!config) {
+        return { status: 'completed', label: `${hoursToComplete}h`, dotColor: 'bg-muted' };
+      }
+      
+      // Color based on whether it was within SLA
+      if (hoursToComplete <= config.green_hours) {
+        return { status: 'completed-green', label: `${hoursToComplete}h`, dotColor: 'bg-success' };
+      } else if (hoursToComplete <= config.yellow_hours) {
+        return { status: 'completed-yellow', label: `${hoursToComplete}h`, dotColor: 'bg-warning' };
+      } else {
+        return { status: 'completed-red', label: `${hoursToComplete}h`, dotColor: 'bg-destructive' };
+      }
     }
 
-    const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     if (!config) {
       return { status: 'no-config', label: '—', dotColor: 'bg-muted' };
     }

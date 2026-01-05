@@ -40,6 +40,7 @@ interface SolicitacaoDetailsSheetProps {
     status: BenefitStatus;
     details: string | null;
     created_at: string;
+    closed_at?: string | null;
     pdf_url?: string | null;
     pdf_file_name?: string | null;
     rejection_reason?: string | null;
@@ -365,9 +366,30 @@ export function SolicitacaoDetailsSheet({
                 <div>
                   <p className="text-xs text-muted-foreground">Data de Abertura</p>
                   <p className="font-medium">
-                    {format(new Date(request.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
+                {/* Tempo de conclusão para chamados finalizados */}
+                {isClosed && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Tempo até conclusão</p>
+                    <p className="font-medium">
+                      {(() => {
+                        const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
+                        const startDate = new Date(request.created_at);
+                        const diffMs = endDate.getTime() - startDate.getTime();
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const diffDays = Math.floor(diffHours / 24);
+                        const remainingHours = diffHours % 24;
+                        
+                        if (diffDays > 0) {
+                          return `${diffDays}d ${remainingHours}h`;
+                        }
+                        return `${diffHours}h`;
+                      })()}
+                    </p>
+                  </div>
+                )}
                 {request.reviewer_name && (
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Responsável pela Análise</p>
