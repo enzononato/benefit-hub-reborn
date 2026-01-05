@@ -13,6 +13,12 @@ import { DeleteColaboradorDialog } from '@/components/colaboradores/DeleteColabo
 import { EditColaboradorDialog } from '@/components/colaboradores/EditColaboradorDialog';
 import { ColaboradorHistorySheet } from '@/components/colaboradores/ColaboradorHistorySheet';
 import { PaginationControls } from '@/components/ui/pagination-controls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface Unit {
+  id: string;
+  name: string;
+}
 
 const DEPARTAMENTOS_LABELS: Record<string, string> = {
   '101': '101 – PUXADA',
@@ -54,6 +60,8 @@ interface Profile {
 export default function Colaboradores() {
   const [search, setSearch] = useState('');
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -78,8 +86,10 @@ export default function Colaboradores() {
       return;
     }
 
-    const { data: unitsData } = await supabase.from('units').select('id, name');
+    const { data: unitsData } = await supabase.from('units').select('id, name').order('name');
     const { data: rolesData } = await supabase.from('user_roles').select('user_id, role');
+
+    setUnits(unitsData || []);
 
     const systemRoles = ['admin', 'gestor', 'agente_dp'];
     const systemUserIds = new Set(
@@ -115,10 +125,12 @@ export default function Colaboradores() {
     setLoading(false);
   };
 
-  const filteredProfiles = profiles.filter((profile) =>
-    profile.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    (profile.cpf && profile.cpf.includes(search))
-  );
+  const filteredProfiles = profiles.filter((profile) => {
+    const matchesSearch = profile.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (profile.cpf && profile.cpf.includes(search));
+    const matchesUnit = !selectedUnitId || profile.unit_id === selectedUnitId;
+    return matchesSearch && matchesUnit;
+  });
 
   const getRoleLabel = (profile: Profile) => {
     const role = profile.user_roles?.[0]?.role || 'colaborador';
@@ -160,6 +172,17 @@ export default function Colaboradores() {
               className="pl-9"
             />
           </div>
+          <Select value={selectedUnitId || "all"} onValueChange={(value) => { setSelectedUnitId(value === "all" ? null : value); setCurrentPage(1); }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filtrar por unidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as unidades</SelectItem>
+              {units.map((unit) => (
+                <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
