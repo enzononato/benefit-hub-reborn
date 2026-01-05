@@ -28,13 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle, Info } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,23 +108,22 @@ export default function Solicitacoes() {
   const getSlaStatus = (request: BenefitRequest) => {
     // Only show SLA for open/in analysis requests
     if (request.status === 'aprovada' || request.status === 'recusada') {
-      return { status: 'completed', label: '—', color: 'text-muted-foreground', tooltip: null };
+      return { status: 'completed', label: '—', dotColor: 'bg-muted' };
     }
 
     const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     if (!config) {
-      return { status: 'no-config', label: '—', color: 'text-muted-foreground', tooltip: null };
+      return { status: 'no-config', label: '—', dotColor: 'bg-muted' };
     }
 
     const hoursElapsed = differenceInHours(new Date(), new Date(request.created_at));
-    const tooltip = `Verde: até ${config.green_hours}h | Amarelo: até ${config.yellow_hours}h | Vermelho: acima`;
     
     if (hoursElapsed <= config.green_hours) {
-      return { status: 'green', label: `${hoursElapsed}h`, color: 'text-success', tooltip };
+      return { status: 'green', label: `${hoursElapsed}h`, dotColor: 'bg-success' };
     } else if (hoursElapsed <= config.yellow_hours) {
-      return { status: 'yellow', label: `${hoursElapsed}h`, color: 'text-warning', tooltip };
+      return { status: 'yellow', label: `${hoursElapsed}h`, dotColor: 'bg-warning' };
     } else {
-      return { status: 'red', label: `${hoursElapsed}h`, color: 'text-destructive', tooltip };
+      return { status: 'red', label: `${hoursElapsed}h`, dotColor: 'bg-destructive' };
     }
   };
 
@@ -712,27 +705,11 @@ export default function Solicitacoes() {
                       <TableCell>
                         {(() => {
                           const sla = getSlaStatus(request);
-                          if (sla.tooltip) {
-                            return (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className={cn("text-sm font-medium cursor-help inline-flex items-center gap-1", sla.color)}>
-                                      {sla.label}
-                                      <Info className="h-3 w-3 opacity-50" />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">{sla.tooltip}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          }
                           return (
-                            <span className={cn("text-sm font-medium", sla.color)}>
-                              {sla.label}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={cn("h-2.5 w-2.5 rounded-full", sla.dotColor)} />
+                              <span className="text-sm text-muted-foreground">{sla.label}</span>
+                            </div>
                           );
                         })()}
                       </TableCell>
