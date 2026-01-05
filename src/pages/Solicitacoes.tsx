@@ -109,22 +109,22 @@ export default function Solicitacoes() {
   const getSlaStatus = (request: BenefitRequest) => {
     const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     
-    // For completed requests, show the time it took to close
+    // For completed requests, show the time it took to close (with ring style)
     if (request.status === 'aprovada' || request.status === 'recusada') {
       const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
       const hoursToComplete = differenceInHours(endDate, new Date(request.created_at));
       
       if (!config) {
-        return { status: 'completed', label: `${hoursToComplete}h`, dotColor: 'bg-muted' };
+        return { status: 'completed', label: `${hoursToComplete}h`, dotColor: 'bg-muted/30 ring-2 ring-muted' };
       }
       
-      // Color based on whether it was within SLA
+      // Color based on whether it was within SLA - using ring style for completed
       if (hoursToComplete <= config.green_hours) {
-        return { status: 'completed-green', label: `${hoursToComplete}h`, dotColor: 'bg-success' };
+        return { status: 'completed-green', label: `${hoursToComplete}h`, dotColor: 'bg-success/30 ring-2 ring-success' };
       } else if (hoursToComplete <= config.yellow_hours) {
-        return { status: 'completed-yellow', label: `${hoursToComplete}h`, dotColor: 'bg-warning' };
+        return { status: 'completed-yellow', label: `${hoursToComplete}h`, dotColor: 'bg-warning/30 ring-2 ring-warning' };
       } else {
-        return { status: 'completed-red', label: `${hoursToComplete}h`, dotColor: 'bg-destructive' };
+        return { status: 'completed-red', label: `${hoursToComplete}h`, dotColor: 'bg-destructive/30 ring-2 ring-destructive' };
       }
     }
 
