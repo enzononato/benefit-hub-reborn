@@ -29,7 +29,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
 import { toast } from 'sonner';
+import { useSlaConfigs, SlaConfig } from '@/hooks/useSlaConfigs';
 
 interface BenefitRequest {
   id: string;
@@ -100,6 +101,31 @@ export default function Solicitacoes() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingViewRequest, setPendingViewRequest] = useState<{ id: string; index: number } | null>(null);
+  
+  const { configs: slaConfigs } = useSlaConfigs();
+
+  // Helper to calculate SLA status
+  const getSlaStatus = (request: BenefitRequest) => {
+    // Only show SLA for open/in analysis requests
+    if (request.status === 'aprovada' || request.status === 'recusada') {
+      return { status: 'completed', label: '—', color: 'text-muted-foreground' };
+    }
+
+    const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
+    if (!config) {
+      return { status: 'no-config', label: '—', color: 'text-muted-foreground' };
+    }
+
+    const hoursElapsed = differenceInHours(new Date(), new Date(request.created_at));
+    
+    if (hoursElapsed <= config.green_hours) {
+      return { status: 'green', label: `${hoursElapsed}h`, color: 'text-success' };
+    } else if (hoursElapsed <= config.yellow_hours) {
+      return { status: 'yellow', label: `${hoursElapsed}h`, color: 'text-warning' };
+    } else {
+      return { status: 'red', label: `${hoursElapsed}h`, color: 'text-destructive' };
+    }
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -599,6 +625,7 @@ export default function Solicitacoes() {
                 <TableHead className="font-semibold">Revenda</TableHead>
                 <TableHead className="font-semibold">Tipo</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">SLA</TableHead>
                 <TableHead className="font-semibold">Data</TableHead>
                 <TableHead className="text-right font-semibold">Ações</TableHead>
               </TableRow>
@@ -612,13 +639,14 @@ export default function Solicitacoes() {
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                   </TableRow>
                 ))
               ) : paginatedRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <ClipboardList className="h-10 w-10 text-muted-foreground/50" />
                       <p>Nenhuma solicitação encontrada</p>
@@ -655,12 +683,7 @@ export default function Solicitacoes() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-sm">
-                            {request.profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
-                          </div>
-                          <span className="font-medium">{request.profile?.full_name || 'N/A'}</span>
-                        </div>
+                        <span className="font-medium">{request.profile?.full_name || 'N/A'}</span>
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
@@ -678,6 +701,16 @@ export default function Solicitacoes() {
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={request.status} />
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const sla = getSlaStatus(request);
+                          return (
+                            <span className={cn("text-sm font-medium", sla.color)}>
+                              {sla.label}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(request.created_at), "dd/MM/yyyy", { locale: ptBR })}
