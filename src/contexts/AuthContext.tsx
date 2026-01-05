@@ -59,18 +59,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlock
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-          }, 0);
+          // On sign in, set loading and fetch user data
+          if (event === 'SIGNED_IN') {
+            setLoading(true);
+            // Defer Supabase calls with setTimeout to prevent deadlock
+            setTimeout(async () => {
+              await fetchUserData(session.user.id);
+              setLoading(false);
+            }, 0);
+          } else {
+            // For other events (TOKEN_REFRESHED, etc), just fetch without loading
+            setTimeout(() => {
+              fetchUserData(session.user.id);
+            }, 0);
+          }
         } else {
           setUserRole(null);
           setUserName(null);
+          setLoading(false);
         }
       }
     );
