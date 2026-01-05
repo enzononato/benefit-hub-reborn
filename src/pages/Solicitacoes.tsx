@@ -74,7 +74,7 @@ interface Unit {
   name: string;
 }
 
-const ITEMS_PER_PAGE = 10;
+const DEFAULT_ITEMS_PER_PAGE = 10;
 
 const benefitIcons: Record<BenefitType, React.ComponentType<{ className?: string }>> = {
   autoescola: Car,
@@ -97,6 +97,7 @@ export default function Solicitacoes() {
   const [unitFilter, setUnitFilter] = useState<string>(searchParams.get('unit') || 'all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
   const [selectedRequest, setSelectedRequest] = useState<BenefitRequest | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -353,10 +354,10 @@ export default function Solicitacoes() {
     return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesDate;
   });
 
-  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
   const paginatedRequests = filteredRequests.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   // Stats calculation
@@ -658,7 +659,7 @@ export default function Solicitacoes() {
               ) : (
                 paginatedRequests.map((request, idx) => {
                   const Icon = benefitIcons[request.benefit_type] || HelpCircle;
-                  const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + idx;
+                  const globalIndex = (currentPage - 1) * itemsPerPage + idx;
                   
                   // Get benefit color based on type
                   const getBenefitColor = (type: BenefitType) => {
@@ -743,13 +744,16 @@ export default function Solicitacoes() {
           </Table>
         </div>
 
-        {totalPages > 1 && (
+        {filteredRequests.length > 0 && (
           <PaginationControls
             currentPage={currentPage}
             totalItems={filteredRequests.length}
-            itemsPerPage={ITEMS_PER_PAGE}
+            itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={() => {}}
+            onItemsPerPageChange={(items) => {
+              setItemsPerPage(items);
+              setCurrentPage(1);
+            }}
           />
         )}
       </div>
