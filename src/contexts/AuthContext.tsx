@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { FullPageLoading } from '@/components/ui/loading-spinner';
 
 export type AppRole = 'admin' | 'gestor' | 'agente_dp' | 'colaborador';
 
@@ -121,11 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
+    return <FullPageLoading message="Carregando..." />;
   }
 
   return (
