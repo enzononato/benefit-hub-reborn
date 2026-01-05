@@ -28,7 +28,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,22 +114,23 @@ export default function Solicitacoes() {
   const getSlaStatus = (request: BenefitRequest) => {
     // Only show SLA for open/in analysis requests
     if (request.status === 'aprovada' || request.status === 'recusada') {
-      return { status: 'completed', label: '—', color: 'text-muted-foreground' };
+      return { status: 'completed', label: '—', color: 'text-muted-foreground', tooltip: null };
     }
 
     const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     if (!config) {
-      return { status: 'no-config', label: '—', color: 'text-muted-foreground' };
+      return { status: 'no-config', label: '—', color: 'text-muted-foreground', tooltip: null };
     }
 
     const hoursElapsed = differenceInHours(new Date(), new Date(request.created_at));
+    const tooltip = `Verde: até ${config.green_hours}h | Amarelo: até ${config.yellow_hours}h | Vermelho: acima`;
     
     if (hoursElapsed <= config.green_hours) {
-      return { status: 'green', label: `${hoursElapsed}h`, color: 'text-success' };
+      return { status: 'green', label: `${hoursElapsed}h`, color: 'text-success', tooltip };
     } else if (hoursElapsed <= config.yellow_hours) {
-      return { status: 'yellow', label: `${hoursElapsed}h`, color: 'text-warning' };
+      return { status: 'yellow', label: `${hoursElapsed}h`, color: 'text-warning', tooltip };
     } else {
-      return { status: 'red', label: `${hoursElapsed}h`, color: 'text-destructive' };
+      return { status: 'red', label: `${hoursElapsed}h`, color: 'text-destructive', tooltip };
     }
   };
 
@@ -705,6 +712,23 @@ export default function Solicitacoes() {
                       <TableCell>
                         {(() => {
                           const sla = getSlaStatus(request);
+                          if (sla.tooltip) {
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className={cn("text-sm font-medium cursor-help inline-flex items-center gap-1", sla.color)}>
+                                      {sla.label}
+                                      <Info className="h-3 w-3 opacity-50" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{sla.tooltip}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          }
                           return (
                             <span className={cn("text-sm font-medium", sla.color)}>
                               {sla.label}
@@ -719,7 +743,7 @@ export default function Solicitacoes() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary transition-all"
+                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewDetails(request.id, globalIndex);
