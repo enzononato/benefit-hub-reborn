@@ -60,7 +60,7 @@ interface Profile {
 
 export default function Colaboradores() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(searchParams.get('unit') || null);
@@ -182,7 +182,18 @@ export default function Colaboradores() {
             <Input
               placeholder="Buscar por nome ou CPF..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setSearch(newValue);
+                setCurrentPage(1);
+                const newParams = new URLSearchParams(searchParams);
+                if (newValue) {
+                  newParams.set('search', newValue);
+                } else {
+                  newParams.delete('search');
+                }
+                setSearchParams(newParams, { replace: true });
+              }}
               className="pl-9"
             />
           </div>
