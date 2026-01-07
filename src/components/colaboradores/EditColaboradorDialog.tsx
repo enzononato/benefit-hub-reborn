@@ -51,12 +51,18 @@ const DEPARTAMENTOS = [
 
 export function EditColaboradorDialog({
   profile,
-  onSuccess
+  onSuccess,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: {
   profile: Profile;
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
   const [formData, setFormData] = useState({
