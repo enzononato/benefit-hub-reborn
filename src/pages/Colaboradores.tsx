@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { roleLabels, UserRole } from '@/types/benefits';
 import { Input } from '@/components/ui/input';
@@ -58,10 +59,11 @@ interface Profile {
 }
 
 export default function Colaboradores() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(searchParams.get('unit') || null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -71,6 +73,18 @@ export default function Colaboradores() {
   useEffect(() => {
     fetchProfiles();
   }, []);
+
+  // Restore history sheet from URL
+  useEffect(() => {
+    const historyUserId = searchParams.get('history');
+    if (historyUserId && profiles.length > 0 && !selectedColaborador) {
+      const profile = profiles.find(p => p.user_id === historyUserId);
+      if (profile) {
+        setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name });
+        setHistoryOpen(true);
+      }
+    }
+  }, [profiles, searchParams]);
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -172,7 +186,19 @@ export default function Colaboradores() {
               className="pl-9"
             />
           </div>
-          <Select value={selectedUnitId || "all"} onValueChange={(value) => { setSelectedUnitId(value === "all" ? null : value); setCurrentPage(1); }}>
+          <Select value={selectedUnitId || "all"} onValueChange={(value) => { 
+            const newValue = value === "all" ? null : value;
+            setSelectedUnitId(newValue); 
+            setCurrentPage(1);
+            // Persist to URL
+            const newParams = new URLSearchParams(searchParams);
+            if (newValue) {
+              newParams.set('unit', newValue);
+            } else {
+              newParams.delete('unit');
+            }
+            setSearchParams(newParams, { replace: true });
+          }}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filtrar por unidade" />
             </SelectTrigger>
@@ -251,7 +277,14 @@ export default function Colaboradores() {
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                   <Badge variant={getRoleVariant(profile)}>{getRoleLabel(profile)}</Badge>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); setHistoryOpen(true); }} title="Histórico">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { 
+                      setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); 
+                      setHistoryOpen(true);
+                      // Persist to URL
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.set('history', profile.user_id);
+                      setSearchParams(newParams, { replace: true });
+                    }} title="Histórico">
                       <History className="h-4 w-4" />
                     </Button>
                     <EditColaboradorDialog profile={profile} onSuccess={fetchProfiles} />
@@ -273,7 +306,20 @@ export default function Colaboradores() {
           />
         )}
 
-        <ColaboradorHistorySheet open={historyOpen} onOpenChange={setHistoryOpen} colaborador={selectedColaborador} />
+        <ColaboradorHistorySheet 
+          open={historyOpen} 
+          onOpenChange={(open) => {
+            setHistoryOpen(open);
+            if (!open) {
+              setSelectedColaborador(null);
+              // Remove from URL when closing
+              const newParams = new URLSearchParams(searchParams);
+              newParams.delete('history');
+              setSearchParams(newParams, { replace: true });
+            }
+          }} 
+          colaborador={selectedColaborador} 
+        />
       </div>
     </MainLayout>
   );

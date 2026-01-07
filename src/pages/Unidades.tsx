@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Building2, Users, FileText, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { NewUnidadeDialog } from '@/components/unidades/NewUnidadeDialog';
 import { ManageUnidadeDialog } from '@/components/unidades/ManageUnidadeDialog';
 import { formatCnpj } from '@/lib/utils';
@@ -19,6 +22,10 @@ interface UnitWithStats extends Unit {
 }
 
 export default function Unidades() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedUnit, setSelectedUnit] = useState<UnitWithStats | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  
   const { data: units, isLoading, refetch } = useQuery({
     queryKey: ['units-with-stats'],
     queryFn: async () => {
@@ -121,6 +128,36 @@ export default function Unidades() {
     },
   });
 
+  // Restore open unit from URL when data loads
+  useEffect(() => {
+    const unitId = searchParams.get('unit');
+    if (unitId && units && units.length > 0 && !selectedUnit) {
+      const unit = units.find(u => u.id === unitId);
+      if (unit) {
+        setSelectedUnit(unit);
+        setManageOpen(true);
+      }
+    }
+  }, [units, searchParams]);
+
+  const handleManageUnit = (unit: UnitWithStats) => {
+    setSelectedUnit(unit);
+    setManageOpen(true);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('unit', unit.id);
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleCloseManage = (open: boolean) => {
+    setManageOpen(open);
+    if (!open) {
+      setSelectedUnit(null);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('unit');
+      setSearchParams(newParams, { replace: true });
+    }
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -202,7 +239,13 @@ export default function Unidades() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-border">
-                    <ManageUnidadeDialog unit={unit} onSuccess={() => refetch()} />
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleManageUnit(unit)}
+                    >
+                      Gerenciar Unidade
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -213,6 +256,15 @@ export default function Unidades() {
             </div>
           )}
         </div>
+
+        {selectedUnit && (
+          <ManageUnidadeDialog 
+            unit={selectedUnit} 
+            open={manageOpen}
+            onOpenChange={handleCloseManage}
+            onSuccess={() => refetch()} 
+          />
+        )}
       </div>
     </MainLayout>
   );

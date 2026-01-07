@@ -24,17 +24,30 @@ interface ManageUnidadeDialogProps {
     name: string;
     code: string;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function ManageUnidadeDialog({ unit, onSuccess }: ManageUnidadeDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ManageUnidadeDialog({ unit, open: controlledOpen, onOpenChange, onSuccess }: ManageUnidadeDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: unit.name,
     code: unit.code,
   });
+
+  // Support both controlled and uncontrolled modes
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,11 +100,13 @@ export function ManageUnidadeDialog({ unit, onSuccess }: ManageUnidadeDialogProp
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="w-full">
-            Gerenciar Unidade
-          </Button>
-        </DialogTrigger>
+        {!isControlled && (
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              Gerenciar Unidade
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Gerenciar Unidade</DialogTitle>
