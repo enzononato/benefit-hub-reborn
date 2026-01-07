@@ -37,37 +37,8 @@ import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
 import { toast } from 'sonner';
-import { useSlaConfigs, SlaConfig } from '@/hooks/useSlaConfigs';
-
-interface BenefitRequest {
-  id: string;
-  protocol: string;
-  user_id: string;
-  benefit_type: BenefitType;
-  status: BenefitStatus;
-  details: string | null;
-  requested_value: number | null;
-  created_at: string;
-  closed_at?: string | null;
-  pdf_url?: string | null;
-  pdf_file_name?: string | null;
-  rejection_reason?: string | null;
-  closing_message?: string | null;
-  reviewed_by?: string | null;
-  reviewed_at?: string | null;
-  reviewer_name?: string | null;
-  account_id?: number | null;
-  conversation_id?: number | null;
-  profile?: {
-    full_name: string;
-    cpf?: string | null;
-    phone?: string | null;
-    unit_id?: string | null;
-    unit?: {
-      name: string;
-    } | null;
-  } | null;
-}
+import { useSlaConfigs } from '@/hooks/useSlaConfigs';
+import { useBenefitRequests, BenefitRequest } from '@/hooks/useBenefitRequests';
 
 interface Unit {
   id: string;
@@ -88,9 +59,7 @@ const benefitIcons: Record<BenefitType, React.ComponentType<{ className?: string
 
 export default function Solicitacoes() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [requests, setRequests] = useState<BenefitRequest[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
@@ -105,6 +74,7 @@ export default function Solicitacoes() {
   const [pendingViewRequest, setPendingViewRequest] = useState<{ id: string; index: number } | null>(null);
   
   const { configs: slaConfigs } = useSlaConfigs();
+  const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests();
 
   // Helper to calculate SLA status
   const getSlaStatus = (request: BenefitRequest) => {
@@ -131,7 +101,6 @@ export default function Solicitacoes() {
   };
 
   useEffect(() => {
-    fetchRequests();
     fetchUnits();
   }, []);
 
@@ -160,40 +129,6 @@ export default function Solicitacoes() {
     setUnits(data || []);
   };
 
-  const fetchRequests = async () => {
-    setLoading(true);
-    try {
-      const { data: requestsData, error: requestsError } = await supabase
-        .from('benefit_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (requestsError) {
-        console.error('Error fetching requests:', requestsError);
-        return;
-      }
-
-      // Fetch profiles separately
-      const userIds = [...new Set(requestsData?.map(r => r.user_id) || [])];
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, cpf, phone, unit_id, unit:units(name)')
-        .in('user_id', userIds);
-
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
-
-      const requestsWithProfiles = (requestsData || []).map(req => ({
-        ...req,
-        profile: profilesMap.get(req.user_id) || null
-      }));
-
-      setRequests(requestsWithProfiles as BenefitRequest[]);
-    } catch (err) {
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleViewDetails = async (requestId: string, index: number) => {
     const request = requests.find(r => r.id === requestId);
@@ -235,10 +170,8 @@ export default function Solicitacoes() {
       console.error('Error updating status:', updateError);
       toast.error('Erro ao atualizar status');
     } else {
-      // Update local state
-      setRequests((prev) => prev.map((r) => 
-        r.id === pendingViewRequest.id ? { ...r, status: 'em_analise' as BenefitStatus } : r
-      ));
+      // Update local state via React Query
+      updateLocalRequest(pendingViewRequest.id, { status: 'em_analise' as BenefitStatus });
       toast.info('Status alterado para "Em Análise"');
     }
 
@@ -403,7 +336,7 @@ export default function Solicitacoes() {
               <Button 
                 variant="secondary" 
                 size="sm" 
-                onClick={fetchRequests} 
+                onClick={() => refetch()} 
                 disabled={loading}
                 className="bg-white/20 hover:bg-white/30 text-white border-0"
               >
@@ -762,7 +695,7 @@ export default function Solicitacoes() {
         open={detailsOpen} 
         onOpenChange={setDetailsOpen} 
         request={selectedRequest}
-        onSuccess={fetchRequests}
+        onSuccess={() => refetch()}
         currentIndex={currentIndex}
         totalItems={filteredRequests.length}
         onNavigate={handleNavigate}
