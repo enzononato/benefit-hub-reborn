@@ -104,6 +104,18 @@ export default function Solicitacoes() {
     fetchUnits();
   }, []);
 
+  // Restore open request from URL when data loads
+  useEffect(() => {
+    const requestId = searchParams.get('request');
+    if (requestId && requests.length > 0 && !selectedRequest) {
+      const request = requests.find(r => r.id === requestId);
+      if (request) {
+        const index = requests.indexOf(request);
+        openRequestDetails(request, index);
+      }
+    }
+  }, [requests, searchParams]);
+
   // Sync URL params with filters
   useEffect(() => {
     const urlStatus = searchParams.get('status');
@@ -201,6 +213,11 @@ export default function Solicitacoes() {
     setSelectedRequest(combinedData);
     setCurrentIndex(index);
     setDetailsOpen(true);
+    
+    // Persist to URL
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('request', request.id);
+    setSearchParams(newParams, { replace: true });
   };
 
   const handleNavigate = async (direction: 'prev' | 'next') => {
@@ -693,7 +710,16 @@ export default function Solicitacoes() {
 
       <SolicitacaoDetailsSheet 
         open={detailsOpen} 
-        onOpenChange={setDetailsOpen} 
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) {
+            setSelectedRequest(null);
+            // Remove request from URL when closing
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('request');
+            setSearchParams(newParams, { replace: true });
+          }
+        }} 
         request={selectedRequest}
         onSuccess={() => refetch()}
         currentIndex={currentIndex}
