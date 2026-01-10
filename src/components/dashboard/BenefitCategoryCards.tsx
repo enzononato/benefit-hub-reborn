@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 import { 
   Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, Handshake,
@@ -77,32 +77,46 @@ interface BenefitTypeData {
 
 interface BenefitCategoryCardsProps {
   data: BenefitTypeData[];
+  /** null = acesso total (admin). Array = tipos permitidos */
+  allowedTypes?: BenefitType[] | null;
 }
 
-const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data }) => {
+const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allowedTypes = null }) => {
   const navigate = useNavigate();
   const [isConveniosOpen, setIsConveniosOpen] = useState(false);
   const [isBeneficiosOpen, setIsBeneficiosOpen] = useState(false);
 
-  const conveniosData = data.filter(item => convenioTypes.includes(item.type));
-  const beneficiosData = data.filter(item => beneficiosTypes.includes(item.type));
-  
+  const allowedSet = allowedTypes ? new Set(allowedTypes) : null;
+
+  const visibleConvenioTypes = allowedSet ? convenioTypes.filter((t) => allowedSet.has(t)) : convenioTypes;
+  const visibleBeneficiosTypes = allowedSet ? beneficiosTypes.filter((t) => allowedSet.has(t)) : beneficiosTypes;
+  const visibleSoltoTypes = allowedSet ? soltoTypes.filter((t) => allowedSet.has(t)) : soltoTypes;
+
+  const showConvenios = visibleConvenioTypes.length > 0;
+  const showBeneficios = visibleBeneficiosTypes.length > 0;
+
+  const conveniosData = data.filter((item) => visibleConvenioTypes.includes(item.type));
+  const beneficiosData = data.filter((item) => visibleBeneficiosTypes.includes(item.type));
+
   const totalConvenios = conveniosData.reduce((sum, item) => sum + item.count, 0);
   const totalBeneficios = beneficiosData.reduce((sum, item) => sum + item.count, 0);
+
+  const soltoFirst = visibleSoltoTypes.slice(0, 4);
+  const soltoLast = visibleSoltoTypes.slice(4);
 
   const handleCategoryClick = (type: BenefitType) => {
     navigate(`/solicitacoes?benefit_type=${type}`);
   };
 
   const handleConveniosClick = () => {
-    // Navigate with all convenio types as filter
-    const types = convenioTypes.join(',');
+    if (!showConvenios) return;
+    const types = visibleConvenioTypes.join(',');
     navigate(`/solicitacoes?benefit_type=${types}`);
   };
 
   const handleBeneficiosClick = () => {
-    // Navigate with all beneficios types as filter
-    const types = beneficiosTypes.join(',');
+    if (!showBeneficios) return;
+    const types = visibleBeneficiosTypes.join(',');
     navigate(`/solicitacoes?benefit_type=${types}`);
   };
 
@@ -167,68 +181,74 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data }) => 
 
   return (
     <div className="space-y-4">
-      {/* Grid principal com todos os cards */}
+      {/* Grid principal com cards conforme módulos permitidos */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {/* Card CONVÊNIOS */}
-        {renderGroupCard(
-          'CONVÊNIOS',
-          totalConvenios,
-          Handshake,
-          'bg-violet-100',
-          'text-violet-600',
-          isConveniosOpen,
-          setIsConveniosOpen,
-          handleConveniosClick
-        )}
+        {showConvenios &&
+          renderGroupCard(
+            'CONVÊNIOS',
+            totalConvenios,
+            Handshake,
+            'bg-violet-100',
+            'text-violet-600',
+            isConveniosOpen,
+            setIsConveniosOpen,
+            handleConveniosClick
+          )}
 
-        {/* Cards Soltos - primeiros 4 */}
-        {soltoTypes.slice(0, 4).map((type) => renderCard(type))}
+        {/* Cards Soltos */}
+        {soltoFirst.map((type) => renderCard(type))}
 
         {/* Card BENEFÍCIOS */}
-        {renderGroupCard(
-          'BENEFÍCIOS',
-          totalBeneficios,
-          Gift,
-          'bg-pink-100',
-          'text-pink-600',
-          isBeneficiosOpen,
-          setIsBeneficiosOpen,
-          handleBeneficiosClick
-        )}
+        {showBeneficios &&
+          renderGroupCard(
+            'BENEFÍCIOS',
+            totalBeneficios,
+            Gift,
+            'bg-pink-100',
+            'text-pink-600',
+            isBeneficiosOpen,
+            setIsBeneficiosOpen,
+            handleBeneficiosClick
+          )}
 
-        {/* Cards Soltos - últimos 4 */}
-        {soltoTypes.slice(4).map((type) => renderCard(type))}
+        {/* Cards Soltos */}
+        {soltoLast.map((type) => renderCard(type))}
       </div>
 
       {/* Convênios expandidos */}
-      <Collapsible open={isConveniosOpen} onOpenChange={setIsConveniosOpen}>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-          <div className="bg-muted/30 rounded-xl p-4 border">
-            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Handshake className="h-4 w-4 text-violet-600" />
-              Convênios
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {convenioTypes.map((type) => renderCard(type))}
+      {showConvenios && (
+        <Collapsible open={isConveniosOpen} onOpenChange={setIsConveniosOpen}>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="bg-muted/30 rounded-xl p-4 border">
+              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Handshake className="h-4 w-4 text-violet-600" />
+                Convênios
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                {visibleConvenioTypes.map((type) => renderCard(type))}
+              </div>
             </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Benefícios expandidos */}
-      <Collapsible open={isBeneficiosOpen} onOpenChange={setIsBeneficiosOpen}>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-          <div className="bg-muted/30 rounded-xl p-4 border">
-            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Gift className="h-4 w-4 text-pink-600" />
-              Benefícios
-            </h4>
-            <div className="grid grid-cols-3 gap-3">
-              {beneficiosTypes.map((type) => renderCard(type))}
+      {showBeneficios && (
+        <Collapsible open={isBeneficiosOpen} onOpenChange={setIsBeneficiosOpen}>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="bg-muted/30 rounded-xl p-4 border">
+              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Gift className="h-4 w-4 text-pink-600" />
+                Benefícios
+              </h4>
+              <div className="grid grid-cols-3 gap-3">
+                {visibleBeneficiosTypes.map((type) => renderCard(type))}
+              </div>
             </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 };

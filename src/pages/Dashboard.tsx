@@ -38,6 +38,13 @@ interface RequestData {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { userModules } = useAuth();
+
+  // Garante que só tipos válidos do enum cheguem no Dashboard (remove agregados tipo "convenios")
+  const allowedBenefitTypes = useMemo(() => {
+    if (userModules === null) return null; // admin
+    return (userModules ?? []).filter((m): m is BenefitType => allBenefitTypes.includes(m as BenefitType));
+  }, [userModules]);
+
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
@@ -51,12 +58,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [filters, userModules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, allowedBenefitTypes]);
+
+  useEffect(() => {
+    if (allowedBenefitTypes !== null && filters.benefitType && !allowedBenefitTypes.includes(filters.benefitType)) {
+      setFilters((prev) => ({ ...prev, benefitType: null }));
+    }
+  }, [allowedBenefitTypes, filters.benefitType]);
 
   const fetchDashboardData = async () => {
     try {
       // If user has no modules configured (empty array), show empty dashboard
-      if (userModules !== null && userModules.length === 0) {
+      if (allowedBenefitTypes !== null && allowedBenefitTypes.length === 0) {
         setAllRequests([]);
         setStats({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
         setBenefitTypeData([]);
@@ -68,8 +82,8 @@ export default function Dashboard() {
         .select('status, benefit_type, user_id, created_at');
 
       // Filter by user's allowed modules (if not admin)
-      if (userModules !== null) {
-        query = query.in('benefit_type', userModules);
+      if (allowedBenefitTypes !== null) {
+        query = query.in('benefit_type', allowedBenefitTypes);
       }
 
       if (filters.benefitType) {
@@ -174,7 +188,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <DashboardFiltersComponent filters={filters} onFiltersChange={setFilters} />
+        <DashboardFiltersComponent filters={filters} onFiltersChange={setFilters} allowedTypes={allowedBenefitTypes} />
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard title="Total" value={stats.total} icon={FileText} onClick={() => navigate('/solicitacoes')} />
@@ -185,7 +199,7 @@ export default function Dashboard() {
           <StatCard title="Reprovadas" value={stats.reprovados} icon={XCircle} variant="destructive" onClick={() => navigate('/solicitacoes?status=recusada')} />
         </div>
 
-        <BenefitCategoryCards data={benefitTypeData} />
+        <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
 
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
           <BenefitsChart data={monthlyData} />
