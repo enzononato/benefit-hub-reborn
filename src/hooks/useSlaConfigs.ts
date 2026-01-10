@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type TimeUnit = 'hours' | 'days';
+
 export interface SlaConfig {
   id: string;
   benefit_type: string;
   green_hours: number;
   yellow_hours: number;
+  time_unit: TimeUnit;
   created_at: string;
   updated_at: string;
 }
@@ -32,7 +35,7 @@ export const useSlaConfigs = () => {
     }
   }, []);
 
-  const createConfig = async (config: { benefit_type: string; green_hours: number; yellow_hours: number }) => {
+  const createConfig = async (config: { benefit_type: string; green_hours: number; yellow_hours: number; time_unit: TimeUnit }) => {
     try {
       const { data, error } = await supabase
         .from('sla_configs')
@@ -42,7 +45,7 @@ export const useSlaConfigs = () => {
 
       if (error) throw error;
 
-      setConfigs((prev) => [...prev, data].sort((a, b) => a.benefit_type.localeCompare(b.benefit_type)));
+      setConfigs((prev) => [...prev, data as SlaConfig].sort((a, b) => a.benefit_type.localeCompare(b.benefit_type)));
       toast.success('Configuração de SLA criada');
       return { data, error: null };
     } catch (error: any) {
@@ -51,7 +54,7 @@ export const useSlaConfigs = () => {
     }
   };
 
-  const updateConfig = async (id: string, updates: { green_hours?: number; yellow_hours?: number }) => {
+  const updateConfig = async (id: string, updates: { green_hours?: number; yellow_hours?: number; time_unit?: TimeUnit }) => {
     try {
       const { data, error } = await supabase
         .from('sla_configs')
@@ -62,7 +65,7 @@ export const useSlaConfigs = () => {
 
       if (error) throw error;
 
-      setConfigs((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+      setConfigs((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } as SlaConfig : c)));
       toast.success('Configuração de SLA atualizada');
       return { data, error: null };
     } catch (error: any) {

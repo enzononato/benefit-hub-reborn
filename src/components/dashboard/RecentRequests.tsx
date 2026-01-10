@@ -61,20 +61,23 @@ export function RecentRequests() {
   // Helper to get SLA status using business hours, holidays and config from DB
   const getSlaStatus = (benefitType: BenefitType, createdAt: string): { colorClass: string; label: string } | null => {
     const config = slaConfigs.find(c => c.benefit_type === benefitType);
+    const businessHours = calculateBusinessHours(new Date(createdAt), new Date(), holidayDatesSet);
     
     if (!config) {
       // Fallback: usar valores padrão se não houver config
-      const businessHours = calculateBusinessHours(new Date(createdAt), new Date(), holidayDatesSet);
       if (businessHours < 2) return { colorClass: 'bg-success', label: 'No prazo' };
       if (businessHours < 6) return { colorClass: 'bg-warning', label: 'Atenção' };
       return { colorClass: 'bg-destructive', label: 'Atrasado' };
     }
 
-    const businessHours = calculateBusinessHours(new Date(createdAt), new Date(), holidayDatesSet);
+    // Converter limites para horas se a unidade for dias
+    const timeUnit = (config as any).time_unit || 'hours';
+    const greenLimit = timeUnit === 'days' ? config.green_hours * 24 : config.green_hours;
+    const yellowLimit = timeUnit === 'days' ? config.yellow_hours * 24 : config.yellow_hours;
     
-    if (businessHours <= config.green_hours) {
+    if (businessHours <= greenLimit) {
       return { colorClass: 'bg-success', label: 'No prazo' };
-    } else if (businessHours <= config.yellow_hours) {
+    } else if (businessHours <= yellowLimit) {
       return { colorClass: 'bg-warning', label: 'Atenção' };
     }
     return { colorClass: 'bg-destructive', label: 'Atrasado' };
