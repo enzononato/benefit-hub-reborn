@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses, ChevronDown, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,10 +57,10 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="flex flex-row items-center justify-between py-3 px-4 cursor-pointer hover:bg-accent/50 transition-colors">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-primary/10 p-2">
                 <Handshake className="h-5 w-5 text-primary" />
@@ -75,43 +75,46 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
               open && "rotate-180"
             )} />
           </CardHeader>
-        </Card>
-      </PopoverTrigger>
-      <PopoverContent className="w-[360px] p-3 bg-popover" align="start">
-        <div className="grid grid-cols-3 gap-3">
-          {convenioTypes.map((type) => {
-            const Icon = iconMap[type];
-            const config = colorConfig[type];
-            const itemData = conveniosData.find(d => d.type === type);
-            const count = itemData?.count || 0;
-            const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-4">
+            <div className="grid grid-cols-3 gap-3">
+              {convenioTypes.map((type) => {
+                const Icon = iconMap[type];
+                const config = colorConfig[type];
+                const itemData = conveniosData.find(d => d.type === type);
+                const count = itemData?.count || 0;
+                const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
-            return (
-              <button
-                key={type}
-                onClick={() => handleConvenioClick(type)}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
-                  "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
-                  config.bg
-                )}
-              >
-                <div className={cn("rounded-xl p-3", config.iconBg)}>
-                  <Icon className={cn("h-6 w-6", config.iconColor)} />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-semibold text-foreground truncate w-full">
-                    {benefitTypeLabels[type]}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">{count} solic.</p>
-                  <p className="text-xs font-bold text-primary">{percentage}%</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
+                return (
+                  <button
+                    key={type}
+                    onClick={() => handleConvenioClick(type)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
+                      "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
+                      config.bg
+                    )}
+                  >
+                    <div className={cn("rounded-xl p-3", config.iconBg)}>
+                      <Icon className={cn("h-6 w-6", config.iconColor)} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-semibold text-foreground truncate w-full">
+                        {benefitTypeLabels[type]}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">{count} solic.</p>
+                      <p className="text-xs font-bold text-primary">{percentage}%</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };
 
