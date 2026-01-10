@@ -1,8 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitStatus, BenefitType } from '@/types/benefits';
 import { toast } from 'sonner';
+
+// Store for new request IDs to trigger highlight animations
+const newRequestIdsStore = new Set<string>();
+
+export const getNewRequestIds = () => newRequestIdsStore;
+export const clearNewRequestId = (id: string) => newRequestIdsStore.delete(id);
 
 export interface BenefitRequest {
   id: string;
@@ -95,7 +101,11 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
 
-  // Realtime subscription
+  // Use ref to track current queryKey for realtime updates
+  const queryKeyRef = useRef(['benefit-requests', normalizedModules]);
+  queryKeyRef.current = ['benefit-requests', normalizedModules];
+
+  // Realtime subscription - uses ref to always have current queryKey
   useEffect(() => {
     const channel = supabase
       .channel('benefit-requests-changes')
@@ -107,11 +117,19 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
           table: 'benefit_requests',
         },
         async (payload) => {
-          console.log('Realtime event:', payload.eventType);
+          console.log('Realtime event:', payload.eventType, 'queryKey:', queryKeyRef.current);
           
           if (payload.eventType === 'INSERT') {
-            // Fetch the new request with profile data
             const newRequest = payload.new as any;
+            
+            // Check if this benefit type is allowed for current user
+            const currentModules = queryKeyRef.current[1] as string[] | null;
+            if (currentModules !== null && !currentModules.includes(newRequest.benefit_type)) {
+              console.log('Skipping INSERT - benefit type not in allowed modules');
+              return;
+            }
+            
+            // Fetch the new request with profile data
             const { data: profileData } = await supabase
               .from('profiles')
               .select('user_id, full_name, cpf, phone, unit_id, unit:units(name)')
@@ -123,9 +141,17 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
               profile: profileData || null,
             };
 
-            queryClient.setQueryData<BenefitRequest[]>(['benefit-requests'], (old) => {
+            // Add to new requests set for highlight animation
+            newRequestIdsStore.add(newRequest.id);
+            
+            // Auto-remove from highlight after 3 seconds
+            setTimeout(() => {
+              newRequestIdsStore.delete(newRequest.id);
+            }, 3000);
+
+            // Update cache with correct queryKey
+            queryClient.setQueryData<BenefitRequest[]>(queryKeyRef.current, (old) => {
               if (!old) return [requestWithProfile];
-              // Check if already exists
               if (old.some(r => r.id === newRequest.id)) return old;
               return [requestWithProfile, ...old];
             });
@@ -136,7 +162,7 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
           } else if (payload.eventType === 'UPDATE') {
             const updatedRequest = payload.new as any;
             
-            queryClient.setQueryData<BenefitRequest[]>(['benefit-requests'], (old) => {
+            queryClient.setQueryData<BenefitRequest[]>(queryKeyRef.current, (old) => {
               if (!old) return old;
               return old.map((r) =>
                 r.id === updatedRequest.id
@@ -147,7 +173,7 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
           } else if (payload.eventType === 'DELETE') {
             const deletedId = (payload.old as any).id;
             
-            queryClient.setQueryData<BenefitRequest[]>(['benefit-requests'], (old) => {
+            queryClient.setQueryData<BenefitRequest[]>(queryKeyRef.current, (old) => {
               if (!old) return old;
               return old.filter((r) => r.id !== deletedId);
             });
@@ -174,19 +200,19 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData<BenefitRequest[]>(['benefit-requests'], (old) => {
+      queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules], (old) => {
         if (!old) return old;
         return old.map((r) => (r.id === data.id ? { ...r, ...data } : r));
       });
     },
   });
 
-  const updateLocalRequest = (id: string, updates: Partial<BenefitRequest>) => {
-    queryClient.setQueryData<BenefitRequest[]>(['benefit-requests'], (old) => {
+  const updateLocalRequest = useCallback((id: string, updates: Partial<BenefitRequest>) => {
+    queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules], (old) => {
       if (!old) return old;
       return old.map((r) => (r.id === id ? { ...r, ...updates } : r));
     });
-  };
+  }, [queryClient, normalizedModules]);
 
   return {
     requests: query.data || [],
