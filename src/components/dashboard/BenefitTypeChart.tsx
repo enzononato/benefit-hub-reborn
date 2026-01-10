@@ -108,6 +108,10 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
             onClick={() => handleLegendClick(entry.type)}
             className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer"
           >
+            <div
+              className="w-3 h-3 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: entry.color }}
+            />
             <span className="text-sm">{entry.emoji}</span>
             <span className="text-xs text-muted-foreground whitespace-nowrap hover:text-foreground transition-colors">
               {entry.name}
