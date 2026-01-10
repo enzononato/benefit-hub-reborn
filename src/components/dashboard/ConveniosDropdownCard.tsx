@@ -52,7 +52,7 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Solicitações por Categoria</h3>
+      <h3 className="text-lg font-semibold text-foreground">Convênios</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {convenioTypes.map((type) => {
           const Icon = iconMap[type];
