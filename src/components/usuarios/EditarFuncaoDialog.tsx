@@ -241,68 +241,76 @@ export const EditarFuncaoDialog: React.FC<EditarFuncaoDialogProps> = ({
           </Select>
         </div>
 
-        {/* Modules Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Módulos de Acesso</Label>
-            <div className="flex items-center gap-4 text-sm">
-              <button
-                onClick={handleSelectAll}
-                className="text-primary hover:underline"
-              >
-                Selecionar todos
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="text-muted-foreground hover:text-foreground hover:underline"
-              >
-                Limpar
-              </button>
+        {/* Modules Section - Somente para não-admins */}
+        {selectedRole !== 'admin' ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Módulos de Acesso</Label>
+              <div className="flex items-center gap-4 text-sm">
+                <button
+                  onClick={handleSelectAll}
+                  className="text-primary hover:underline"
+                >
+                  Selecionar todos
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  className="text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  Limpar
+                </button>
+              </div>
             </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto py-1">
+                {/* Aggregate Modules (Convênios, Benefícios) */}
+                {AGGREGATE_MODULES.map((aggregate) => (
+                  <label
+                    key={aggregate.id}
+                    className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <Checkbox
+                      checked={isAggregateSelected(aggregate)}
+                      onCheckedChange={() => handleToggleAggregate(aggregate)}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <span className="text-sm text-foreground">{aggregate.label}</span>
+                  </label>
+                ))}
+
+                {/* Individual Modules (DP) */}
+                {INDIVIDUAL_MODULES.map((module) => (
+                  <label
+                    key={module.id}
+                    className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleToggleModule(module.id)}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <span className="text-sm text-foreground">{module.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Selecione os módulos que este usuário poderá visualizar e atender.
+            </p>
           </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto py-1">
-              {/* Aggregate Modules (Convênios, Benefícios) */}
-              {AGGREGATE_MODULES.map((aggregate) => (
-                <label
-                  key={aggregate.id}
-                  className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={isAggregateSelected(aggregate)}
-                    onCheckedChange={() => handleToggleAggregate(aggregate)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                  <span className="text-sm text-foreground">{aggregate.label}</span>
-                </label>
-              ))}
-
-              {/* Individual Modules (DP) */}
-              {INDIVIDUAL_MODULES.map((module) => (
-                <label
-                  key={module.id}
-                  className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedModules.includes(module.id)}
-                    onCheckedChange={() => handleToggleModule(module.id)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                  <span className="text-sm text-foreground">{module.label}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          <p className="text-xs text-muted-foreground">
-            Selecione os módulos que este usuário poderá visualizar e atender.
-          </p>
-        </div>
+        ) : (
+          <div className="rounded-lg border bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Administradores têm acesso total a todos os módulos do sistema.
+            </p>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

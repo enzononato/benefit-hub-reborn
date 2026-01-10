@@ -83,7 +83,16 @@ const moduleLabels: Record<string, string> = {
   outros: 'Outros',
 };
 
-function formatModulesDisplay(modules: string[]) {
+function formatModulesDisplay(modules: string[], role: SystemRole) {
+  // Administrador tem acesso a todos os módulos automaticamente
+  if (role === 'admin') {
+    return (
+      <Badge variant="default" className="bg-primary text-primary-foreground">
+        Todos
+      </Badge>
+    );
+  }
+
   if (!modules || modules.length === 0) {
     return <span className="text-muted-foreground text-sm italic">Nenhum</span>;
   }
@@ -352,7 +361,7 @@ export default function Usuarios() {
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      {formatModulesDisplay(user.modules)}
+                      {formatModulesDisplay(user.modules, user.role)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
