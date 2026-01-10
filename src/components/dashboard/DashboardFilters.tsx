@@ -21,6 +21,8 @@ export interface DashboardFilters {
 interface DashboardFiltersProps {
   filters: DashboardFilters;
   onFiltersChange: (filters: DashboardFilters) => void;
+  /** null = admin/sem filtro; array = tipos permitidos */
+  allowedTypes?: BenefitType[] | null;
 }
 
 interface Unit {
@@ -29,8 +31,12 @@ interface Unit {
   code: string;
 }
 
-export function DashboardFiltersComponent({ filters, onFiltersChange }: DashboardFiltersProps) {
+export function DashboardFiltersComponent({ filters, onFiltersChange, allowedTypes = null }: DashboardFiltersProps) {
   const [units, setUnits] = useState<Unit[]>([]);
+
+  const benefitTypeOptions = (Object.keys(benefitTypeFilterLabels) as BenefitType[]).filter((type) =>
+    allowedTypes === null ? true : allowedTypes.includes(type)
+  );
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -61,7 +67,7 @@ export function DashboardFiltersComponent({ filters, onFiltersChange }: Dashboar
           <SelectTrigger className="w-full h-9 text-xs sm:text-sm"><SelectValue placeholder="Tipos" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os tipos</SelectItem>
-            {(Object.keys(benefitTypeFilterLabels) as Array<keyof typeof benefitTypeFilterLabels>).map((type) => <SelectItem key={type} value={type}>{benefitTypeFilterLabels[type]}</SelectItem>)}
+            {benefitTypeOptions.map((type) => <SelectItem key={type} value={type}>{benefitTypeFilterLabels[type]}</SelectItem>)}
           </SelectContent>
         </Select>
 
