@@ -57,6 +57,79 @@ const roleColors: Record<SystemRole, string> = {
   agente_dp: 'bg-primary/10 text-primary border-primary/20',
 };
 
+// Módulos de Convênios e Benefícios (para agrupar na exibição)
+const CONVENIOS_IDS = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
+const BENEFICIOS_IDS = ['plano_odontologico', 'plano_saude', 'vale_transporte'];
+
+const moduleLabels: Record<string, string> = {
+  autoescola: 'Autoescola',
+  farmacia: 'Farmácia',
+  oficina: 'Oficina',
+  vale_gas: 'Vale Gás',
+  papelaria: 'Papelaria',
+  otica: 'Ótica',
+  plano_odontologico: 'Plano Odonto',
+  plano_saude: 'Plano Saúde',
+  vale_transporte: 'Vale Transporte',
+  abono_horas: 'Abono Horas',
+  alteracao_ferias: 'Alt. Férias',
+  alteracao_horario: 'Alt. Horário',
+  atestado: 'Atestado',
+  aviso_folga_falta: 'Folga/Falta',
+  contracheque: 'Contracheque',
+  operacao_domingo: 'Op. Domingo',
+  relatorio_ponto: 'Rel. Ponto',
+  relato_anomalia: 'Rel. Anomalia',
+  outros: 'Outros',
+};
+
+function formatModulesDisplay(modules: string[]) {
+  if (!modules || modules.length === 0) {
+    return <span className="text-muted-foreground text-sm italic">Nenhum</span>;
+  }
+
+  const hasAllConvenios = CONVENIOS_IDS.every(id => modules.includes(id));
+  const hasAllBeneficios = BENEFICIOS_IDS.every(id => modules.includes(id));
+
+  const displayItems: string[] = [];
+
+  if (hasAllConvenios) {
+    displayItems.push('Convênios');
+  }
+  if (hasAllBeneficios) {
+    displayItems.push('Benefícios');
+  }
+
+  // Adicionar módulos individuais (que não são convênios/benefícios completos)
+  modules.forEach(m => {
+    if (hasAllConvenios && CONVENIOS_IDS.includes(m)) return;
+    if (hasAllBeneficios && BENEFICIOS_IDS.includes(m)) return;
+    if (!CONVENIOS_IDS.includes(m) && !BENEFICIOS_IDS.includes(m)) {
+      displayItems.push(moduleLabels[m] || m);
+    }
+  });
+
+  // Mostrar até 3 badges, depois "+N"
+  const maxVisible = 3;
+  const visibleItems = displayItems.slice(0, maxVisible);
+  const remaining = displayItems.length - maxVisible;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visibleItems.map(item => (
+        <Badge key={item} variant="secondary" className="text-xs whitespace-nowrap">
+          {item}
+        </Badge>
+      ))}
+      {remaining > 0 && (
+        <Badge variant="outline" className="text-xs">
+          +{remaining}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
 export default function Usuarios() {
   const { users, loading, fetchUsers, createUser, deleteUser, changePassword } = useUsuarios();
   const [searchTerm, setSearchTerm] = useState('');
@@ -248,19 +321,20 @@ export default function Usuarios() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Permissão</TableHead>
+                <TableHead>Módulos</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <UserCog className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">Nenhum usuário encontrado</p>
@@ -276,6 +350,9 @@ export default function Usuarios() {
                       <Badge variant="outline" className={cn(roleColors[user.role])}>
                         {roleLabels[user.role]}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      {formatModulesDisplay(user.modules)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
