@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useDeferredValue, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { benefitTypeLabels, statusLabels, BenefitStatus, BenefitType } from '@/types/benefits';
@@ -40,8 +40,9 @@ import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDe
 import { toast } from 'sonner';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
 import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
-import { useBenefitRequests, BenefitRequest } from '@/hooks/useBenefitRequests';
+import { useBenefitRequests, BenefitRequest, getNewRequestIds, clearNewRequestId } from '@/hooks/useBenefitRequests';
 import { useAuth } from '@/contexts/AuthContext';
+import { AnimatedNumber } from '@/components/dashboard/AnimatedNumber';
 
 interface Unit {
   id: string;
@@ -76,6 +77,8 @@ export default function Solicitacoes() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [units, setUnits] = useState<Unit[]>([]);
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search); // Debounce search for performance
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
   const [unitFilter, setUnitFilter] = useState<string>(searchParams.get('unit') || 'all');
@@ -95,6 +98,32 @@ export default function Solicitacoes() {
 
   // Cache holiday dates set for performance
   const holidayDatesSet = getHolidayDatesSet(holidays);
+
+  // Check for new request highlights
+  useEffect(() => {
+    const checkNewRequests = () => {
+      const newIds = getNewRequestIds();
+      if (newIds.size > 0) {
+        setHighlightedIds(new Set(newIds));
+        // Clear after animation
+        newIds.forEach(id => {
+          setTimeout(() => {
+            clearNewRequestId(id);
+            setHighlightedIds(prev => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }, 3000);
+        });
+      }
+    };
+
+    // Check immediately and set up interval
+    checkNewRequests();
+    const interval = setInterval(checkNewRequests, 500);
+    return () => clearInterval(interval);
+  }, [requests]);
 
   // Helper to calculate SLA status using business hours
   const getSlaStatus = (request: BenefitRequest) => {
@@ -316,9 +345,9 @@ export default function Solicitacoes() {
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch =
-      request.protocol.toLowerCase().includes(search.toLowerCase()) ||
-      request.profile?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      request.details?.toLowerCase().includes(search.toLowerCase());
+      request.protocol.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      request.profile?.full_name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      request.details?.toLowerCase().includes(deferredSearch.toLowerCase());
 
     // Handle comma-separated status values from URL
     let matchesStatus = statusFilter === 'all';
@@ -421,7 +450,9 @@ export default function Solicitacoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Abertas</p>
-                <p className="text-2xl font-bold text-info">{statsData.aberta}</p>
+                <p className="text-2xl font-bold text-info">
+                  <AnimatedNumber value={statsData.aberta} duration={400} />
+                </p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
                 <Clock className="h-5 w-5 text-info" />
@@ -440,7 +471,9 @@ export default function Solicitacoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Em Análise</p>
-                <p className="text-2xl font-bold text-warning">{statsData.em_analise}</p>
+                <p className="text-2xl font-bold text-warning">
+                  <AnimatedNumber value={statsData.em_analise} duration={400} />
+                </p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
                 <Search className="h-5 w-5 text-warning" />
@@ -459,7 +492,9 @@ export default function Solicitacoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Aprovadas</p>
-                <p className="text-2xl font-bold text-success">{statsData.aprovada}</p>
+                <p className="text-2xl font-bold text-success">
+                  <AnimatedNumber value={statsData.aprovada} duration={400} />
+                </p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
                 <CheckCircle2 className="h-5 w-5 text-success" />
@@ -478,7 +513,9 @@ export default function Solicitacoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Recusadas</p>
-                <p className="text-2xl font-bold text-destructive">{statsData.recusada}</p>
+                <p className="text-2xl font-bold text-destructive">
+                  <AnimatedNumber value={statsData.recusada} duration={400} />
+                </p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
                 <XCircle className="h-5 w-5 text-destructive" />
@@ -655,6 +692,7 @@ export default function Solicitacoes() {
                 paginatedRequests.map((request, idx) => {
                   const Icon = benefitIcons[request.benefit_type] || HelpCircle;
                   const globalIndex = (currentPage - 1) * itemsPerPage + idx;
+                  const isNewRequest = highlightedIds.has(request.id);
                   
                   // Get benefit color based on type
                   const getBenefitColor = (type: BenefitType) => {
@@ -672,7 +710,10 @@ export default function Solicitacoes() {
                   return (
                     <TableRow 
                       key={request.id} 
-                      className="group hover:bg-primary/5 transition-all duration-200 cursor-pointer"
+                      className={cn(
+                        "group hover:bg-primary/5 transition-all duration-200 cursor-pointer",
+                        isNewRequest && "animate-pulse bg-success/10 border-l-4 border-l-success"
+                      )}
                       onClick={() => handleViewDetails(request.id, globalIndex)}
                     >
                       <TableCell>
