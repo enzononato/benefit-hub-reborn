@@ -327,7 +327,12 @@ export default function Solicitacoes() {
       matchesStatus = statuses.includes(request.status);
     }
 
-    const matchesType = typeFilter === 'all' || request.benefit_type === typeFilter;
+    // Handle comma-separated benefit_type values from URL (e.g., from CONVÊNIOS card)
+    let matchesType = typeFilter === 'all';
+    if (!matchesType) {
+      const types = typeFilter.split(',');
+      matchesType = types.includes(request.benefit_type);
+    }
 
     // Unit filter
     const matchesUnit = unitFilter === 'all' || request.profile?.unit_id === unitFilter;

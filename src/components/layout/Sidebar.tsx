@@ -25,8 +25,8 @@ import revalleLogo from '@/assets/revalle-logo.png';
 
 // Prefetch queries for each route
 const routePrefetchQueries: Record<string, string[]> = {
-  '/': ['benefit-requests', 'profiles', 'units'],
-  '/solicitacoes': ['benefit-requests', 'profiles', 'units', 'sla-configs'],
+  '/': ['benefit-requests', 'profiles', 'units', 'holidays'],
+  '/solicitacoes': ['benefit-requests', 'profiles', 'units', 'sla-configs', 'holidays'],
   '/colaboradores': ['profiles', 'units'],
   '/unidades': ['units'],
   '/usuarios': ['user-roles', 'profiles'],
