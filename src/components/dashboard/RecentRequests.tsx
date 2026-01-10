@@ -10,6 +10,7 @@ import type { BenefitStatus, BenefitType } from '@/types/benefits';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RecentRequest {
   id: string;
@@ -54,29 +55,52 @@ function getSlaStatus(createdAt: string): { colorClass: string; label: string } 
 
 export function RecentRequests() {
   const navigate = useNavigate();
+  const { userModules } = useAuth();
   const [requests, setRequests] = useState<RecentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRecentRequests = async () => {
       try {
-        const { data: requestsData, error } = await supabase
+        // If user has no modules configured (empty array), show empty
+        if (userModules !== null && userModules.length === 0) {
+          setRequests([]);
+          setLoading(false);
+          return;
+        }
+
+        let query = supabase
           .from('benefit_requests')
           .select('id, protocol, benefit_type, status, created_at, user_id')
           .order('created_at', { ascending: false })
           .limit(5);
 
-        if (error || !requestsData?.length) { setRequests([]); setLoading(false); return; }
+        // Filter by user's allowed modules (if not admin)
+        if (userModules !== null) {
+          query = query.in('benefit_type', userModules);
+        }
+
+        const { data: requestsData, error } = await query;
+
+        if (error || !requestsData?.length) {
+          setRequests([]);
+          setLoading(false);
+          return;
+        }
 
         const userIds = [...new Set(requestsData.map(r => r.user_id))];
         const { data: profilesData } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
         const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.full_name]) || []);
         setRequests(requestsData.map(req => ({ ...req, full_name: profilesMap.get(req.user_id) || 'Usuário' })));
-      } catch { }
+      } catch {
+        // ignore
+      }
       setLoading(false);
     };
+
+    setLoading(true);
     fetchRecentRequests();
-  }, []);
+  }, [userModules]);
 
   const handleViewProtocol = (protocolId: string) => navigate(`/solicitacoes?protocol=${protocolId}`);
 

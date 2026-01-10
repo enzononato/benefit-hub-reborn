@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { UserCheck, Loader2, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AgentData {
   name: string;
@@ -29,15 +30,42 @@ const AVATAR_COLORS = [
 ];
 
 export function AgentPerformanceChart() {
+  const { userModules } = useAuth();
   const [data, setData] = useState<AgentData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchAgentData(); }, []);
+  useEffect(() => {
+    setLoading(true);
+    fetchAgentData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userModules]);
 
   const fetchAgentData = async () => {
     try {
-      const { data: requests, error } = await supabase.from('benefit_requests').select('reviewed_by, status').not('reviewed_by', 'is', null);
-      if (error || !requests?.length) { setData([]); setLoading(false); return; }
+      // If user has no modules configured (empty array), show empty
+      if (userModules !== null && userModules.length === 0) {
+        setData([]);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
+        .from('benefit_requests')
+        .select('reviewed_by, status, benefit_type')
+        .not('reviewed_by', 'is', null);
+
+      // Filter by user's allowed modules (if not admin)
+      if (userModules !== null) {
+        query = query.in('benefit_type', userModules);
+      }
+
+      const { data: requests, error } = await query;
+
+      if (error || !requests?.length) {
+        setData([]);
+        setLoading(false);
+        return;
+      }
 
       const agentMap = new Map<string, { atendidas: number; aprovadas: number; recusadas: number }>();
       requests.forEach((req) => {
@@ -63,7 +91,9 @@ export function AgentPerformanceChart() {
         .slice(0, 5);
 
       setData(chartData);
-    } catch { }
+    } catch {
+      // ignore
+    }
     setLoading(false);
   };
 
