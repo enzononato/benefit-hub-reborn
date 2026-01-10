@@ -815,6 +815,7 @@ export type Database = {
           created_at: string
           green_hours: number
           id: string
+          time_unit: string
           updated_at: string
           yellow_hours: number
         }
@@ -823,6 +824,7 @@ export type Database = {
           created_at?: string
           green_hours?: number
           id?: string
+          time_unit?: string
           updated_at?: string
           yellow_hours?: number
         }
@@ -831,6 +833,7 @@ export type Database = {
           created_at?: string
           green_hours?: number
           id?: string
+          time_unit?: string
           updated_at?: string
           yellow_hours?: number
         }

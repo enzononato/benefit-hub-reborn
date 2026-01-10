@@ -116,12 +116,27 @@ export default function Solicitacoes() {
       holidayDatesSet
     );
     
-    if (businessHoursElapsed <= config.green_hours) {
-      return { status: 'green', label: `${businessHoursElapsed}h`, dotColor: 'bg-success' };
-    } else if (businessHoursElapsed <= config.yellow_hours) {
-      return { status: 'yellow', label: `${businessHoursElapsed}h`, dotColor: 'bg-warning' };
+    // Converter limites para horas se a unidade for dias
+    const timeUnit = (config as any).time_unit || 'hours';
+    const greenLimit = timeUnit === 'days' ? config.green_hours * 24 : config.green_hours;
+    const yellowLimit = timeUnit === 'days' ? config.yellow_hours * 24 : config.yellow_hours;
+    
+    // Formatar label de acordo com a unidade
+    const formatLabel = (hours: number) => {
+      if (timeUnit === 'days') {
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+      }
+      return `${hours}h`;
+    };
+    
+    if (businessHoursElapsed <= greenLimit) {
+      return { status: 'green', label: formatLabel(businessHoursElapsed), dotColor: 'bg-success' };
+    } else if (businessHoursElapsed <= yellowLimit) {
+      return { status: 'yellow', label: formatLabel(businessHoursElapsed), dotColor: 'bg-warning' };
     } else {
-      return { status: 'red', label: `${businessHoursElapsed}h`, dotColor: 'bg-destructive' };
+      return { status: 'red', label: formatLabel(businessHoursElapsed), dotColor: 'bg-destructive' };
     }
   };
 

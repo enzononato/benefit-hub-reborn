@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useSlaConfigs, SlaConfig } from '@/hooks/useSlaConfigs';
+import { useSlaConfigs, SlaConfig, TimeUnit } from '@/hooks/useSlaConfigs';
 import { useHolidays, Holiday } from '@/hooks/useHolidays';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,6 +135,7 @@ export default function Configuracoes() {
     benefit_type: '',
     green_hours: 2,
     yellow_hours: 6,
+    time_unit: 'hours' as TimeUnit,
   });
   const [saving, setSaving] = useState(false);
 
@@ -155,7 +156,7 @@ export default function Configuracoes() {
   // SLA Handlers
   const handleOpenCreate = () => {
     setEditingConfig(null);
-    setFormData({ benefit_type: availableTypes[0] || '', green_hours: 2, yellow_hours: 6 });
+    setFormData({ benefit_type: availableTypes[0] || '', green_hours: 2, yellow_hours: 6, time_unit: 'hours' });
     setDialogOpen(true);
   };
 
@@ -165,6 +166,7 @@ export default function Configuracoes() {
       benefit_type: config.benefit_type,
       green_hours: config.green_hours,
       yellow_hours: config.yellow_hours,
+      time_unit: config.time_unit || 'hours',
     });
     setDialogOpen(true);
   };
@@ -182,6 +184,7 @@ export default function Configuracoes() {
       await updateConfig(editingConfig.id, {
         green_hours: formData.green_hours,
         yellow_hours: formData.yellow_hours,
+        time_unit: formData.time_unit,
       });
     } else {
       await createConfig(formData);
@@ -462,9 +465,15 @@ export default function Configuracoes() {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell>{config.green_hours}h</TableCell>
-                              <TableCell>{config.yellow_hours}h</TableCell>
-                              <TableCell>&gt; {config.yellow_hours}h</TableCell>
+                              <TableCell>
+                                {config.green_hours}{config.time_unit === 'days' ? 'd' : 'h'}
+                              </TableCell>
+                              <TableCell>
+                                {config.yellow_hours}{config.time_unit === 'days' ? 'd' : 'h'}
+                              </TableCell>
+                              <TableCell>
+                                &gt; {config.yellow_hours}{config.time_unit === 'days' ? 'd' : 'h'}
+                              </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
                                   <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(config)}>
@@ -549,12 +558,38 @@ export default function Configuracoes() {
                 </Select>
               </div>
             )}
+            
+            {/* Time Unit Selector */}
+            <div className="space-y-2">
+              <Label>Unidade de Tempo</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={formData.time_unit === 'hours' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setFormData((prev) => ({ ...prev, time_unit: 'hours' }))}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Horas
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.time_unit === 'days' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setFormData((prev) => ({ ...prev, time_unit: 'days' }))}
+                >
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  Dias
+                </Button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="green_hours">
                   <span className="inline-flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-green-500" />
-                    Verde (horas)
+                    Verde ({formData.time_unit === 'days' ? 'dias' : 'horas'})
                   </span>
                 </Label>
                 <Input
@@ -569,7 +604,7 @@ export default function Configuracoes() {
                 <Label htmlFor="yellow_hours">
                   <span className="inline-flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-yellow-500" />
-                    Amarelo (horas)
+                    Amarelo ({formData.time_unit === 'days' ? 'dias' : 'horas'})
                   </span>
                 </Label>
                 <Input
@@ -582,7 +617,7 @@ export default function Configuracoes() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Solicitações que ultrapassarem {formData.yellow_hours} horas serão marcadas como vermelho (atrasadas).
+              Solicitações que ultrapassarem {formData.yellow_hours} {formData.time_unit === 'days' ? 'dias' : 'horas'} serão marcadas como vermelho (atrasadas).
             </p>
           </div>
           <DialogFooter>
