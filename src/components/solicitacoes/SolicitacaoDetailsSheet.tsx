@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -105,6 +106,8 @@ export function SolicitacaoDetailsSheet({
   const [closingMessage, setClosingMessage] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState(request?.pdf_url);
+  const [approvedValue, setApprovedValue] = useState("");
+  const [totalInstallments, setTotalInstallments] = useState("1");
 
   useEffect(() => {
     if (request) {
@@ -113,6 +116,8 @@ export function SolicitacaoDetailsSheet({
       setClosingMessage(request.closing_message || "");
       setPdfUrl(request.pdf_url);
       setPdfFile(null);
+      setApprovedValue("");
+      setTotalInstallments("1");
     }
   }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url]);
 
@@ -207,6 +212,12 @@ export function SolicitacaoDetailsSheet({
         return;
       }
 
+      if (status === "aprovada" && !approvedValue.trim()) {
+        toast.error("É necessário informar o valor aprovado");
+        setLoading(false);
+        return;
+      }
+
       if (status === "recusada" && !rejectionReason.trim()) {
         toast.error("Por favor, informe o motivo da rejeição");
         setLoading(false);
@@ -222,6 +233,9 @@ export function SolicitacaoDetailsSheet({
       const finalStatus: BenefitStatus =
         status === "aprovada" ? "aprovada" : "recusada";
 
+      const parsedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
+      const parsedInstallments = parseInt(totalInstallments) || 1;
+
       const { error: updateError } = await supabase
         .from("benefit_requests")
         .update({
@@ -232,6 +246,9 @@ export function SolicitacaoDetailsSheet({
           closing_message: closingMessage,
           closed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          approved_value: status === "aprovada" ? parsedValue : null,
+          total_installments: status === "aprovada" ? parsedInstallments : 1,
+          paid_installments: 0,
         })
         .eq("id", request.id);
 
@@ -519,6 +536,50 @@ export function SolicitacaoDetailsSheet({
                         placeholder="Descreva o motivo da rejeição..."
                         rows={3}
                       />
+                    </div>
+                  )}
+
+                  {/* Campos de valor aprovado e parcelas */}
+                  {isApproved && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="approved-value">Valor Aprovado (R$) *</Label>
+                          <Input
+                            id="approved-value"
+                            type="text"
+                            value={approvedValue}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^\d,\.]/g, '');
+                              setApprovedValue(value);
+                            }}
+                            placeholder="0,00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="installments">Nº de Parcelas</Label>
+                          <Input
+                            id="installments"
+                            type="number"
+                            min="1"
+                            max="60"
+                            value={totalInstallments}
+                            onChange={(e) => setTotalInstallments(e.target.value)}
+                            placeholder="1"
+                          />
+                        </div>
+                      </div>
+
+                      {parseInt(totalInstallments) > 1 && approvedValue && (
+                        <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Valor por parcela:</span>
+                            <span className="font-medium">
+                              R$ {(parseFloat(approvedValue.replace(',', '.')) / parseInt(totalInstallments)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
