@@ -15,13 +15,13 @@ const iconMap: Record<string, React.ElementType> = {
   otica: Glasses,
 };
 
-const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
-  autoescola: { iconBg: 'bg-sky-400', iconColor: 'text-white' },
-  farmacia: { iconBg: 'bg-emerald-400', iconColor: 'text-white' },
-  oficina: { iconBg: 'bg-orange-400', iconColor: 'text-white' },
-  vale_gas: { iconBg: 'bg-amber-500', iconColor: 'text-white' },
-  papelaria: { iconBg: 'bg-purple-300', iconColor: 'text-white' },
-  otica: { iconBg: 'bg-cyan-400', iconColor: 'text-white' },
+const colorConfig: Record<string, { bg: string; iconBg: string; iconColor: string }> = {
+  autoescola: { bg: 'bg-sky-50 hover:bg-sky-100', iconBg: 'bg-sky-400', iconColor: 'text-white' },
+  farmacia: { bg: 'bg-emerald-50 hover:bg-emerald-100', iconBg: 'bg-emerald-400', iconColor: 'text-white' },
+  oficina: { bg: 'bg-orange-50 hover:bg-orange-100', iconBg: 'bg-orange-400', iconColor: 'text-white' },
+  vale_gas: { bg: 'bg-amber-50 hover:bg-amber-100', iconBg: 'bg-amber-500', iconColor: 'text-white' },
+  papelaria: { bg: 'bg-purple-50 hover:bg-purple-100', iconBg: 'bg-purple-300', iconColor: 'text-white' },
+  otica: { bg: 'bg-cyan-50 hover:bg-cyan-100', iconBg: 'bg-cyan-400', iconColor: 'text-white' },
 };
 
 // Tipos de convênio (apenas os 6 convênios)
@@ -77,32 +77,35 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
           </CardHeader>
         </Card>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-2 bg-popover" align="start">
-        <div className="space-y-1">
+      <PopoverContent className="w-[360px] p-3 bg-popover" align="start">
+        <div className="grid grid-cols-3 gap-3">
           {convenioTypes.map((type) => {
             const Icon = iconMap[type];
             const config = colorConfig[type];
             const itemData = conveniosData.find(d => d.type === type);
             const count = itemData?.count || 0;
+            const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
             return (
               <button
                 key={type}
                 onClick={() => handleConvenioClick(type)}
                 className={cn(
-                  "flex items-center gap-3 w-full p-2 rounded-md transition-colors",
-                  "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
+                  "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  config.bg
                 )}
               >
-                <div className={cn("rounded-lg p-1.5", config.iconBg)}>
-                  <Icon className={cn("h-4 w-4", config.iconColor)} />
+                <div className={cn("rounded-xl p-3", config.iconBg)}>
+                  <Icon className={cn("h-6 w-6", config.iconColor)} />
                 </div>
-                <span className="text-sm font-medium text-foreground flex-1 text-left">
-                  {benefitTypeLabels[type]}
-                </span>
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {count}
-                </span>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-foreground truncate w-full">
+                    {benefitTypeLabels[type]}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{count} solic.</p>
+                  <p className="text-xs font-bold text-primary">{percentage}%</p>
+                </div>
               </button>
             );
           })}
