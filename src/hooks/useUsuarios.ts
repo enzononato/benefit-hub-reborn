@@ -11,6 +11,7 @@ export interface SystemUser {
   email: string;
   role: SystemRole;
   created_at: string;
+  modules: string[];
 }
 
 export const useUsuarios = () => {
@@ -45,12 +46,24 @@ export const useUsuarios = () => {
 
       if (profilesError) throw profilesError;
 
+      // Fetch module permissions for all system users
+      const { data: permissions, error: permError } = await supabase
+        .from('user_module_permissions')
+        .select('user_id, module')
+        .in('user_id', systemUserIds);
+
+      if (permError) throw permError;
+
       const usersWithRoles: SystemUser[] = (profiles || [])
         .map((profile) => {
           const userRole = roles.find((r) => r.user_id === profile.user_id);
+          const userModules = (permissions || [])
+            .filter(p => p.user_id === profile.user_id)
+            .map(p => p.module);
           return {
             ...profile,
             role: userRole?.role as SystemRole,
+            modules: userModules,
           };
         })
         .filter(u => u.role);
