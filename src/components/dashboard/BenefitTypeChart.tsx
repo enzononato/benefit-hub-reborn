@@ -35,29 +35,68 @@ const COLORS: Partial<Record<BenefitType, string>> = {
 };
 
 const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
-  const chartData = data.map((item) => ({
-    name: benefitTypeLabels[item.type],
-    value: item.count,
-    color: COLORS[item.type],
-  }));
+  // Filter out items with 0 count to avoid empty slices
+  const chartData = data
+    .filter((item) => item.count > 0)
+    .map((item) => ({
+      name: benefitTypeLabels[item.type],
+      value: item.count,
+      color: COLORS[item.type],
+    }));
+
+  // Custom legend that shows all items with count > 0
+  const renderLegend = () => {
+    return (
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 mt-4 px-2">
+        {chartData.map((entry, index) => (
+          <div key={index} className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {entry.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Distribuição por Tipo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            Nenhum dado disponível
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Distribuição por Tipo</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Distribuição por Tipo</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={2}
                 dataKey="value"
+                strokeWidth={2}
+                stroke="hsl(var(--card))"
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -68,12 +107,14 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
+                  fontSize: '12px',
                 }}
+                formatter={(value: number, name: string) => [value, name]}
               />
-              <Legend />
             </PieChart>
           </ResponsiveContainer>
         </div>
+        {renderLegend()}
       </CardContent>
     </Card>
   );
