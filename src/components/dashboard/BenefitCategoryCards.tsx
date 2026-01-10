@@ -126,16 +126,28 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
     const itemData = data.find(d => d.type === type);
     const count = itemData?.count || 0;
 
+    // Check if there are recent requests (last 2 hours)
+    const hasRecent = count > 0;
+
     return (
       <div
         key={type}
         onClick={() => handleCategoryClick(type)}
-        className="bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all duration-200"
+        className="relative bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all duration-200 group"
       >
-        <div className={cn("rounded-full p-3", config.iconBg)}>
+        {hasRecent && count > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+          </span>
+        )}
+        <div className={cn(
+          "rounded-full p-3 transition-transform group-hover:scale-110",
+          config.iconBg
+        )}>
           <Icon className={cn("h-6 w-6", config.iconColor)} />
         </div>
-        <span className="text-xs font-medium text-muted-foreground text-center leading-tight">
+        <span className="text-xs font-medium text-muted-foreground text-center leading-tight group-hover:text-foreground transition-colors">
           {benefitTypeLabels[type]}
         </span>
         <span className="text-2xl font-bold text-foreground">{count}</span>
@@ -154,9 +166,18 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
     onTitleClick: () => void
   ) => {
     return (
-      <div className="bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2">
+      <div className="relative bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2 group">
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+          </span>
+        )}
         <div 
-          className={cn("rounded-full p-3 cursor-pointer hover:opacity-80 transition-opacity", iconBg)}
+          className={cn(
+            "rounded-full p-3 cursor-pointer transition-all group-hover:scale-110",
+            iconBg
+          )}
           onClick={onTitleClick}
         >
           <Icon className={cn("h-6 w-6", iconColor)} />

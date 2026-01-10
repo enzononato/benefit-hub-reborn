@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Sector } from 'recharts';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
+import { PieChartIcon } from 'lucide-react';
 
 interface BenefitTypeData {
   type: BenefitType;
@@ -71,6 +72,8 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
       emoji: EMOJIS[item.type] || '📌',
     }));
 
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
   const handleSegmentClick = (type: BenefitType) => {
     navigate(`/solicitacoes?benefit_type=${type}`);
   };
@@ -98,6 +101,34 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
     );
   };
 
+  // Custom center label with total
+  const renderCenterLabel = () => {
+    return (
+      <g>
+        <text
+          x="50%"
+          y="46%"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-foreground text-3xl font-bold"
+          style={{ fontSize: '28px', fontWeight: 700 }}
+        >
+          {total}
+        </text>
+        <text
+          x="50%"
+          y="58%"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-muted-foreground text-xs"
+          style={{ fontSize: '11px' }}
+        >
+          total
+        </text>
+      </g>
+    );
+  };
+
   // Custom legend that shows all items with count > 0
   const renderLegend = () => {
     return (
@@ -106,14 +137,17 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
           <button
             key={index}
             onClick={() => handleLegendClick(entry.type)}
-            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer"
+            className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer group"
           >
             <div
-              className="w-3 h-3 rounded-sm flex-shrink-0"
+              className="w-3 h-3 rounded-sm flex-shrink-0 transition-transform group-hover:scale-110"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-xs text-muted-foreground whitespace-nowrap hover:text-foreground transition-colors">
+            <span className="text-xs text-muted-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
               {entry.name}
+            </span>
+            <span className="text-[10px] text-muted-foreground/70 font-medium">
+              ({entry.value})
             </span>
           </button>
         ))}
@@ -123,13 +157,22 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
 
   if (chartData.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Distribuição por Tipo</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <PieChartIcon className="h-4 w-4 text-primary" />
+            </div>
+            Distribuição por Tipo
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-            Nenhum dado disponível
+        <CardContent className="flex items-center justify-center h-[300px]">
+          <div className="text-center">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <PieChartIcon className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground text-sm font-medium">Nenhum dado disponível</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Ajuste os filtros ou aguarde novas solicitações</p>
           </div>
         </CardContent>
       </Card>
@@ -137,20 +180,25 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
   }
 
   return (
-    <Card className="animate-fade-in">
-      <CardHeader>
-        <CardTitle className="text-base sm:text-lg">Distribuição por Tipo</CardTitle>
+    <Card className="animate-fade-in overflow-hidden">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <PieChartIcon className="h-4 w-4 text-primary" />
+          </div>
+          Distribuição por Tipo
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[280px]">
+        <div className="h-[280px] relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={50}
-                outerRadius={90}
+                innerRadius={55}
+                outerRadius={95}
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={2}
@@ -173,12 +221,14 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
                   />
                 ))}
               </Pie>
+              {renderCenterLabel()}
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                   fontSize: '12px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 }}
                 formatter={(value: number, name: string) => [value, name]}
               />

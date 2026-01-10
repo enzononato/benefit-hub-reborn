@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AnimatedNumber } from './AnimatedNumber';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatCardProps {
   title: string;
@@ -11,6 +14,8 @@ interface StatCardProps {
   };
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'info' | 'destructive';
   onClick?: () => void;
+  tooltip?: string;
+  loading?: boolean;
 }
 
 const variantStyles = {
@@ -31,11 +36,28 @@ const iconStyles = {
   destructive: 'bg-destructive text-destructive-foreground',
 };
 
-export function StatCard({ title, value, icon: Icon, trend, variant = 'default', onClick }: StatCardProps) {
-  return (
+export function StatCard({ title, value, icon: Icon, trend, variant = 'default', onClick, tooltip, loading }: StatCardProps) {
+  if (loading) {
+    return (
+      <div className={cn(
+        'rounded-xl border p-4 sm:p-5 lg:p-6 animate-shimmer',
+        variantStyles[variant]
+      )}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-8 w-12" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  const content = (
     <div
       className={cn(
-        'rounded-xl border p-4 sm:p-5 lg:p-6 transition-all duration-200 hover:shadow-md hover:border-primary/30 animate-fade-in',
+        'rounded-xl border p-4 sm:p-5 lg:p-6 transition-all duration-200 hover:shadow-md hover:border-primary/30 animate-fade-in group',
         variantStyles[variant],
         onClick && 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]'
       )}
@@ -44,7 +66,13 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{title}</p>
-          <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{value}</p>
+          <div className="mt-1 sm:mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+            {typeof value === 'number' ? (
+              <AnimatedNumber value={value} />
+            ) : (
+              value
+            )}
+          </div>
           {trend && (
             <p className={cn(
               'mt-1 text-xs sm:text-sm font-semibold truncate',
@@ -55,10 +83,28 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
             </p>
           )}
         </div>
-        <div className={cn('rounded-md sm:rounded-lg lg:rounded-xl p-1.5 sm:p-2 lg:p-3 shrink-0', iconStyles[variant])}>
+        <div className={cn(
+          'rounded-md sm:rounded-lg lg:rounded-xl p-1.5 sm:p-2 lg:p-3 shrink-0 transition-transform group-hover:scale-110',
+          iconStyles[variant]
+        )}>
           <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 shrink-0" />
         </div>
       </div>
     </div>
   );
+
+  if (tooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return content;
 }

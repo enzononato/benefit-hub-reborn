@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import BenefitsChart from '@/components/dashboard/BenefitsChart';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,7 +15,7 @@ import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashbo
 import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType } from '@/types/benefits';
-import { benefitTypes, convenioTypes, dpTypes } from '@/data/mockData';
+import { benefitTypes } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 
 const allBenefitTypes = benefitTypes as BenefitType[];
@@ -37,7 +38,7 @@ interface RequestData {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { userModules } = useAuth();
+  const { userModules, userName } = useAuth();
 
   // Garante que só tipos válidos do enum cheguem no Dashboard (remove agregados tipo "convenios")
   const allowedBenefitTypes = useMemo(() => {
@@ -48,6 +49,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [filters, setFilters] = useState<DashboardFilters>({
     unitId: null,
     benefitType: null,
@@ -56,24 +59,15 @@ export default function Dashboard() {
     endDate: null,
   });
 
-  useEffect(() => {
-    fetchDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, allowedBenefitTypes]);
-
-  useEffect(() => {
-    if (allowedBenefitTypes !== null && filters.benefitType && !allowedBenefitTypes.includes(filters.benefitType)) {
-      setFilters((prev) => ({ ...prev, benefitType: null }));
-    }
-  }, [allowedBenefitTypes, filters.benefitType]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
     try {
       // If user has no modules configured (empty array), show empty dashboard
       if (allowedBenefitTypes !== null && allowedBenefitTypes.length === 0) {
         setAllRequests([]);
         setStats({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
         setBenefitTypeData([]);
+        setLoading(false);
         return;
       }
 
@@ -103,6 +97,7 @@ export default function Dashboard() {
 
       if (error) {
         console.error('Error fetching dashboard data:', error);
+        setLoading(false);
         return;
       }
 
@@ -139,10 +134,22 @@ export default function Dashboard() {
         count: filteredData.filter(r => r.benefit_type === type).length,
       }));
       setBenefitTypeData(typeData);
+      setLastUpdate(new Date());
     } catch (err) {
       console.error('Error in fetchDashboardData:', err);
     }
-  };
+    setLoading(false);
+  }, [allowedBenefitTypes, filters]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    if (allowedBenefitTypes !== null && filters.benefitType && !allowedBenefitTypes.includes(filters.benefitType)) {
+      setFilters((prev) => ({ ...prev, benefitType: null }));
+    }
+  }, [allowedBenefitTypes, filters.benefitType]);
 
   const monthlyData = useMemo(() => {
     const end = filters.endDate || new Date();
@@ -177,26 +184,68 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="space-y-4 sm:space-y-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
-            Dashboard
-            <span className="hidden sm:inline"> - Revalle Gestão do DP</span>
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            <span className="hidden sm:inline">Acompanhamento em tempo real das solicitações e análises do DP</span>
-            <span className="sm:hidden">Visão geral das solicitações</span>
-          </p>
-        </div>
+        <DashboardHeader 
+          userName={userName || undefined} 
+          onRefresh={fetchDashboardData} 
+          isLoading={loading}
+          lastUpdate={lastUpdate}
+        />
 
         <DashboardFiltersComponent filters={filters} onFiltersChange={setFilters} allowedTypes={allowedBenefitTypes} />
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard title="Total" value={stats.total} icon={FileText} onClick={() => navigate('/solicitacoes')} />
-          <StatCard title="Hoje" value={stats.today} icon={TrendingUp} onClick={() => navigate('/solicitacoes')} />
-          <StatCard title="Aberto" value={stats.abertos} icon={FolderOpen} variant="info" onClick={() => navigate('/solicitacoes?status=aberta')} />
-          <StatCard title="Análise" value={stats.emAnalise} icon={Clock} variant="warning" onClick={() => navigate('/solicitacoes?status=em_analise')} />
-          <StatCard title="Aprovadas" value={stats.aprovados} icon={CheckCircle} variant="success" onClick={() => navigate('/solicitacoes?status=aprovada')} />
-          <StatCard title="Reprovadas" value={stats.reprovados} icon={XCircle} variant="destructive" onClick={() => navigate('/solicitacoes?status=recusada')} />
+          <StatCard 
+            title="Total" 
+            value={stats.total} 
+            icon={FileText} 
+            onClick={() => navigate('/solicitacoes')} 
+            loading={loading}
+            tooltip="Total de solicitações no período"
+          />
+          <StatCard 
+            title="Hoje" 
+            value={stats.today} 
+            icon={TrendingUp} 
+            onClick={() => navigate('/solicitacoes')} 
+            loading={loading}
+            tooltip="Novas solicitações criadas hoje"
+          />
+          <StatCard 
+            title="Aberto" 
+            value={stats.abertos} 
+            icon={FolderOpen} 
+            variant="info" 
+            onClick={() => navigate('/solicitacoes?status=aberta')} 
+            loading={loading}
+            tooltip="Aguardando atendimento"
+          />
+          <StatCard 
+            title="Análise" 
+            value={stats.emAnalise} 
+            icon={Clock} 
+            variant="warning" 
+            onClick={() => navigate('/solicitacoes?status=em_analise')} 
+            loading={loading}
+            tooltip="Em análise pelo agente"
+          />
+          <StatCard 
+            title="Aprovadas" 
+            value={stats.aprovados} 
+            icon={CheckCircle} 
+            variant="success" 
+            onClick={() => navigate('/solicitacoes?status=aprovada')} 
+            loading={loading}
+            tooltip="Solicitações aprovadas"
+          />
+          <StatCard 
+            title="Reprovadas" 
+            value={stats.reprovados} 
+            icon={XCircle} 
+            variant="destructive" 
+            onClick={() => navigate('/solicitacoes?status=recusada')} 
+            loading={loading}
+            tooltip="Solicitações recusadas"
+          />
         </div>
 
         <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
