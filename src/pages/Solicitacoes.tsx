@@ -39,6 +39,7 @@ import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
 import { toast } from 'sonner';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
+import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
 import { useBenefitRequests, BenefitRequest } from '@/hooks/useBenefitRequests';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -89,7 +90,11 @@ export default function Solicitacoes() {
   
   const { userModules } = useAuth();
   const { configs: slaConfigs } = useSlaConfigs();
+  const { holidays } = useHolidays();
   const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests(userModules);
+
+  // Cache holiday dates set for performance
+  const holidayDatesSet = getHolidayDatesSet(holidays);
 
   // Helper to calculate SLA status using business hours
   const getSlaStatus = (request: BenefitRequest) => {
@@ -104,10 +109,11 @@ export default function Solicitacoes() {
       return { status: 'no-config', label: '—', dotColor: 'bg-muted' };
     }
 
-    // Usar horas úteis (exclui sábados após 12h e domingos)
+    // Usar horas úteis (exclui sábados após 12h, domingos e feriados)
     const businessHoursElapsed = calculateBusinessHours(
       new Date(request.created_at),
-      new Date()
+      new Date(),
+      holidayDatesSet
     );
     
     if (businessHoursElapsed <= config.green_hours) {
