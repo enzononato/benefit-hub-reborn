@@ -35,11 +35,32 @@ const COLORS: Partial<Record<BenefitType, string>> = {
   relato_anomalia: 'hsl(25, 90%, 50%)',
 };
 
+const EMOJIS: Partial<Record<BenefitType, string>> = {
+  autoescola: '🚗',
+  farmacia: '💊',
+  oficina: '🔧',
+  vale_gas: '⛽',
+  papelaria: '📚',
+  otica: '👓',
+  outros: '❓',
+  alteracao_ferias: '🏖️',
+  aviso_folga_falta: '📋',
+  atestado: '🏥',
+  contracheque: '💵',
+  abono_horas: '⏰',
+  alteracao_horario: '🕐',
+  operacao_domingo: '☀️',
+  relatorio_ponto: '📊',
+  plano_odontologico: '🦷',
+  plano_saude: '❤️',
+  vale_transporte: '🚌',
+  relato_anomalia: '⚠️',
+};
+
 const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
 
-  // Filter out items with 0 count to avoid empty slices
   const chartData = data
     .filter((item) => item.count > 0)
     .map((item) => ({
@@ -47,6 +68,7 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
       value: item.count,
       color: COLORS[item.type],
       type: item.type,
+      emoji: EMOJIS[item.type] || '📌',
     }));
 
   const handleSegmentClick = (type: BenefitType) => {
@@ -86,10 +108,7 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
             onClick={() => handleLegendClick(entry.type)}
             className="flex items-center gap-1.5 hover:opacity-70 transition-opacity cursor-pointer"
           >
-            <div
-              className="w-3 h-3 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: entry.color }}
-            />
+            <span className="text-sm">{entry.emoji}</span>
             <span className="text-xs text-muted-foreground whitespace-nowrap hover:text-foreground transition-colors">
               {entry.name}
             </span>
