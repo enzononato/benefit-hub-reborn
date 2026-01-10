@@ -80,8 +80,7 @@ export function EditColaboradorDialog({
     credit_limit: profile.credit_limit?.toString() || '',
   });
   
-  // Track the profile id to detect when we're editing a different profile
-  const currentProfileIdRef = useRef(profile.id);
+  const prevOpenRef = useRef(false);
 
   // Load units only once (use cache if available)
   useEffect(() => {
@@ -92,10 +91,9 @@ export function EditColaboradorDialog({
     }
   }, [open]);
 
-  // Update form data when profile changes or dialog opens for a new profile
+  // Reset form only when the dialog is opened (avoids wiping edits on rerenders/tab focus)
   useEffect(() => {
-    if (open && currentProfileIdRef.current !== profile.id) {
-      currentProfileIdRef.current = profile.id;
+    if (open && !prevOpenRef.current) {
       setFormData({
         full_name: profile.full_name,
         unit_id: profile.unit_id || '',
@@ -108,6 +106,7 @@ export function EditColaboradorDialog({
         credit_limit: profile.credit_limit?.toString() || '',
       });
     }
+    prevOpenRef.current = open;
   }, [open, profile]);
 
   const fetchUnits = async () => {

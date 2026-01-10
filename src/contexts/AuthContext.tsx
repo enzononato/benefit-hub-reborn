@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { FullPageLoading } from '@/components/ui/loading-spinner';
@@ -25,6 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Important: avoid toggling the global loader again on tab focus/multi-tab auth events.
+  const userDataLoadedRef = useRef(false);
 
   const fetchUserData = async (userId: string) => {
     // Fetch user roles (user may have multiple roles)
@@ -58,33 +61,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // On sign in, set loading and fetch user data
-          if (event === 'SIGNED_IN') {
-            setLoading(true);
-            // Defer Supabase calls with setTimeout to prevent deadlock
-            setTimeout(async () => {
-              await fetchUserData(session.user.id);
+      if (session?.user) {
+        const userId = session.user.id;
+
+        // Some browsers/multi-tab flows can emit SIGNED_IN again when returning to the tab.
+        // We should not show the full-page loader again if we already loaded user data once.
+        const shouldBlockUI = event === 'SIGNED_IN' && !userDataLoadedRef.current;
+
+        if (shouldBlockUI) {
+          setLoading(true);
+          // Defer Supabase calls with setTimeout to prevent deadlock
+          setTimeout(() => {
+            fetchUserData(userId).finally(() => {
+              userDataLoadedRef.current = true;
               setLoading(false);
-            }, 0);
-          } else {
-            // For other events (TOKEN_REFRESHED, etc), just fetch without loading
-            setTimeout(() => {
-              fetchUserData(session.user.id);
-            }, 0);
-          }
+            });
+          }, 0);
         } else {
-          setUserRole(null);
-          setUserName(null);
-          setLoading(false);
+          // Background refresh only (doesn't remount routes/pages)
+          setTimeout(() => {
+            fetchUserData(userId).finally(() => {
+              userDataLoadedRef.current = true;
+            });
+          }, 0);
         }
+      } else {
+        userDataLoadedRef.current = false;
+        setUserRole(null);
+        setUserName(null);
+        setLoading(false);
       }
-    );
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -93,9 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         fetchUserData(session.user.id).finally(() => {
+          userDataLoadedRef.current = true;
           setLoading(false);
         });
       } else {
+        userDataLoadedRef.current = false;
         setLoading(false);
       }
     });
@@ -125,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUserRole(null);
     setUserName(null);
+    userDataLoadedRef.current = false;
   };
 
   const hasAccess = (allowedRoles: AppRole[]): boolean => {
@@ -137,17 +153,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated: !!session,
-      user,
-      session,
-      userRole,
-      userName,
-      loading,
-      login,
-      logout,
-      hasAccess
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!session,
+        user,
+        session,
+        userRole,
+        userName,
+        loading,
+        login,
+        logout,
+        hasAccess,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
