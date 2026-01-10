@@ -39,8 +39,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ModulosAcessoDialog } from '@/components/usuarios/ModulosAcessoDialog';
 
 type SystemRole = 'admin' | 'gestor' | 'agente_dp';
 
@@ -63,6 +64,7 @@ export default function Usuarios() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isModulosDialogOpen, setIsModulosDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -149,6 +151,11 @@ export default function Usuarios() {
     setSelectedUser(user);
     setNewPassword('');
     setIsPasswordDialogOpen(true);
+  };
+
+  const openModulosDialog = (user: SystemUser) => {
+    setSelectedUser(user);
+    setIsModulosDialogOpen(true);
   };
 
   const filteredUsers = users.filter(
@@ -295,6 +302,14 @@ export default function Usuarios() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => openModulosDialog(user)}
+                          title="Módulos de acesso"
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => openPasswordDialog(user)}
                           title="Alterar senha"
                         >
@@ -420,6 +435,16 @@ export default function Usuarios() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Modulos de Acesso Dialog */}
+        {selectedUser && (
+          <ModulosAcessoDialog
+            open={isModulosDialogOpen}
+            onOpenChange={setIsModulosDialogOpen}
+            userId={selectedUser.user_id}
+            userName={selectedUser.full_name}
+          />
+        )}
       </div>
     </MainLayout>
   );
