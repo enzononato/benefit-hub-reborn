@@ -14,13 +14,13 @@ const iconMap: Record<string, React.ElementType> = {
   otica: Glasses,
 };
 
-const colorConfig: Record<string, { bg: string; iconBg: string; iconColor: string }> = {
-  autoescola: { bg: 'bg-sky-50 hover:bg-sky-100', iconBg: 'bg-sky-400', iconColor: 'text-white' },
-  farmacia: { bg: 'bg-emerald-50 hover:bg-emerald-100', iconBg: 'bg-emerald-400', iconColor: 'text-white' },
-  oficina: { bg: 'bg-orange-50 hover:bg-orange-100', iconBg: 'bg-orange-400', iconColor: 'text-white' },
-  vale_gas: { bg: 'bg-amber-50 hover:bg-amber-100', iconBg: 'bg-amber-500', iconColor: 'text-white' },
-  papelaria: { bg: 'bg-purple-50 hover:bg-purple-100', iconBg: 'bg-purple-300', iconColor: 'text-white' },
-  otica: { bg: 'bg-cyan-50 hover:bg-cyan-100', iconBg: 'bg-cyan-400', iconColor: 'text-white' },
+const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
+  autoescola: { iconBg: 'bg-sky-500', iconColor: 'text-white' },
+  farmacia: { iconBg: 'bg-emerald-500', iconColor: 'text-white' },
+  oficina: { iconBg: 'bg-orange-500', iconColor: 'text-white' },
+  vale_gas: { iconBg: 'bg-amber-500', iconColor: 'text-white' },
+  papelaria: { iconBg: 'bg-purple-500', iconColor: 'text-white' },
+  otica: { iconBg: 'bg-cyan-500', iconColor: 'text-white' },
 };
 
 const convenioTypes: BenefitType[] = [
@@ -52,12 +52,12 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Convênios</CardTitle>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold">Convênios</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {convenioTypes.map((type) => {
             const Icon = iconMap[type];
             const config = colorConfig[type];
@@ -66,24 +66,33 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
             const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
             return (
-              <Card 
+              <div
                 key={type}
-                className="hover:shadow-lg transition-all cursor-pointer border"
                 onClick={() => handleConvenioClick(type)}
+                className="group cursor-pointer"
               >
-                <CardContent className="flex flex-col items-center gap-3 p-6">
-                  <div className={cn("rounded-2xl p-4", config.iconBg)}>
-                    <Icon className={cn("h-8 w-8", config.iconColor)} />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      {benefitTypeLabels[type]}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{count} solicitações</p>
-                    <p className="text-lg font-bold text-primary">{percentage}%</p>
-                  </div>
-                </CardContent>
-              </Card>
+                <Card className="h-full border bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                  <CardContent className="flex flex-col items-center justify-center p-5 gap-3">
+                    <div className={cn(
+                      "rounded-2xl p-4 shadow-sm",
+                      config.iconBg
+                    )}>
+                      <Icon className={cn("h-7 w-7", config.iconColor)} />
+                    </div>
+                    <div className="text-center space-y-0.5">
+                      <p className="text-sm font-medium text-foreground leading-tight">
+                        {benefitTypeLabels[type]}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {count} solicitações
+                      </p>
+                      <p className="text-base font-bold text-primary">
+                        {percentage}%
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             );
           })}
         </div>
