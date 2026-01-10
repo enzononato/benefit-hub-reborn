@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useSlaConfigs, SlaConfig } from '@/hooks/useSlaConfigs';
+import { useHolidays, Holiday } from '@/hooks/useHolidays';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -32,9 +33,11 @@ import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, RefreshCw, Clock, Settings, Info, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, HelpCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, Clock, Settings, Info, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, HelpCircle, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Todos os 19 tipos de benefícios organizados por categoria
 const benefitCategories = {
@@ -114,6 +117,16 @@ const getCategoryForType = (type: string): string => {
 
 export default function Configuracoes() {
   const { configs, loading, fetchConfigs, createConfig, updateConfig, deleteConfig } = useSlaConfigs();
+  const { 
+    holidays, 
+    loading: holidaysLoading, 
+    fetchHolidays, 
+    createHoliday, 
+    updateHoliday, 
+    deleteHoliday 
+  } = useHolidays();
+  
+  // SLA Dialog State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<SlaConfig | null>(null);
@@ -125,9 +138,21 @@ export default function Configuracoes() {
   });
   const [saving, setSaving] = useState(false);
 
+  // Holiday Dialog State
+  const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
+  const [deleteHolidayDialogOpen, setDeleteHolidayDialogOpen] = useState(false);
+  const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
+  const [holidayToDelete, setHolidayToDelete] = useState<Holiday | null>(null);
+  const [holidayFormData, setHolidayFormData] = useState({
+    date: '',
+    name: '',
+  });
+  const [savingHoliday, setSavingHoliday] = useState(false);
+
   const existingTypes = configs.map((c) => c.benefit_type);
   const availableTypes = Object.keys(benefitTypeLabels).filter((t) => !existingTypes.includes(t));
 
+  // SLA Handlers
   const handleOpenCreate = () => {
     setEditingConfig(null);
     setFormData({ benefit_type: availableTypes[0] || '', green_hours: 2, yellow_hours: 6 });
@@ -172,6 +197,52 @@ export default function Configuracoes() {
     setConfigToDelete(null);
   };
 
+  // Holiday Handlers
+  const handleOpenCreateHoliday = () => {
+    setEditingHoliday(null);
+    setHolidayFormData({ date: '', name: '' });
+    setHolidayDialogOpen(true);
+  };
+
+  const handleOpenEditHoliday = (holiday: Holiday) => {
+    setEditingHoliday(holiday);
+    setHolidayFormData({
+      date: holiday.date,
+      name: holiday.name,
+    });
+    setHolidayDialogOpen(true);
+  };
+
+  const handleOpenDeleteHoliday = (holiday: Holiday) => {
+    setHolidayToDelete(holiday);
+    setDeleteHolidayDialogOpen(true);
+  };
+
+  const handleSubmitHoliday = async () => {
+    if (!holidayFormData.date || !holidayFormData.name) return;
+
+    setSavingHoliday(true);
+    if (editingHoliday) {
+      await updateHoliday(editingHoliday.id, holidayFormData);
+    } else {
+      await createHoliday(holidayFormData);
+    }
+    setSavingHoliday(false);
+    setHolidayDialogOpen(false);
+  };
+
+  const handleDeleteHoliday = async () => {
+    if (!holidayToDelete) return;
+    await deleteHoliday(holidayToDelete.id);
+    setDeleteHolidayDialogOpen(false);
+    setHolidayToDelete(null);
+  };
+
+  // Separar feriados futuros e passados
+  const today = new Date().toISOString().split('T')[0];
+  const futureHolidays = holidays.filter(h => h.date >= today);
+  const pastHolidays = holidays.filter(h => h.date < today);
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -201,10 +272,107 @@ export default function Configuracoes() {
                   Cálculo de horas úteis
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  O SLA considera apenas <strong>horas úteis</strong>. Sábados após 12h e domingos inteiros <strong>não são contabilizados</strong> no tempo de atendimento.
+                  O SLA considera apenas <strong>horas úteis</strong>. Sábados após 12h, domingos inteiros e <strong>feriados cadastrados</strong> não são contabilizados no tempo de atendimento.
                 </p>
               </div>
             </div>
+
+            {/* Card de Feriados */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Feriados
+                    </CardTitle>
+                    <CardDescription>
+                      Cadastre feriados que não devem ser contabilizados no cálculo de SLA.
+                      Dias inteiros de feriados são excluídos da contagem de horas.
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={fetchHolidays} disabled={holidaysLoading}>
+                      <RefreshCw className={cn('h-4 w-4 mr-2', holidaysLoading && 'animate-spin')} />
+                      Atualizar
+                    </Button>
+                    <Button size="sm" onClick={handleOpenCreateHoliday}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Feriado
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {holidaysLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-24 text-center">
+                            <div className="flex items-center justify-center">
+                              <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : holidays.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            <Calendar className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                            Nenhum feriado cadastrado
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        [...futureHolidays, ...pastHolidays].map((holiday) => {
+                          const isPast = holiday.date < today;
+                          return (
+                            <TableRow key={holiday.id} className={cn(isPast && 'opacity-60')}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "flex h-8 w-8 items-center justify-center rounded-lg",
+                                    isPast ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
+                                  )}>
+                                    <Calendar className="h-4 w-4" />
+                                  </div>
+                                  <span className="font-medium">
+                                    {format(parseISO(holiday.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{holiday.name}</TableCell>
+                              <TableCell>
+                                <Badge variant={isPast ? 'secondary' : 'default'}>
+                                  {isPast ? 'Passado' : 'Ativo'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenEditHoliday(holiday)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteHoliday(holiday)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
@@ -440,6 +608,61 @@ export default function Configuracoes() {
         }"?`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
+        variant="destructive"
+      />
+
+      {/* Holiday Dialog */}
+      <Dialog open={holidayDialogOpen} onOpenChange={setHolidayDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingHoliday ? 'Editar Feriado' : 'Novo Feriado'}</DialogTitle>
+            <DialogDescription>
+              {editingHoliday
+                ? 'Atualize as informações do feriado.'
+                : 'Cadastre um novo feriado que não será contabilizado no SLA.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="holiday_date">Data</Label>
+              <Input
+                id="holiday_date"
+                type="date"
+                value={holidayFormData.date}
+                onChange={(e) => setHolidayFormData((prev) => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="holiday_name">Nome do Feriado</Label>
+              <Input
+                id="holiday_name"
+                placeholder="Ex: Natal, Ano Novo, Corpus Christi..."
+                value={holidayFormData.name}
+                onChange={(e) => setHolidayFormData((prev) => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHolidayDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmitHoliday}
+              disabled={savingHoliday || !holidayFormData.date || !holidayFormData.name.trim()}
+            >
+              {savingHoliday ? 'Salvando...' : editingHoliday ? 'Salvar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={deleteHolidayDialogOpen}
+        onOpenChange={setDeleteHolidayDialogOpen}
+        title="Excluir Feriado"
+        description={`Tem certeza que deseja excluir o feriado "${holidayToDelete?.name || ''}"?`}
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteHoliday}
         variant="destructive"
       />
     </MainLayout>

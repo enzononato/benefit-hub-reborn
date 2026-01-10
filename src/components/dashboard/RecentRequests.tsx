@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { calculateBusinessHours } from '@/lib/slaUtils';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
+import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
 
 interface RecentRequest {
   id: string;
@@ -50,22 +51,26 @@ export function RecentRequests() {
   const navigate = useNavigate();
   const { userModules } = useAuth();
   const { configs: slaConfigs } = useSlaConfigs();
+  const { holidays } = useHolidays();
   const [requests, setRequests] = useState<RecentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper to get SLA status using business hours and config from DB
+  // Cache holiday dates set for performance
+  const holidayDatesSet = getHolidayDatesSet(holidays);
+
+  // Helper to get SLA status using business hours, holidays and config from DB
   const getSlaStatus = (benefitType: BenefitType, createdAt: string): { colorClass: string; label: string } | null => {
     const config = slaConfigs.find(c => c.benefit_type === benefitType);
     
     if (!config) {
       // Fallback: usar valores padrão se não houver config
-      const businessHours = calculateBusinessHours(new Date(createdAt), new Date());
+      const businessHours = calculateBusinessHours(new Date(createdAt), new Date(), holidayDatesSet);
       if (businessHours < 2) return { colorClass: 'bg-success', label: 'No prazo' };
       if (businessHours < 6) return { colorClass: 'bg-warning', label: 'Atenção' };
       return { colorClass: 'bg-destructive', label: 'Atrasado' };
     }
 
-    const businessHours = calculateBusinessHours(new Date(createdAt), new Date());
+    const businessHours = calculateBusinessHours(new Date(createdAt), new Date(), holidayDatesSet);
     
     if (businessHours <= config.green_hours) {
       return { colorClass: 'bg-success', label: 'No prazo' };
