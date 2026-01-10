@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -31,8 +32,11 @@ import {
   ExternalLink,
   Wallet,
   AlertCircle,
+  MessageSquare,
+  ClipboardList,
 } from "lucide-react";
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
+import { ChatPanel } from "./ChatPanel";
 
 interface SolicitacaoDetailsSheetProps {
   open: boolean;
@@ -115,6 +119,7 @@ export function SolicitacaoDetailsSheet({
   const [totalInstallments, setTotalInstallments] = useState("1");
   const [creditInfo, setCreditInfo] = useState<{ limit: number; used: number; available: number } | null>(null);
   const [loadingCredit, setLoadingCredit] = useState(false);
+  const [activeTab, setActiveTab] = useState("detalhes");
 
   // Fetch credit limit info when request changes
   useEffect(() => {
@@ -165,6 +170,7 @@ export function SolicitacaoDetailsSheet({
       setPdfFile(null);
       setApprovedValue("");
       setTotalInstallments("1");
+      setActiveTab("detalhes");
     }
   }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url]);
 
@@ -382,376 +388,403 @@ export function SolicitacaoDetailsSheet({
           </div>
         </SheetHeader>
 
-        {/* Conteúdo scrollável */}
-        <ScrollArea className="flex-1">
-          <div className="p-6 space-y-6">
-            {/* Status atual */}
-            <div className="flex items-center justify-between">
-              <StatusBadge status={status} />
-              <span className="text-xs text-muted-foreground">
-                {getRelativeTime(request.created_at)}
-              </span>
-            </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="mx-6 mt-4 grid w-auto grid-cols-2">
+            <TabsTrigger value="detalhes" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Detalhes
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Informações do colaborador */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Colaborador</h4>
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{request.profile?.full_name || "N/A"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {request.profile?.cpf ? formatCpf(request.profile.cpf) : "CPF não informado"}
+          {/* Detalhes Tab */}
+          <TabsContent value="detalhes" className="flex-1 overflow-hidden m-0">
+            <ScrollArea className="h-full">
+              <div className="p-6 space-y-6">
+                {/* Status atual */}
+                <div className="flex items-center justify-between">
+                  <StatusBadge status={status} />
+                  <span className="text-xs text-muted-foreground">
+                    {getRelativeTime(request.created_at)}
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{request.profile?.unit?.name || "Unidade não informada"}</span>
-                </div>
-                {request.profile?.phone && (
-                  <div className="flex items-center justify-between">
+
+                {/* Informações do colaborador */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Colaborador</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                     <div className="flex items-center gap-3">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{request.profile.phone}</span>
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{request.profile?.full_name || "N/A"}</span>
                     </div>
-                    <a
-                      href={getWhatsAppLink(request.profile.phone)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      Abrir WhatsApp
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Detalhes do convênio */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Convênio</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Tipo</p>
-                  <p className="font-medium">
-                    {benefitTypeLabels[request.benefit_type]}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Data de Abertura</p>
-                  <p className="font-medium">
-                    {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </p>
-                </div>
-                {/* Tempo de conclusão para chamados finalizados */}
-                {isClosed && (
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Tempo até conclusão</p>
-                    <p className="font-medium">
-                      {(() => {
-                        const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
-                        const startDate = new Date(request.created_at);
-                        const diffMs = endDate.getTime() - startDate.getTime();
-                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                        const diffDays = Math.floor(diffHours / 24);
-                        const remainingHours = diffHours % 24;
-                        
-                        if (diffDays > 0) {
-                          return `${diffDays}d ${remainingHours}h`;
-                        }
-                        return `${diffHours}h`;
-                      })()}
-                    </p>
-                  </div>
-                )}
-                {request.reviewer_name && (
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Responsável pela Análise</p>
-                    <p className="font-medium text-primary">{request.reviewer_name}</p>
-                    {request.reviewed_at && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        desde {format(new Date(request.reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {request.profile?.cpf ? formatCpf(request.profile.cpf) : "CPF não informado"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{request.profile?.unit?.name || "Unidade não informada"}</span>
+                    </div>
+                    {request.profile?.phone && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{request.profile.phone}</span>
+                        </div>
+                        <a
+                          href={getWhatsAppLink(request.profile.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Abrir WhatsApp
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-              {request.details && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Descrição</p>
-                  <p className="text-sm bg-muted/50 rounded p-3">{request.details}</p>
                 </div>
-              )}
-            </div>
 
-            {/* Informações de fechamento (se já encerrado) */}
-            {isClosed && (
-              <>
                 <Separator />
+
+                {/* Detalhes do convênio */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Encerramento</h4>
-                  
-                  {/* Valor Aprovado e Parcelas */}
-                  {request.status === 'aprovada' && request.approved_value && (
-                    <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Valor Aprovado</span>
-                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                          R$ {request.approved_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-
-                      {request.total_installments && request.total_installments > 1 && (
-                        <>
-                          <Separator className="bg-emerald-500/20" />
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Parcelas</span>
-                            <span className="font-semibold">
-                              {request.paid_installments || 0} / {request.total_installments}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Valor por Parcela</span>
-                            <span className="font-medium">
-                              R$ {(request.approved_value / request.total_installments).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {request.closing_message && (
+                  <h4 className="text-sm font-medium text-muted-foreground">Convênio</h4>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">Mensagem</p>
-                      <p className="text-sm bg-muted/50 rounded p-3">{request.closing_message}</p>
-                    </div>
-                  )}
-                  {request.rejection_reason && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Motivo da rejeição</p>
-                      <p className="text-sm bg-destructive/10 text-destructive rounded p-3">
-                        {request.rejection_reason}
+                      <p className="text-xs text-muted-foreground">Tipo</p>
+                      <p className="font-medium">
+                        {benefitTypeLabels[request.benefit_type]}
                       </p>
                     </div>
-                  )}
-                  {request.pdf_url && (
-                    <a
-                      href={request.pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    >
-                      <FileUp className="h-4 w-4" />
-                      Ver PDF anexado
-                    </a>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Ações (se pendente) */}
-            {isPending && !isClosed && (
-              <>
-                <Separator />
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-muted-foreground">Ações</h4>
-
-                  {/* Botões de ação */}
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={handleApprove}
-                      className="flex-1"
-                      variant={isApproved ? "default" : "outline"}
-                      disabled={loading}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Aprovar
-                    </Button>
-                    <Button
-                      onClick={handleReject}
-                      className="flex-1"
-                      variant={isRejected ? "destructive" : "outline"}
-                      disabled={loading}
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reprovar
-                    </Button>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data de Abertura</p>
+                      <p className="font-medium">
+                        {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                    {/* Tempo de conclusão para chamados finalizados */}
+                    {isClosed && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Tempo até conclusão</p>
+                        <p className="font-medium">
+                          {(() => {
+                            const endDate = request.closed_at ? new Date(request.closed_at) : new Date();
+                            const startDate = new Date(request.created_at);
+                            const diffMs = endDate.getTime() - startDate.getTime();
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                            const diffDays = Math.floor(diffHours / 24);
+                            const remainingHours = diffHours % 24;
+                            
+                            if (diffDays > 0) {
+                              return `${diffDays}d ${remainingHours}h`;
+                            }
+                            return `${diffHours}h`;
+                          })()}
+                        </p>
+                      </div>
+                    )}
+                    {request.reviewer_name && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Responsável pela Análise</p>
+                        <p className="font-medium text-primary">{request.reviewer_name}</p>
+                        {request.reviewed_at && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            desde {format(new Date(request.reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Campo de rejeição */}
-                  {isRejected && (
-                    <div className="space-y-2">
-                      <Label htmlFor="rejection-reason">Motivo da Rejeição *</Label>
-                      <Textarea
-                        id="rejection-reason"
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="Descreva o motivo da rejeição..."
-                        rows={3}
-                      />
+                  {request.details && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Descrição</p>
+                      <p className="text-sm bg-muted/50 rounded p-3">{request.details}</p>
                     </div>
                   )}
+                </div>
 
-                  {/* Campos de valor aprovado e parcelas */}
-                  {isApproved && (
+                {/* Informações de fechamento (se já encerrado) */}
+                {isClosed && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Encerramento</h4>
+                      
+                      {/* Valor Aprovado e Parcelas */}
+                      {request.status === 'aprovada' && request.approved_value && (
+                        <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Valor Aprovado</span>
+                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                              R$ {request.approved_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+
+                          {request.total_installments && request.total_installments > 1 && (
+                            <>
+                              <Separator className="bg-emerald-500/20" />
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Parcelas</span>
+                                <span className="font-semibold">
+                                  {request.paid_installments || 0} / {request.total_installments}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Valor por Parcela</span>
+                                <span className="font-medium">
+                                  R$ {(request.approved_value / request.total_installments).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {request.closing_message && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Mensagem</p>
+                          <p className="text-sm bg-muted/50 rounded p-3">{request.closing_message}</p>
+                        </div>
+                      )}
+                      {request.rejection_reason && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Motivo da rejeição</p>
+                          <p className="text-sm bg-destructive/10 text-destructive rounded p-3">
+                            {request.rejection_reason}
+                          </p>
+                        </div>
+                      )}
+                      {request.pdf_url && (
+                        <a
+                          href={request.pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <FileUp className="h-4 w-4" />
+                          Ver PDF anexado
+                        </a>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Ações (se pendente) */}
+                {isPending && !isClosed && (
+                  <>
+                    <Separator />
                     <div className="space-y-4">
-                      {/* Informação do Limite de Crédito */}
-                      {creditInfo && creditInfo.limit > 0 && (
-                        <div className={cn(
-                          "rounded-lg p-3 space-y-2",
-                          exceedsCredit 
-                            ? "bg-destructive/10 border border-destructive/30" 
-                            : "bg-muted/50 border border-border"
-                        )}>
-                          <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Limite de Crédito</span>
+                      <h4 className="text-sm font-medium text-muted-foreground">Ações</h4>
+
+                      {/* Botões de ação */}
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleApprove}
+                          className="flex-1"
+                          variant={isApproved ? "default" : "outline"}
+                          disabled={loading}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Aprovar
+                        </Button>
+                        <Button
+                          onClick={handleReject}
+                          className="flex-1"
+                          variant={isRejected ? "destructive" : "outline"}
+                          disabled={loading}
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Reprovar
+                        </Button>
+                      </div>
+
+                      {/* Campo de rejeição */}
+                      {isRejected && (
+                        <div className="space-y-2">
+                          <Label htmlFor="rejection-reason">Motivo da Rejeição *</Label>
+                          <Textarea
+                            id="rejection-reason"
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="Descreva o motivo da rejeição..."
+                            rows={3}
+                          />
+                        </div>
+                      )}
+
+                      {/* Campos de valor aprovado e parcelas */}
+                      {isApproved && (
+                        <div className="space-y-4">
+                          {/* Informação do Limite de Crédito */}
+                          {creditInfo && creditInfo.limit > 0 && (
+                            <div className={cn(
+                              "rounded-lg p-3 space-y-2",
+                              exceedsCredit 
+                                ? "bg-destructive/10 border border-destructive/30" 
+                                : "bg-muted/50 border border-border"
+                            )}>
+                              <div className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">Limite de Crédito</span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground block">Total</span>
+                                  <span className="font-medium">
+                                    R$ {creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground block">Utilizado</span>
+                                  <span className="font-medium text-amber-600 dark:text-amber-400">
+                                    R$ {creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground block">Disponível</span>
+                                  <span className={cn(
+                                    "font-bold",
+                                    exceedsCredit ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
+                                  )}>
+                                    R$ {creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              </div>
+                              {exceedsCredit && (
+                                <div className="flex items-center gap-2 text-xs text-destructive mt-2">
+                                  <AlertCircle className="h-3 w-3" />
+                                  <span>Valor excede o limite disponível!</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {loadingCredit && (
+                            <div className="text-xs text-muted-foreground">
+                              Carregando informações de crédito...
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="approved-value">Valor Aprovado (R$) *</Label>
+                              <Input
+                                id="approved-value"
+                                type="text"
+                                value={approvedValue}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^\d,\.]/g, '');
+                                  setApprovedValue(value);
+                                }}
+                                placeholder="0,00"
+                                className={exceedsCredit ? "border-destructive" : ""}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="installments">Nº de Parcelas</Label>
+                              <Input
+                                id="installments"
+                                type="number"
+                                min="1"
+                                max="60"
+                                value={totalInstallments}
+                                onChange={(e) => setTotalInstallments(e.target.value)}
+                                placeholder="1"
+                              />
+                            </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                              <span className="text-muted-foreground block">Total</span>
-                              <span className="font-medium">
-                                R$ {creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block">Utilizado</span>
-                              <span className="font-medium text-amber-600 dark:text-amber-400">
-                                R$ {creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block">Disponível</span>
-                              <span className={cn(
-                                "font-bold",
-                                exceedsCredit ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
-                              )}>
-                                R$ {creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                          </div>
-                          {exceedsCredit && (
-                            <div className="flex items-center gap-2 text-xs text-destructive mt-2">
-                              <AlertCircle className="h-3 w-3" />
-                              <span>Valor excede o limite disponível!</span>
+
+                          {parseInt(totalInstallments) > 1 && approvedValue && (
+                            <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Valor por parcela:</span>
+                                <span className="font-medium">
+                                  R$ {(parsedApprovedValue / parseInt(totalInstallments)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
                             </div>
                           )}
                         </div>
                       )}
 
-                      {loadingCredit && (
-                        <div className="text-xs text-muted-foreground">
-                          Carregando informações de crédito...
+                      {/* Upload de PDF (aprovado) */}
+                      {isApproved && (
+                        <div className="space-y-2">
+                          <Label>Upload de PDF *</Label>
+                          <Button
+                            onClick={() => document.getElementById("pdf-upload")?.click()}
+                            variant="outline"
+                            disabled={loading}
+                            className="w-full"
+                          >
+                            <FileUp className="w-4 h-4 mr-2" />
+                            {pdfFile ? pdfFile.name : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
+                          </Button>
+                          <input
+                            id="pdf-upload"
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          {pdfUrl && (
+                            <a
+                              href={pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Ver PDF atual
+                            </a>
+                          )}
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Mensagem ao colaborador */}
+                      {(isApproved || isRejected) && (
                         <div className="space-y-2">
-                          <Label htmlFor="approved-value">Valor Aprovado (R$) *</Label>
-                          <Input
-                            id="approved-value"
-                            type="text"
-                            value={approvedValue}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^\d,\.]/g, '');
-                              setApprovedValue(value);
-                            }}
-                            placeholder="0,00"
-                            className={exceedsCredit ? "border-destructive" : ""}
+                          <Label htmlFor="closing-message">Mensagem ao Colaborador *</Label>
+                          <Textarea
+                            id="closing-message"
+                            value={closingMessage}
+                            onChange={(e) => setClosingMessage(e.target.value)}
+                            placeholder={
+                              isApproved
+                                ? "Seu convênio foi aprovado..."
+                                : "Sua solicitação foi analisada..."
+                            }
+                            rows={3}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="installments">Nº de Parcelas</Label>
-                          <Input
-                            id="installments"
-                            type="number"
-                            min="1"
-                            max="60"
-                            value={totalInstallments}
-                            onChange={(e) => setTotalInstallments(e.target.value)}
-                            placeholder="1"
-                          />
-                        </div>
-                      </div>
-
-                      {parseInt(totalInstallments) > 1 && approvedValue && (
-                        <div className="rounded-lg bg-muted/50 p-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Valor por parcela:</span>
-                            <span className="font-medium">
-                              R$ {(parsedApprovedValue / parseInt(totalInstallments)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        </div>
                       )}
                     </div>
-                  )}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
 
-                  {/* Upload de PDF (aprovado) */}
-                  {isApproved && (
-                    <div className="space-y-2">
-                      <Label>Upload de PDF *</Label>
-                      <Button
-                        onClick={() => document.getElementById("pdf-upload")?.click()}
-                        variant="outline"
-                        disabled={loading}
-                        className="w-full"
-                      >
-                        <FileUp className="w-4 h-4 mr-2" />
-                        {pdfFile ? pdfFile.name : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
-                      </Button>
-                      <input
-                        id="pdf-upload"
-                        type="file"
-                        accept="application/pdf"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                      {pdfUrl && (
-                        <a
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Ver PDF atual
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Mensagem ao colaborador */}
-                  {(isApproved || isRejected) && (
-                    <div className="space-y-2">
-                      <Label htmlFor="closing-message">Mensagem ao Colaborador *</Label>
-                      <Textarea
-                        id="closing-message"
-                        value={closingMessage}
-                        onChange={(e) => setClosingMessage(e.target.value)}
-                        placeholder={
-                          isApproved
-                            ? "Seu convênio foi aprovado..."
-                            : "Sua solicitação foi analisada..."
-                        }
-                        rows={3}
-                      />
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </ScrollArea>
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="flex-1 overflow-hidden m-0">
+            <ChatPanel
+              requestId={request.id}
+              userName={request.profile?.full_name}
+              userPhone={request.profile?.phone || undefined}
+              accountId={request.account_id}
+              conversationId={request.conversation_id}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Footer fixo com botão de enviar */}
-        {(isApproved || isRejected) && !isClosed && (
+        {(isApproved || isRejected) && !isClosed && activeTab === "detalhes" && (
           <div className="p-6 pt-4 border-t border-border">
             <Button
               onClick={handleSend}
