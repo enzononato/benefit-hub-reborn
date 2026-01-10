@@ -157,7 +157,7 @@ export function ChatPanel({
         
         {canSendWhatsapp ? (
           <p className="text-[10px] text-muted-foreground">
-            ✓ Mensagens serão encaminhadas automaticamente via WhatsApp
+            Encaminhamento via WhatsApp habilitado (requer workflow n8n ativo)
           </p>
         ) : (
           <p className="text-[10px] text-muted-foreground">
