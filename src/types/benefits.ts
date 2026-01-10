@@ -1,5 +1,24 @@
 // Alinhado com os enums do banco de dados Supabase
-export type BenefitType = 'autoescola' | 'farmacia' | 'oficina' | 'vale_gas' | 'papelaria' | 'otica' | 'outros';
+export type BenefitType = 
+  | 'autoescola' 
+  | 'farmacia' 
+  | 'oficina' 
+  | 'vale_gas' 
+  | 'papelaria' 
+  | 'otica'
+  | 'alteracao_ferias'
+  | 'aviso_folga_falta'
+  | 'atestado'
+  | 'contracheque'
+  | 'abono_horas'
+  | 'alteracao_horario'
+  | 'operacao_domingo'
+  | 'relatorio_ponto'
+  | 'plano_odontologico'
+  | 'plano_saude'
+  | 'vale_transporte'
+  | 'relato_anomalia'
+  | 'outros';
 
 export type BenefitStatus = 'aberta' | 'em_analise' | 'aprovada' | 'recusada';
 
@@ -58,12 +77,26 @@ export interface Log {
 }
 
 export const benefitTypeLabels: Record<BenefitType, string> = {
+  // Convênios
   autoescola: 'Autoescola',
   farmacia: 'Farmácia',
   oficina: 'Oficina',
   vale_gas: 'Vale Gás',
   papelaria: 'Papelaria',
   otica: 'Ótica',
+  // Solicitações DP
+  alteracao_ferias: 'Alteração de Férias',
+  aviso_folga_falta: 'Aviso Folga/Falta',
+  atestado: 'Atestado',
+  contracheque: 'Contracheque',
+  abono_horas: 'Abono de Horas',
+  alteracao_horario: 'Alteração de Horário',
+  operacao_domingo: 'Operação Domingo',
+  relatorio_ponto: 'Relatório de Ponto',
+  plano_odontologico: 'Plano Odontológico',
+  plano_saude: 'Plano de Saúde',
+  vale_transporte: 'Vale Transporte',
+  relato_anomalia: 'Relato de Anomalia',
   outros: 'Outros',
 };
 
@@ -88,6 +121,18 @@ export const benefitTypeFilterLabels: Record<Exclude<BenefitType, 'outros'>, str
   vale_gas: 'Vale Gás',
   papelaria: 'Papelaria',
   otica: 'Ótica',
+  alteracao_ferias: 'Alteração de Férias',
+  aviso_folga_falta: 'Aviso Folga/Falta',
+  atestado: 'Atestado',
+  contracheque: 'Contracheque',
+  abono_horas: 'Abono de Horas',
+  alteracao_horario: 'Alteração de Horário',
+  operacao_domingo: 'Operação Domingo',
+  relatorio_ponto: 'Relatório de Ponto',
+  plano_odontologico: 'Plano Odontológico',
+  plano_saude: 'Plano de Saúde',
+  vale_transporte: 'Vale Transporte',
+  relato_anomalia: 'Relato de Anomalia',
 };
 
 export const roleLabels: Record<UserRole, string> = {
