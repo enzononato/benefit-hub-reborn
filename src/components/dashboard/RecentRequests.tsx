@@ -11,6 +11,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { calculateBusinessHours } from '@/lib/slaUtils';
+import { useSlaConfigs } from '@/hooks/useSlaConfigs';
 
 interface RecentRequest {
   id: string;
@@ -44,20 +46,34 @@ const benefitTypeConfig: Partial<Record<BenefitType, { icon: React.ElementType; 
   outros: { icon: HelpCircle, colorClass: 'bg-muted text-muted-foreground' },
 };
 
-function getSlaStatus(createdAt: string): { colorClass: string; label: string } {
-  const now = new Date();
-  const created = new Date(createdAt);
-  const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
-  if (diffHours < 2) return { colorClass: 'bg-success', label: 'No prazo' };
-  if (diffHours < 6) return { colorClass: 'bg-warning', label: 'Atenção' };
-  return { colorClass: 'bg-destructive', label: 'Atrasado' };
-}
-
 export function RecentRequests() {
   const navigate = useNavigate();
   const { userModules } = useAuth();
+  const { configs: slaConfigs } = useSlaConfigs();
   const [requests, setRequests] = useState<RecentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper to get SLA status using business hours and config from DB
+  const getSlaStatus = (benefitType: BenefitType, createdAt: string): { colorClass: string; label: string } | null => {
+    const config = slaConfigs.find(c => c.benefit_type === benefitType);
+    
+    if (!config) {
+      // Fallback: usar valores padrão se não houver config
+      const businessHours = calculateBusinessHours(new Date(createdAt), new Date());
+      if (businessHours < 2) return { colorClass: 'bg-success', label: 'No prazo' };
+      if (businessHours < 6) return { colorClass: 'bg-warning', label: 'Atenção' };
+      return { colorClass: 'bg-destructive', label: 'Atrasado' };
+    }
+
+    const businessHours = calculateBusinessHours(new Date(createdAt), new Date());
+    
+    if (businessHours <= config.green_hours) {
+      return { colorClass: 'bg-success', label: 'No prazo' };
+    } else if (businessHours <= config.yellow_hours) {
+      return { colorClass: 'bg-warning', label: 'Atenção' };
+    }
+    return { colorClass: 'bg-destructive', label: 'Atrasado' };
+  };
 
   useEffect(() => {
     const fetchRecentRequests = async () => {
@@ -147,7 +163,7 @@ export function RecentRequests() {
         {requests.map((request, index) => {
           const config = benefitTypeConfig[request.benefit_type] || { icon: HelpCircle, colorClass: 'bg-muted text-muted-foreground' };
           const Icon = config.icon;
-          const sla = getSlaStatus(request.created_at);
+          const sla = getSlaStatus(request.benefit_type, request.created_at);
           const isOpenStatus = request.status === 'aberta' || request.status === 'em_analise';
 
           return (

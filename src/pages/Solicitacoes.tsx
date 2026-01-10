@@ -29,7 +29,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, Smile, HeartPulse, Bus } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { calculateBusinessHours } from '@/lib/slaUtils';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -90,7 +91,7 @@ export default function Solicitacoes() {
   const { configs: slaConfigs } = useSlaConfigs();
   const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests(userModules);
 
-  // Helper to calculate SLA status
+  // Helper to calculate SLA status using business hours
   const getSlaStatus = (request: BenefitRequest) => {
     const config = slaConfigs.find(c => c.benefit_type === request.benefit_type);
     
@@ -103,14 +104,18 @@ export default function Solicitacoes() {
       return { status: 'no-config', label: '—', dotColor: 'bg-muted' };
     }
 
-    const hoursElapsed = differenceInHours(new Date(), new Date(request.created_at));
+    // Usar horas úteis (exclui sábados após 12h e domingos)
+    const businessHoursElapsed = calculateBusinessHours(
+      new Date(request.created_at),
+      new Date()
+    );
     
-    if (hoursElapsed <= config.green_hours) {
-      return { status: 'green', label: `${hoursElapsed}h`, dotColor: 'bg-success' };
-    } else if (hoursElapsed <= config.yellow_hours) {
-      return { status: 'yellow', label: `${hoursElapsed}h`, dotColor: 'bg-warning' };
+    if (businessHoursElapsed <= config.green_hours) {
+      return { status: 'green', label: `${businessHoursElapsed}h`, dotColor: 'bg-success' };
+    } else if (businessHoursElapsed <= config.yellow_hours) {
+      return { status: 'yellow', label: `${businessHoursElapsed}h`, dotColor: 'bg-warning' };
     } else {
-      return { status: 'red', label: `${hoursElapsed}h`, dotColor: 'bg-destructive' };
+      return { status: 'red', label: `${businessHoursElapsed}h`, dotColor: 'bg-destructive' };
     }
   };
 
