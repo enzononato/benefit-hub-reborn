@@ -66,54 +66,32 @@ export function useRequestMessages(requestId: string | null) {
 
     setSending(true);
     try {
-      // Insert message into database
-      const { error: insertError } = await supabase
-        .from('request_messages')
-        .insert({
+      // Call edge function to send message (handles both DB insert and WhatsApp webhook)
+      const { data, error } = await supabase.functions.invoke('send-chat-message', {
+        body: {
           benefit_request_id: requestId,
           sender_id: user.id,
           sender_name: userName || 'Administrador',
           message: message.trim(),
-          sent_via: 'sistema',
-        });
+          send_via_whatsapp: sendViaWhatsapp,
+          account_id: webhookData?.accountId,
+          conversation_id: webhookData?.conversationId,
+          user_name: webhookData?.userName,
+          user_phone: webhookData?.userPhone,
+        },
+      });
 
-      if (insertError) throw insertError;
-
-      // If sendViaWhatsapp is enabled, call the n8n webhook
-      if (sendViaWhatsapp && webhookData?.accountId && webhookData?.conversationId) {
-        try {
-          const response = await fetch('https://n8n.revalle.com.br/webhook/chat-message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: message.trim(),
-              account_id: webhookData.accountId,
-              conversation_id: webhookData.conversationId,
-              sender_name: userName || 'Administrador',
-              user_name: webhookData.userName,
-              user_phone: webhookData.userPhone,
-            }),
-          });
-
-          if (!response.ok) {
-            console.error('Erro ao enviar via WhatsApp:', response.status);
-            toast({
-              title: 'Aviso',
-              description: 'Mensagem salva, mas houve erro ao enviar via WhatsApp.',
-              variant: 'destructive',
-            });
-          }
-        } catch (webhookError) {
-          console.error('Erro no webhook WhatsApp:', webhookError);
-        }
-      }
+      if (error) throw error;
 
       // Refresh messages
-      await fetchMessages();
+      await fetchMessages(false);
       
+      const whatsappSent = data?.whatsapp_sent;
       toast({
         title: 'Mensagem enviada',
-        description: sendViaWhatsapp ? 'Mensagem enviada e encaminhada via WhatsApp.' : 'Mensagem enviada com sucesso.',
+        description: whatsappSent 
+          ? 'Mensagem enviada e encaminhada via WhatsApp.' 
+          : 'Mensagem enviada com sucesso.',
       });
 
       return true;
