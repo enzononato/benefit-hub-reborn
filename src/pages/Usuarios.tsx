@@ -83,6 +83,9 @@ const moduleLabels: Record<string, string> = {
   outros: 'Outros',
 };
 
+// IDs agregadores que não devem existir no banco (apenas os individuais)
+const AGGREGATE_IDS = ['convenios', 'beneficios'];
+
 function formatModulesDisplay(modules: string[], role: SystemRole) {
   // Administrador tem acesso a todos os módulos automaticamente
   if (role === 'admin') {
@@ -93,12 +96,15 @@ function formatModulesDisplay(modules: string[], role: SystemRole) {
     );
   }
 
-  if (!modules || modules.length === 0) {
+  // Filtrar módulos válidos (excluir IDs agregadores que não deveriam estar no banco)
+  const validModules = modules?.filter(m => !AGGREGATE_IDS.includes(m)) || [];
+
+  if (validModules.length === 0) {
     return <span className="text-muted-foreground text-sm italic">Nenhum</span>;
   }
 
-  const hasAllConvenios = CONVENIOS_IDS.every(id => modules.includes(id));
-  const hasAllBeneficios = BENEFICIOS_IDS.every(id => modules.includes(id));
+  const hasAllConvenios = CONVENIOS_IDS.every(id => validModules.includes(id));
+  const hasAllBeneficios = BENEFICIOS_IDS.every(id => validModules.includes(id));
 
   const displayItems: string[] = [];
 
@@ -110,7 +116,7 @@ function formatModulesDisplay(modules: string[], role: SystemRole) {
   }
 
   // Adicionar módulos individuais (que não são convênios/benefícios completos)
-  modules.forEach(m => {
+  validModules.forEach(m => {
     if (hasAllConvenios && CONVENIOS_IDS.includes(m)) return;
     if (hasAllBeneficios && BENEFICIOS_IDS.includes(m)) return;
     if (!CONVENIOS_IDS.includes(m) && !BENEFICIOS_IDS.includes(m)) {
