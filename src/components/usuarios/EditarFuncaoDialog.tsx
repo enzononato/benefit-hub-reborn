@@ -30,8 +30,8 @@ const roleLabels: Record<SystemRole, string> = {
   agente_dp: 'Agente de DP',
 };
 
-// Módulos organizados por categoria
-const MODULE_CATEGORIES = {
+// Módulos agrupados (Convênios e Benefícios)
+const GROUPED_MODULES = {
   convenios: {
     label: 'Convênios',
     modules: [
@@ -51,26 +51,27 @@ const MODULE_CATEGORIES = {
       { id: 'vale_transporte' as BenefitType, label: 'Vale Transporte', emoji: '🚌' },
     ],
   },
-  dp: {
-    label: 'DP',
-    modules: [
-      { id: 'alteracao_ferias' as BenefitType, label: 'Alteração de Férias', emoji: '🏖️' },
-      { id: 'alteracao_horario' as BenefitType, label: 'Alteração de Horário', emoji: '🕐' },
-      { id: 'atestado' as BenefitType, label: 'Atestado', emoji: '🏥' },
-      { id: 'aviso_folga_falta' as BenefitType, label: 'Aviso de Folga/Falta', emoji: '📋' },
-      { id: 'contracheque' as BenefitType, label: 'Contracheque', emoji: '💵' },
-      { id: 'relatorio_ponto' as BenefitType, label: 'Relatório de Ponto', emoji: '📊' },
-      { id: 'relato_anomalia' as BenefitType, label: 'Relato de Anomalia', emoji: '⚠️' },
-      { id: 'outros' as BenefitType, label: 'Outros', emoji: '📌' },
-    ],
-  },
 };
+
+// Módulos soltos (DP) - cada um aparece individualmente
+const DP_MODULES = [
+  { id: 'abono_horas' as BenefitType, label: 'Abono de Horas', emoji: '⏰' },
+  { id: 'alteracao_ferias' as BenefitType, label: 'Alteração de Férias', emoji: '🏖️' },
+  { id: 'alteracao_horario' as BenefitType, label: 'Alteração de Horário', emoji: '🕐' },
+  { id: 'atestado' as BenefitType, label: 'Atestado', emoji: '🏥' },
+  { id: 'aviso_folga_falta' as BenefitType, label: 'Aviso de Folga/Falta', emoji: '📋' },
+  { id: 'contracheque' as BenefitType, label: 'Contracheque', emoji: '💵' },
+  { id: 'operacao_domingo' as BenefitType, label: 'Operação Domingo', emoji: '📆' },
+  { id: 'relatorio_ponto' as BenefitType, label: 'Relatório de Ponto', emoji: '📊' },
+  { id: 'relato_anomalia' as BenefitType, label: 'Relato de Anomalia', emoji: '⚠️' },
+  { id: 'outros' as BenefitType, label: 'Outros', emoji: '📌' },
+];
 
 // Flatten all modules for operations
 const ALL_MODULES = [
-  ...MODULE_CATEGORIES.convenios.modules,
-  ...MODULE_CATEGORIES.beneficios.modules,
-  ...MODULE_CATEGORIES.dp.modules,
+  ...GROUPED_MODULES.convenios.modules,
+  ...GROUPED_MODULES.beneficios.modules,
+  ...DP_MODULES,
 ];
 
 interface EditarFuncaoDialogProps {
@@ -250,21 +251,47 @@ export const EditarFuncaoDialog: React.FC<EditarFuncaoDialogProps> = ({
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto py-1">
-              {ALL_MODULES.map((module) => (
-                <label
-                  key={module.id}
-                  className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedModules.includes(module.id)}
-                    onCheckedChange={() => handleToggleModule(module.id)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                  <span className="text-base">{module.emoji}</span>
-                  <span className="text-sm text-foreground">{module.label}</span>
-                </label>
+            <div className="space-y-4 max-h-[320px] overflow-y-auto py-1">
+              {/* Grouped Modules (Convênios e Benefícios) */}
+              {Object.entries(GROUPED_MODULES).map(([key, category]) => (
+                <div key={key} className="rounded-lg border p-3 space-y-2">
+                  <p className="text-sm font-medium text-foreground">{category.label}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {category.modules.map((module) => (
+                      <label
+                        key={module.id}
+                        className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                      >
+                        <Checkbox
+                          checked={selectedModules.includes(module.id)}
+                          onCheckedChange={() => handleToggleModule(module.id)}
+                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                        <span className="text-base">{module.emoji}</span>
+                        <span className="text-sm text-foreground">{module.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               ))}
+
+              {/* DP Modules (soltos) */}
+              <div className="grid grid-cols-2 gap-2">
+                {DP_MODULES.map((module) => (
+                  <label
+                    key={module.id}
+                    className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <Checkbox
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleToggleModule(module.id)}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                    <span className="text-base">{module.emoji}</span>
+                    <span className="text-sm text-foreground">{module.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           )}
 
