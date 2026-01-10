@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { ArrowRight, Eye, Clock, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle } from 'lucide-react';
+import { ArrowRight, Eye, Clock, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -21,13 +21,25 @@ interface RecentRequest {
   full_name?: string;
 }
 
-const benefitTypeConfig: Record<BenefitType, { icon: React.ElementType; colorClass: string }> = {
+const benefitTypeConfig: Partial<Record<BenefitType, { icon: React.ElementType; colorClass: string }>> = {
   autoescola: { icon: Car, colorClass: 'bg-[hsl(var(--benefit-autoescola))] text-[hsl(var(--benefit-autoescola-icon))]' },
   farmacia: { icon: Pill, colorClass: 'bg-[hsl(var(--benefit-farmacia))] text-[hsl(var(--benefit-farmacia-icon))]' },
   oficina: { icon: Wrench, colorClass: 'bg-[hsl(var(--benefit-oficina))] text-[hsl(var(--benefit-oficina-icon))]' },
   vale_gas: { icon: Cylinder, colorClass: 'bg-[hsl(var(--benefit-vale-gas))] text-[hsl(var(--benefit-vale-gas-icon))]' },
   papelaria: { icon: BookOpen, colorClass: 'bg-[hsl(var(--benefit-papelaria))] text-[hsl(var(--benefit-papelaria-icon))]' },
   otica: { icon: Glasses, colorClass: 'bg-[hsl(var(--benefit-otica))] text-[hsl(var(--benefit-otica-icon))]' },
+  alteracao_ferias: { icon: CalendarDays, colorClass: 'bg-blue-500 text-white' },
+  aviso_folga_falta: { icon: FileText, colorClass: 'bg-indigo-500 text-white' },
+  atestado: { icon: Stethoscope, colorClass: 'bg-red-500 text-white' },
+  contracheque: { icon: Receipt, colorClass: 'bg-green-500 text-white' },
+  abono_horas: { icon: Clock, colorClass: 'bg-teal-500 text-white' },
+  alteracao_horario: { icon: CalendarClock, colorClass: 'bg-violet-500 text-white' },
+  operacao_domingo: { icon: Sun, colorClass: 'bg-yellow-500 text-white' },
+  relatorio_ponto: { icon: ClipboardList, colorClass: 'bg-slate-500 text-white' },
+  plano_odontologico: { icon: Smile, colorClass: 'bg-pink-500 text-white' },
+  plano_saude: { icon: HeartPulse, colorClass: 'bg-rose-500 text-white' },
+  vale_transporte: { icon: Bus, colorClass: 'bg-lime-600 text-white' },
+  relato_anomalia: { icon: AlertTriangle, colorClass: 'bg-orange-600 text-white' },
   outros: { icon: HelpCircle, colorClass: 'bg-muted text-muted-foreground' },
 };
 
@@ -109,7 +121,7 @@ export function RecentRequests() {
       </div>
       <div className="divide-y divide-border">
         {requests.map((request, index) => {
-          const config = benefitTypeConfig[request.benefit_type];
+          const config = benefitTypeConfig[request.benefit_type] || { icon: HelpCircle, colorClass: 'bg-muted text-muted-foreground' };
           const Icon = config.icon;
           const sla = getSlaStatus(request.created_at);
           const isOpenStatus = request.status === 'aberta' || request.status === 'em_analise';

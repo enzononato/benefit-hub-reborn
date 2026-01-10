@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, Eye, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, CalendarIcon, X, Filter, RefreshCw, Download, ClipboardList, Clock, CheckCircle2, XCircle, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, Smile, HeartPulse, Bus } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,13 +47,25 @@ interface Unit {
 
 const DEFAULT_ITEMS_PER_PAGE = 10;
 
-const benefitIcons: Record<BenefitType, React.ComponentType<{ className?: string }>> = {
+const benefitIcons: Partial<Record<BenefitType, React.ComponentType<{ className?: string }>>> = {
   autoescola: Car,
   farmacia: Pill,
   oficina: Wrench,
   vale_gas: Cylinder,
   papelaria: BookOpen,
   otica: Glasses,
+  alteracao_ferias: CalendarDays,
+  aviso_folga_falta: FileText,
+  atestado: Stethoscope,
+  contracheque: Receipt,
+  abono_horas: Clock,
+  alteracao_horario: CalendarClock,
+  operacao_domingo: Sun,
+  relatorio_ponto: ClipboardList,
+  plano_odontologico: Smile,
+  plano_saude: HeartPulse,
+  vale_transporte: Bus,
+  relato_anomalia: AlertTriangle,
   outros: HelpCircle,
 };
 

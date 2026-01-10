@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 
-const BENEFIT_COLORS: Record<BenefitType, string> = {
+const BENEFIT_COLORS: Partial<Record<BenefitType, string>> = {
   autoescola: 'hsl(var(--benefit-autoescola))',
   farmacia: 'hsl(var(--benefit-farmacia))',
   oficina: 'hsl(var(--benefit-oficina))',

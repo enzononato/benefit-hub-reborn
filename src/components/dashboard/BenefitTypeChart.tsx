@@ -12,7 +12,7 @@ interface BenefitTypeChartProps {
   data: BenefitTypeData[];
 }
 
-const COLORS: Record<BenefitType, string> = {
+const COLORS: Partial<Record<BenefitType, string>> = {
   autoescola: 'hsl(var(--chart-1))',
   farmacia: 'hsl(var(--chart-2))',
   oficina: 'hsl(var(--chart-3))',
@@ -20,6 +20,18 @@ const COLORS: Record<BenefitType, string> = {
   papelaria: 'hsl(var(--chart-5))',
   otica: 'hsl(var(--primary))',
   outros: 'hsl(var(--muted-foreground))',
+  alteracao_ferias: 'hsl(210, 70%, 50%)',
+  aviso_folga_falta: 'hsl(230, 70%, 50%)',
+  atestado: 'hsl(0, 70%, 50%)',
+  contracheque: 'hsl(140, 70%, 40%)',
+  abono_horas: 'hsl(170, 70%, 40%)',
+  alteracao_horario: 'hsl(270, 70%, 50%)',
+  operacao_domingo: 'hsl(45, 90%, 50%)',
+  relatorio_ponto: 'hsl(210, 20%, 50%)',
+  plano_odontologico: 'hsl(330, 70%, 50%)',
+  plano_saude: 'hsl(350, 70%, 50%)',
+  vale_transporte: 'hsl(90, 60%, 40%)',
+  relato_anomalia: 'hsl(25, 90%, 50%)',
 };
 
 const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
