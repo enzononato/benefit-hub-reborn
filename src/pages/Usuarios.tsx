@@ -39,9 +39,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound, Settings2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ModulosAcessoDialog } from '@/components/usuarios/ModulosAcessoDialog';
+import { EditarFuncaoDialog } from '@/components/usuarios/EditarFuncaoDialog';
 
 type SystemRole = 'admin' | 'gestor' | 'agente_dp';
 
@@ -58,13 +58,12 @@ const roleColors: Record<SystemRole, string> = {
 };
 
 export default function Usuarios() {
-  const { users, loading, fetchUsers, createUser, updateUserRole, deleteUser, changePassword } = useUsuarios();
+  const { users, loading, fetchUsers, createUser, deleteUser, changePassword } = useUsuarios();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [isModulosDialogOpen, setIsModulosDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -92,19 +91,6 @@ export default function Usuarios() {
     if (!error) {
       setIsCreateDialogOpen(false);
       setFormData({ email: '', password: '', full_name: '', role: 'gestor' });
-    }
-    setFormLoading(false);
-  };
-
-  const handleUpdateRole = async () => {
-    if (!selectedUser) return;
-
-    setFormLoading(true);
-    const { error } = await updateUserRole(selectedUser.user_id, formData.role);
-
-    if (!error) {
-      setIsEditDialogOpen(false);
-      setSelectedUser(null);
     }
     setFormLoading(false);
   };
@@ -138,7 +124,6 @@ export default function Usuarios() {
 
   const openEditDialog = (user: SystemUser) => {
     setSelectedUser(user);
-    setFormData({ ...formData, role: user.role });
     setIsEditDialogOpen(true);
   };
 
@@ -151,11 +136,6 @@ export default function Usuarios() {
     setSelectedUser(user);
     setNewPassword('');
     setIsPasswordDialogOpen(true);
-  };
-
-  const openModulosDialog = (user: SystemUser) => {
-    setSelectedUser(user);
-    setIsModulosDialogOpen(true);
   };
 
   const filteredUsers = users.filter(
@@ -302,14 +282,6 @@ export default function Usuarios() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => openModulosDialog(user)}
-                          title="Módulos de acesso"
-                        >
-                          <Settings2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           onClick={() => openPasswordDialog(user)}
                           title="Alterar senha"
                         >
@@ -319,7 +291,7 @@ export default function Usuarios() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditDialog(user)}
-                          title="Editar permissão"
+                          title="Editar função e módulos"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -341,44 +313,18 @@ export default function Usuarios() {
           </Table>
         </div>
 
-        {/* Edit Role Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Permissão</DialogTitle>
-              <DialogDescription>
-                Altere a permissão do usuário {selectedUser?.full_name}.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Permissão</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: SystemRole) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a permissão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="gestor">Gestor</SelectItem>
-                    <SelectItem value="agente_dp">Agente de DP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleUpdateRole} disabled={formLoading}>
-                {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Edit Function + Modules Dialog */}
+        {selectedUser && (
+          <EditarFuncaoDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            userId={selectedUser.user_id}
+            userName={selectedUser.full_name}
+            userEmail={selectedUser.email}
+            currentRole={selectedUser.role}
+            onRoleUpdated={fetchUsers}
+          />
+        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -436,15 +382,6 @@ export default function Usuarios() {
           </DialogContent>
         </Dialog>
 
-        {/* Modulos de Acesso Dialog */}
-        {selectedUser && (
-          <ModulosAcessoDialog
-            open={isModulosDialogOpen}
-            onOpenChange={setIsModulosDialogOpen}
-            userId={selectedUser.user_id}
-            userName={selectedUser.full_name}
-          />
-        )}
       </div>
     </MainLayout>
   );
