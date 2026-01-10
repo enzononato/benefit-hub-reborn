@@ -7,6 +7,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import BenefitTypeChart from '@/components/dashboard/BenefitTypeChart';
 import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
+import ConveniosDropdownCard from '@/components/dashboard/ConveniosDropdownCard';
 import { RecentRequests } from '@/components/dashboard/RecentRequests';
 import { AgentPerformanceChart } from '@/components/dashboard/AgentPerformanceChart';
 import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashboard/DashboardFilters';
@@ -167,6 +168,10 @@ export default function Dashboard() {
           <StatCard title="Análise" value={stats.emAnalise} icon={Clock} variant="warning" onClick={() => navigate('/solicitacoes?status=em_analise')} />
           <StatCard title="Aprovadas" value={stats.aprovados} icon={CheckCircle} variant="success" onClick={() => navigate('/solicitacoes?status=aprovada')} />
           <StatCard title="Reprovadas" value={stats.reprovados} icon={XCircle} variant="destructive" onClick={() => navigate('/solicitacoes?status=recusada')} />
+        </div>
+
+        <div className="w-full max-w-xs">
+          <ConveniosDropdownCard data={benefitTypeData} />
         </div>
 
         <BenefitCategoryCards data={benefitTypeData} />
