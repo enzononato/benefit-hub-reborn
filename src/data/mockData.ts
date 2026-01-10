@@ -46,8 +46,18 @@ export const getMonthlyData = (): MonthlyData[] => {
   }));
 };
 
-// Benefit types list
-export const benefitTypes: BenefitType[] = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
+// Benefit types list - Convênios
+export const convenioTypes: BenefitType[] = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
+
+// Benefit types list - Solicitações DP
+export const dpTypes: BenefitType[] = [
+  'alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque',
+  'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto',
+  'plano_odontologico', 'plano_saude', 'vale_transporte', 'relato_anomalia'
+];
+
+// All benefit types (for backward compatibility)
+export const benefitTypes: BenefitType[] = [...convenioTypes, ...dpTypes];
 
 // Status list (sem concluida na UI)
 export const statuses: BenefitStatus[] = ['aberta', 'em_analise', 'aprovada', 'recusada'];

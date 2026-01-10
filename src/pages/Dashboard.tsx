@@ -14,9 +14,9 @@ import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashbo
 import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType } from '@/types/benefits';
-import { benefitTypes } from '@/data/mockData';
+import { benefitTypes, convenioTypes, dpTypes } from '@/data/mockData';
 
-const filteredBenefitTypes = benefitTypes.filter(t => t !== 'outros') as BenefitType[];
+const allBenefitTypes = benefitTypes as BenefitType[];
 
 interface DashboardStats {
   total: number;
@@ -105,7 +105,7 @@ export default function Dashboard() {
 
       setStats({ total, today, abertos, emAnalise, aprovados, reprovados });
 
-      const typeData = filteredBenefitTypes.map(type => ({
+      const typeData = allBenefitTypes.map(type => ({
         type,
         count: filteredData.filter(r => r.benefit_type === type).length,
       }));
