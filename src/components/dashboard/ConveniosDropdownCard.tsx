@@ -1,9 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
-import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses, ChevronDown, Handshake } from 'lucide-react';
+import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -24,7 +22,6 @@ const colorConfig: Record<string, { bg: string; iconBg: string; iconColor: strin
   otica: { bg: 'bg-cyan-50 hover:bg-cyan-100', iconBg: 'bg-cyan-400', iconColor: 'text-white' },
 };
 
-// Tipos de convênio (apenas os 6 convênios)
 const convenioTypes: BenefitType[] = [
   'autoescola',
   'farmacia',
@@ -45,76 +42,50 @@ interface ConveniosDropdownCardProps {
 
 const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) => {
   const navigate = useNavigate();
-  const [open, setOpen] = React.useState(false);
 
-  // Filtra apenas os convênios
   const conveniosData = data.filter(item => convenioTypes.includes(item.type));
   const totalConvenios = conveniosData.reduce((sum, item) => sum + item.count, 0);
 
   const handleConvenioClick = (type: BenefitType) => {
-    setOpen(false);
     navigate(`/solicitacoes?benefit_type=${type}`);
   };
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="flex flex-row items-center justify-between py-3 px-4 cursor-pointer hover:bg-accent/50 transition-colors">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Handshake className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-sm font-semibold">Convênios</CardTitle>
-                <p className="text-xs text-muted-foreground">{totalConvenios} solicitações</p>
-              </div>
-            </div>
-            <ChevronDown className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform duration-200",
-              open && "rotate-180"
-            )} />
-          </CardHeader>
-        </CollapsibleTrigger>
-        
-        <CollapsibleContent>
-          <CardContent className="pt-0 pb-4">
-            <div className="grid grid-cols-3 gap-3">
-              {convenioTypes.map((type) => {
-                const Icon = iconMap[type];
-                const config = colorConfig[type];
-                const itemData = conveniosData.find(d => d.type === type);
-                const count = itemData?.count || 0;
-                const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-foreground">Solicitações por Categoria</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        {convenioTypes.map((type) => {
+          const Icon = iconMap[type];
+          const config = colorConfig[type];
+          const itemData = conveniosData.find(d => d.type === type);
+          const count = itemData?.count || 0;
+          const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
-                return (
-                  <button
-                    key={type}
-                    onClick={() => handleConvenioClick(type)}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
-                      "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
-                      config.bg
-                    )}
-                  >
-                    <div className={cn("rounded-xl p-3", config.iconBg)}>
-                      <Icon className={cn("h-6 w-6", config.iconColor)} />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs font-semibold text-foreground truncate w-full">
-                        {benefitTypeLabels[type]}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">{count} solic.</p>
-                      <p className="text-xs font-bold text-primary">{percentage}%</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+          return (
+            <button
+              key={type}
+              onClick={() => handleConvenioClick(type)}
+              className={cn(
+                "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
+                "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
+                config.bg
+              )}
+            >
+              <div className={cn("rounded-xl p-3", config.iconBg)}>
+                <Icon className={cn("h-6 w-6", config.iconColor)} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">
+                  {benefitTypeLabels[type]}
+                </p>
+                <p className="text-xs text-muted-foreground">{count} solicitações</p>
+                <p className="text-sm font-bold text-primary">{percentage}%</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
