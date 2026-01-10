@@ -34,11 +34,23 @@ export interface BenefitRequest {
   } | null;
 }
 
-const fetchBenefitRequests = async (): Promise<BenefitRequest[]> => {
-  const { data: requestsData, error: requestsError } = await supabase
+const fetchBenefitRequests = async (allowedModules: string[] | null): Promise<BenefitRequest[]> => {
+  // If user has no modules configured (empty array), return empty
+  if (allowedModules !== null && allowedModules.length === 0) {
+    return [];
+  }
+
+  let query = supabase
     .from('benefit_requests')
     .select('*')
     .order('created_at', { ascending: false });
+
+  // If not admin (allowedModules !== null), filter by allowed benefit types
+  if (allowedModules !== null) {
+    query = query.in('benefit_type', allowedModules);
+  }
+
+  const { data: requestsData, error: requestsError } = await query;
 
   if (requestsError) {
     console.error('Error fetching requests:', requestsError);
@@ -67,12 +79,12 @@ const fetchBenefitRequests = async (): Promise<BenefitRequest[]> => {
   return requestsWithProfiles as BenefitRequest[];
 };
 
-export const useBenefitRequests = () => {
+export const useBenefitRequests = (allowedModules: string[] | null = null) => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['benefit-requests'],
-    queryFn: fetchBenefitRequests,
+    queryKey: ['benefit-requests', allowedModules],
+    queryFn: () => fetchBenefitRequests(allowedModules),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });

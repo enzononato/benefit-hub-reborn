@@ -39,6 +39,7 @@ import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDe
 import { toast } from 'sonner';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
 import { useBenefitRequests, BenefitRequest } from '@/hooks/useBenefitRequests';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Unit {
   id: string;
@@ -85,8 +86,9 @@ export default function Solicitacoes() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingViewRequest, setPendingViewRequest] = useState<{ id: string; index: number } | null>(null);
   
+  const { userModules } = useAuth();
   const { configs: slaConfigs } = useSlaConfigs();
-  const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests();
+  const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests(userModules);
 
   // Helper to calculate SLA status
   const getSlaStatus = (request: BenefitRequest) => {
