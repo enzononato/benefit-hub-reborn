@@ -112,7 +112,6 @@ const BenefitTypeChart: React.FC<BenefitTypeChartProps> = ({ data }) => {
               className="w-3 h-3 rounded-sm flex-shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-sm">{entry.emoji}</span>
             <span className="text-xs text-muted-foreground whitespace-nowrap hover:text-foreground transition-colors">
               {entry.name}
             </span>
