@@ -12,6 +12,9 @@ export interface BenefitRequest {
   status: BenefitStatus;
   details: string | null;
   requested_value: number | null;
+  approved_value?: number | null;
+  total_installments?: number | null;
+  paid_installments?: number | null;
   created_at: string;
   closed_at?: string | null;
   pdf_url?: string | null;

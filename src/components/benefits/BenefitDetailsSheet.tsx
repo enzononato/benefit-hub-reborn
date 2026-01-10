@@ -51,6 +51,9 @@ interface BenefitDetailsSheetProps {
     reviewed_by: string | null;
     reviewed_at: string | null;
     reviewer_name: string | null;
+    approved_value?: number | null;
+    total_installments?: number | null;
+    paid_installments?: number | null;
     profiles: {
       full_name: string;
       cpf: string | null;
@@ -373,6 +376,37 @@ export function BenefitDetailsSheet({
                 <Separator />
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Encerramento</h4>
+                  
+                  {/* Valor Aprovado e Parcelas */}
+                  {request.status === 'aprovada' && request.approved_value && (
+                    <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Valor Aprovado</span>
+                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                          R$ {request.approved_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      {request.total_installments && request.total_installments > 1 && (
+                        <>
+                          <Separator className="bg-emerald-500/20" />
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Parcelas</span>
+                            <span className="font-semibold">
+                              {request.paid_installments || 0} / {request.total_installments}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Valor por Parcela</span>
+                            <span className="font-medium">
+                              R$ {(request.approved_value / request.total_installments).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {request.closing_message && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Mensagem</p>
