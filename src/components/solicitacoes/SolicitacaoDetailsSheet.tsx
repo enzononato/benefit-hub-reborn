@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,6 +29,8 @@ import {
   User,
   FileText,
   ExternalLink,
+  Wallet,
+  AlertCircle,
 } from "lucide-react";
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
 
@@ -37,6 +40,7 @@ interface SolicitacaoDetailsSheetProps {
   request: {
     id: string;
     protocol: string;
+    user_id: string;
     benefit_type: BenefitType;
     status: BenefitStatus;
     details: string | null;
@@ -58,6 +62,7 @@ interface SolicitacaoDetailsSheetProps {
       full_name: string;
       cpf?: string | null;
       phone?: string | null;
+      credit_limit?: number | null;
       unit?: {
         name: string;
       } | null;
@@ -108,6 +113,48 @@ export function SolicitacaoDetailsSheet({
   const [pdfUrl, setPdfUrl] = useState(request?.pdf_url);
   const [approvedValue, setApprovedValue] = useState("");
   const [totalInstallments, setTotalInstallments] = useState("1");
+  const [creditInfo, setCreditInfo] = useState<{ limit: number; used: number; available: number } | null>(null);
+  const [loadingCredit, setLoadingCredit] = useState(false);
+
+  // Fetch credit limit info when request changes
+  useEffect(() => {
+    const fetchCreditInfo = async () => {
+      if (!request?.user_id) return;
+      
+      setLoadingCredit(true);
+      try {
+        // Get profile credit limit
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('credit_limit')
+          .eq('user_id', request.user_id)
+          .single();
+
+        const limit = profileData?.credit_limit || 0;
+
+        // Get total used credit (approved requests, excluding current if already approved)
+        const { data: usedData } = await supabase
+          .from('benefit_requests')
+          .select('approved_value')
+          .eq('user_id', request.user_id)
+          .eq('status', 'aprovada')
+          .neq('id', request.id);
+
+        const used = (usedData || []).reduce((sum, r) => sum + (r.approved_value || 0), 0);
+        const available = Math.max(0, limit - used);
+
+        setCreditInfo({ limit, used, available });
+      } catch (error) {
+        console.error('Erro ao buscar limite de crédito:', error);
+      } finally {
+        setLoadingCredit(false);
+      }
+    };
+
+    if (open && request) {
+      fetchCreditInfo();
+    }
+  }, [open, request?.user_id, request?.id]);
 
   useEffect(() => {
     if (request) {
@@ -122,6 +169,9 @@ export function SolicitacaoDetailsSheet({
   }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url]);
 
   if (!request) return null;
+
+  const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
+  const exceedsCredit = creditInfo && parsedApprovedValue > creditInfo.available;
 
   const handleApprove = () => {
     setStatus("aprovada");
@@ -214,6 +264,16 @@ export function SolicitacaoDetailsSheet({
 
       if (status === "aprovada" && !approvedValue.trim()) {
         toast.error("É necessário informar o valor aprovado");
+        setLoading(false);
+        return;
+      }
+
+      // Validate credit limit
+      if (status === "aprovada" && creditInfo && parsedApprovedValue > creditInfo.available) {
+        toast.error(
+          `Valor aprovado excede o limite disponível de R$ ${creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          { description: `Limite total: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Utilizado: R$ ${creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+        );
         setLoading(false);
         return;
       }
@@ -542,6 +602,56 @@ export function SolicitacaoDetailsSheet({
                   {/* Campos de valor aprovado e parcelas */}
                   {isApproved && (
                     <div className="space-y-4">
+                      {/* Informação do Limite de Crédito */}
+                      {creditInfo && creditInfo.limit > 0 && (
+                        <div className={cn(
+                          "rounded-lg p-3 space-y-2",
+                          exceedsCredit 
+                            ? "bg-destructive/10 border border-destructive/30" 
+                            : "bg-muted/50 border border-border"
+                        )}>
+                          <div className="flex items-center gap-2">
+                            <Wallet className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Limite de Crédito</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground block">Total</span>
+                              <span className="font-medium">
+                                R$ {creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block">Utilizado</span>
+                              <span className="font-medium text-amber-600 dark:text-amber-400">
+                                R$ {creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block">Disponível</span>
+                              <span className={cn(
+                                "font-bold",
+                                exceedsCredit ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
+                              )}>
+                                R$ {creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </div>
+                          {exceedsCredit && (
+                            <div className="flex items-center gap-2 text-xs text-destructive mt-2">
+                              <AlertCircle className="h-3 w-3" />
+                              <span>Valor excede o limite disponível!</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {loadingCredit && (
+                        <div className="text-xs text-muted-foreground">
+                          Carregando informações de crédito...
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label htmlFor="approved-value">Valor Aprovado (R$) *</Label>
@@ -554,6 +664,7 @@ export function SolicitacaoDetailsSheet({
                               setApprovedValue(value);
                             }}
                             placeholder="0,00"
+                            className={exceedsCredit ? "border-destructive" : ""}
                           />
                         </div>
                         <div className="space-y-2">
@@ -575,7 +686,7 @@ export function SolicitacaoDetailsSheet({
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Valor por parcela:</span>
                             <span className="font-medium">
-                              R$ {(parseFloat(approvedValue.replace(',', '.')) / parseInt(totalInstallments)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              R$ {(parsedApprovedValue / parseInt(totalInstallments)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         </div>
