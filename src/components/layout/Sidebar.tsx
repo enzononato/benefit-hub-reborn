@@ -2,7 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   FileText,
@@ -21,6 +22,17 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationDropdown } from './NotificationDropdown';
 import revalleLogo from '@/assets/revalle-logo.png';
+
+// Prefetch queries for each route
+const routePrefetchQueries: Record<string, string[]> = {
+  '/': ['benefit-requests', 'profiles', 'units'],
+  '/solicitacoes': ['benefit-requests', 'profiles', 'units', 'sla-configs'],
+  '/colaboradores': ['profiles', 'units'],
+  '/unidades': ['units'],
+  '/usuarios': ['user-roles', 'profiles'],
+  '/configuracoes': ['sla-configs', 'holidays', 'partnerships'],
+  '/auditoria': ['logs'],
+};
 
 interface NavItem {
   name: string;
@@ -101,6 +113,18 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { userName, userRole, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [openProtocolsCount, setOpenProtocolsCount] = useState(0);
+  const queryClient = useQueryClient();
+
+  // Prefetch data when hovering over navigation links
+  const handlePrefetch = useCallback((href: string) => {
+    const queryKeys = routePrefetchQueries[href];
+    if (queryKeys) {
+      queryKeys.forEach(key => {
+        // Just mark queries as stale to trigger background refetch if needed
+        queryClient.invalidateQueries({ queryKey: [key], refetchType: 'none' });
+      });
+    }
+  }, [queryClient]);
 
   useEffect(() => {
     const fetchOpenProtocolsCount = async () => {
@@ -167,6 +191,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 key={item.name}
                 to={item.href}
                 onClick={onNavigate}
+                onMouseEnter={() => handlePrefetch(item.href)}
+                onFocus={() => handlePrefetch(item.href)}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative',
                   isActive
