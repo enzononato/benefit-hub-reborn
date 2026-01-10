@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 import { 
   Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, Handshake,
   CalendarDays, FileText, Stethoscope, Receipt, Clock,
-  AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, Gift
+  AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, Gift, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +79,8 @@ interface BenefitCategoryCardsProps {
 
 const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data }) => {
   const navigate = useNavigate();
+  const [isConveniosOpen, setIsConveniosOpen] = useState(false);
+  const [isBeneficiosOpen, setIsBeneficiosOpen] = useState(false);
 
   const conveniosData = data.filter(item => convenioTypes.includes(item.type));
   const soltoData = data.filter(item => soltoTypes.includes(item.type));
@@ -129,44 +132,64 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data }) => 
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna 1: Convênios (COM título) */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl p-3 bg-primary shadow-sm">
-                <Handshake className="h-6 w-6 text-primary-foreground" />
+          {/* Coluna 1: Convênios (Collapsible) */}
+          <Collapsible open={isConveniosOpen} onOpenChange={setIsConveniosOpen}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl p-3 bg-primary shadow-sm">
+                    <Handshake className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-semibold text-foreground">Convênios</h4>
+                    <p className="text-xs text-muted-foreground">{totalConvenios} solicitações</p>
+                  </div>
+                </div>
+                <ChevronDown className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                  isConveniosOpen && "rotate-180"
+                )} />
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">Convênios</h4>
-                <p className="text-xs text-muted-foreground">{totalConvenios} solicitações</p>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4">
+                {convenioTypes.map((type) => renderCard(type, totalAll))}
               </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {convenioTypes.map((type) => renderCard(type, totalAll))}
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
 
-          {/* Coluna 2: Cards Soltos (SEM título) */}
+          {/* Coluna 2: Cards Soltos (SEM título, sempre visíveis) */}
           <div className="flex items-start">
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full">
               {soltoTypes.map((type) => renderCard(type, totalAll))}
             </div>
           </div>
 
-          {/* Coluna 3: Benefícios (COM título) */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl p-3 bg-emerald-600 shadow-sm">
-                <Gift className="h-6 w-6 text-white" />
+          {/* Coluna 3: Benefícios (Collapsible) */}
+          <Collapsible open={isBeneficiosOpen} onOpenChange={setIsBeneficiosOpen}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl p-3 bg-emerald-600 shadow-sm">
+                    <Gift className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-semibold text-foreground">Benefícios</h4>
+                    <p className="text-xs text-muted-foreground">{totalBeneficios} solicitações</p>
+                  </div>
+                </div>
+                <ChevronDown className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                  isBeneficiosOpen && "rotate-180"
+                )} />
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">Benefícios</h4>
-                <p className="text-xs text-muted-foreground">{totalBeneficios} solicitações</p>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+              <div className="grid grid-cols-3 gap-3 pt-4">
+                {beneficiosTypes.map((type) => renderCard(type, totalAll))}
               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {beneficiosTypes.map((type) => renderCard(type, totalAll))}
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </CardContent>
     </Card>
