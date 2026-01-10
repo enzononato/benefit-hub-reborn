@@ -85,8 +85,11 @@ const fetchBenefitRequests = async (allowedModules: string[] | null): Promise<Be
 export const useBenefitRequests = (allowedModules: string[] | null = null) => {
   const queryClient = useQueryClient();
 
+  // Normalize queryKey to prevent unnecessary refetches when array order changes
+  const normalizedModules = allowedModules ? [...allowedModules].sort() : null;
+
   const query = useQuery({
-    queryKey: ['benefit-requests', allowedModules],
+    queryKey: ['benefit-requests', normalizedModules],
     queryFn: () => fetchBenefitRequests(allowedModules),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
