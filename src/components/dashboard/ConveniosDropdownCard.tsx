@@ -57,7 +57,7 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
         <CardTitle>Convênios</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {convenioTypes.map((type) => {
             const Icon = iconMap[type];
             const config = colorConfig[type];
@@ -66,26 +66,24 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
             const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
             return (
-              <button
+              <Card 
                 key={type}
+                className="hover:shadow-lg transition-all cursor-pointer border"
                 onClick={() => handleConvenioClick(type)}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
-                  "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
-                  config.bg
-                )}
               >
-                <div className={cn("rounded-xl p-3", config.iconBg)}>
-                  <Icon className={cn("h-6 w-6", config.iconColor)} />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-foreground">
-                    {benefitTypeLabels[type]}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{count} solicitações</p>
-                  <p className="text-sm font-bold text-primary">{percentage}%</p>
-                </div>
-              </button>
+                <CardContent className="flex flex-col items-center gap-3 p-6">
+                  <div className={cn("rounded-2xl p-4", config.iconBg)}>
+                    <Icon className={cn("h-8 w-8", config.iconColor)} />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      {benefitTypeLabels[type]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{count} solicitações</p>
+                    <p className="text-lg font-bold text-primary">{percentage}%</p>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
