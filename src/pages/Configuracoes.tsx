@@ -22,7 +22,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -30,17 +32,84 @@ import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, RefreshCw, Clock, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, Clock, Settings, Info, Car, Pill, Wrench, Cylinder, BookOpen, Glasses, CalendarDays, FileText, Stethoscope, Receipt, CalendarClock, AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+
+// Todos os 19 tipos de benefícios organizados por categoria
+const benefitCategories = {
+  convenios: {
+    label: 'Convênios',
+    types: ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'],
+  },
+  dp: {
+    label: 'Solicitações DP',
+    types: ['alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque', 'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto', 'relato_anomalia'],
+  },
+  beneficios: {
+    label: 'Benefícios',
+    types: ['plano_odontologico', 'plano_saude', 'vale_transporte'],
+  },
+  outros: {
+    label: 'Outros',
+    types: ['outros'],
+  },
+};
 
 const benefitTypeLabels: Record<string, string> = {
+  // Convênios
   autoescola: 'Autoescola',
   farmacia: 'Farmácia',
   oficina: 'Oficina',
   vale_gas: 'Vale Gás',
   papelaria: 'Papelaria',
   otica: 'Ótica',
+  // Solicitações DP
+  alteracao_ferias: 'Alteração de Férias',
+  aviso_folga_falta: 'Aviso Folga/Falta',
+  atestado: 'Atestado',
+  contracheque: 'Contracheque',
+  abono_horas: 'Abono de Horas',
+  alteracao_horario: 'Alteração de Horário',
+  operacao_domingo: 'Operação Domingo',
+  relatorio_ponto: 'Relatório de Ponto',
+  relato_anomalia: 'Relato de Anomalia',
+  // Benefícios
+  plano_odontologico: 'Plano Odontológico',
+  plano_saude: 'Plano de Saúde',
+  vale_transporte: 'Vale Transporte',
+  // Outros
   outros: 'Outros',
+};
+
+const benefitTypeIcons: Record<string, React.ElementType> = {
+  autoescola: Car,
+  farmacia: Pill,
+  oficina: Wrench,
+  vale_gas: Cylinder,
+  papelaria: BookOpen,
+  otica: Glasses,
+  alteracao_ferias: CalendarDays,
+  aviso_folga_falta: FileText,
+  atestado: Stethoscope,
+  contracheque: Receipt,
+  abono_horas: Clock,
+  alteracao_horario: CalendarClock,
+  operacao_domingo: Sun,
+  relatorio_ponto: ClipboardList,
+  plano_odontologico: Smile,
+  plano_saude: HeartPulse,
+  vale_transporte: Bus,
+  relato_anomalia: AlertTriangle,
+  outros: HelpCircle,
+};
+
+// Helper para identificar a categoria de um tipo
+const getCategoryForType = (type: string): string => {
+  for (const [key, cat] of Object.entries(benefitCategories)) {
+    if (cat.types.includes(type)) return key;
+  }
+  return 'outros';
 };
 
 export default function Configuracoes() {
@@ -124,13 +193,26 @@ export default function Configuracoes() {
           </TabsList>
 
           <TabsContent value="sla" className="space-y-6">
+            {/* Nota informativa sobre horário comercial */}
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+              <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Cálculo de horas úteis
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  O SLA considera apenas <strong>horas úteis</strong>. Sábados após 12h e domingos inteiros <strong>não são contabilizados</strong> no tempo de atendimento.
+                </p>
+              </div>
+            </div>
+
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle>Configurações de SLA</CardTitle>
+                    <CardTitle>Configurações de SLA por Tipo</CardTitle>
                     <CardDescription>
-                      Define os limites de tempo para cada tipo de benefício. Verde indica atendimento
+                      Define os limites de tempo para cada tipo de benefício/convênio. Verde indica atendimento
                       rápido, amarelo indica alerta, e vermelho indica atraso.
                     </CardDescription>
                   </div>
@@ -190,26 +272,44 @@ export default function Configuracoes() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        configs.map((config) => (
-                          <TableRow key={config.id}>
-                            <TableCell className="font-medium">
-                              {benefitTypeLabels[config.benefit_type] || config.benefit_type}
-                            </TableCell>
-                            <TableCell>{config.green_hours}h</TableCell>
-                            <TableCell>{config.yellow_hours}h</TableCell>
-                            <TableCell>&gt; {config.yellow_hours}h</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(config)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(config)}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        configs.map((config) => {
+                          const category = getCategoryForType(config.benefit_type);
+                          const categoryLabel = benefitCategories[category as keyof typeof benefitCategories]?.label || 'Outros';
+                          const Icon = benefitTypeIcons[config.benefit_type] || HelpCircle;
+                          
+                          return (
+                            <TableRow key={config.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">
+                                      {benefitTypeLabels[config.benefit_type] || config.benefit_type}
+                                    </p>
+                                    <Badge variant="outline" className="text-xs mt-0.5">
+                                      {categoryLabel}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{config.green_hours}h</TableCell>
+                              <TableCell>{config.yellow_hours}h</TableCell>
+                              <TableCell>&gt; {config.yellow_hours}h</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(config)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(config)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -255,12 +355,28 @@ export default function Configuracoes() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um tipo" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {availableTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {benefitTypeLabels[type] || type}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-h-80">
+                    {Object.entries(benefitCategories).map(([key, category]) => {
+                      const availableInCategory = category.types.filter(t => availableTypes.includes(t));
+                      if (availableInCategory.length === 0) return null;
+                      
+                      return (
+                        <SelectGroup key={key}>
+                          <SelectLabel className="text-xs text-muted-foreground">{category.label}</SelectLabel>
+                          {availableInCategory.map((type) => {
+                            const Icon = benefitTypeIcons[type] || HelpCircle;
+                            return (
+                              <SelectItem key={type} value={type}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                  {benefitTypeLabels[type] || type}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectGroup>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
