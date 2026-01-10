@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const iconMap: Record<string, React.ElementType> = {
   autoescola: Car,
@@ -51,41 +52,45 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Convênios</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-        {convenioTypes.map((type) => {
-          const Icon = iconMap[type];
-          const config = colorConfig[type];
-          const itemData = conveniosData.find(d => d.type === type);
-          const count = itemData?.count || 0;
-          const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
+    <Card>
+      <CardHeader>
+        <CardTitle>Convênios</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {convenioTypes.map((type) => {
+            const Icon = iconMap[type];
+            const config = colorConfig[type];
+            const itemData = conveniosData.find(d => d.type === type);
+            const count = itemData?.count || 0;
+            const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
 
-          return (
-            <button
-              key={type}
-              onClick={() => handleConvenioClick(type)}
-              className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
-                "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
-                config.bg
-              )}
-            >
-              <div className={cn("rounded-xl p-3", config.iconBg)}>
-                <Icon className={cn("h-6 w-6", config.iconColor)} />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-foreground">
-                  {benefitTypeLabels[type]}
-                </p>
-                <p className="text-xs text-muted-foreground">{count} solicitações</p>
-                <p className="text-sm font-bold text-primary">{percentage}%</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+            return (
+              <button
+                key={type}
+                onClick={() => handleConvenioClick(type)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
+                  "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  config.bg
+                )}
+              >
+                <div className={cn("rounded-xl p-3", config.iconBg)}>
+                  <Icon className={cn("h-6 w-6", config.iconColor)} />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-foreground">
+                    {benefitTypeLabels[type]}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{count} solicitações</p>
+                  <p className="text-sm font-bold text-primary">{percentage}%</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
