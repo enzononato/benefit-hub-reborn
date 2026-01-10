@@ -177,9 +177,13 @@ export const EditarFuncaoDialog: React.FC<EditarFuncaoDialogProps> = ({
 
       if (deleteError) throw deleteError;
 
-      // Insert new permissions
-      if (selectedModules.length > 0) {
-        const newPermissions = selectedModules.map(module => ({
+      // Insert new permissions (only valid individual module IDs, not aggregates)
+      const validModulesToSave = selectedModules.filter(m => 
+        ALL_MODULE_IDS.includes(m as BenefitType)
+      );
+
+      if (validModulesToSave.length > 0) {
+        const newPermissions = validModulesToSave.map(module => ({
           user_id: userId,
           module,
         }));
