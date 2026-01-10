@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BenefitType, benefitTypeLabels } from '@/types/benefits';
-import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses } from 'lucide-react';
+import { Car, Pill, Wrench, Cylinder, BookOpen, Glasses, ChevronDown, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const iconMap: Record<string, React.ElementType> = {
   autoescola: Car,
@@ -43,6 +44,7 @@ interface ConveniosDropdownCardProps {
 
 const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) => {
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
 
   const conveniosData = data.filter(item => convenioTypes.includes(item.type));
   const totalConvenios = conveniosData.reduce((sum, item) => sum + item.count, 0);
@@ -52,52 +54,71 @@ const ConveniosDropdownCard: React.FC<ConveniosDropdownCardProps> = ({ data }) =
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold">Convênios</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {convenioTypes.map((type) => {
-            const Icon = iconMap[type];
-            const config = colorConfig[type];
-            const itemData = conveniosData.find(d => d.type === type);
-            const count = itemData?.count || 0;
-            const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
-
-            return (
-              <div
-                key={type}
-                onClick={() => handleConvenioClick(type)}
-                className="group cursor-pointer"
-              >
-                <Card className="h-full border bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
-                  <CardContent className="flex flex-col items-center justify-center p-5 gap-3">
-                    <div className={cn(
-                      "rounded-2xl p-4 shadow-sm",
-                      config.iconBg
-                    )}>
-                      <Icon className={cn("h-7 w-7", config.iconColor)} />
-                    </div>
-                    <div className="text-center space-y-0.5">
-                      <p className="text-sm font-medium text-foreground leading-tight">
-                        {benefitTypeLabels[type]}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {count} solicitações
-                      </p>
-                      <p className="text-base font-bold text-primary">
-                        {percentage}%
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="shadow-sm overflow-hidden">
+        <CollapsibleTrigger asChild>
+          <button className="w-full p-6 flex items-center justify-between hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl p-4 bg-primary shadow-sm">
+                <Handshake className="h-8 w-8 text-primary-foreground" />
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold text-foreground">Convênios</h3>
+                <p className="text-sm text-muted-foreground">{totalConvenios} solicitações</p>
+              </div>
+            </div>
+            <ChevronDown className={cn(
+              "h-5 w-5 text-muted-foreground transition-transform duration-200",
+              isOpen && "rotate-180"
+            )} />
+          </button>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {convenioTypes.map((type) => {
+                const Icon = iconMap[type];
+                const config = colorConfig[type];
+                const itemData = conveniosData.find(d => d.type === type);
+                const count = itemData?.count || 0;
+                const percentage = totalConvenios > 0 ? Math.round((count / totalConvenios) * 100) : 0;
+
+                return (
+                  <div
+                    key={type}
+                    onClick={() => handleConvenioClick(type)}
+                    className="group cursor-pointer"
+                  >
+                    <Card className="h-full border bg-card hover:shadow-md hover:border-primary/20 transition-all duration-200">
+                      <CardContent className="flex flex-col items-center justify-center p-5 gap-3">
+                        <div className={cn(
+                          "rounded-2xl p-4 shadow-sm",
+                          config.iconBg
+                        )}>
+                          <Icon className={cn("h-7 w-7", config.iconColor)} />
+                        </div>
+                        <div className="text-center space-y-0.5">
+                          <p className="text-sm font-medium text-foreground leading-tight">
+                            {benefitTypeLabels[type]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {count} solicitações
+                          </p>
+                          <p className="text-base font-bold text-primary">
+                            {percentage}%
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };
 
