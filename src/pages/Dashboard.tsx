@@ -15,6 +15,7 @@ import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'l
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType } from '@/types/benefits';
 import { benefitTypes, convenioTypes, dpTypes } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
 
 const allBenefitTypes = benefitTypes as BenefitType[];
 
@@ -36,6 +37,7 @@ interface RequestData {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { userModules } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
@@ -49,13 +51,26 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [filters]);
+  }, [filters, userModules]);
 
   const fetchDashboardData = async () => {
     try {
+      // If user has no modules configured (empty array), show empty dashboard
+      if (userModules !== null && userModules.length === 0) {
+        setAllRequests([]);
+        setStats({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
+        setBenefitTypeData([]);
+        return;
+      }
+
       let query = supabase
         .from('benefit_requests')
         .select('status, benefit_type, user_id, created_at');
+
+      // Filter by user's allowed modules (if not admin)
+      if (userModules !== null) {
+        query = query.in('benefit_type', userModules);
+      }
 
       if (filters.benefitType) {
         query = query.eq('benefit_type', filters.benefitType);

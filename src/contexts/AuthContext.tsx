@@ -11,6 +11,7 @@ interface AuthContextType {
   session: Session | null;
   userRole: AppRole | null;
   userName: string | null;
+  userModules: string[] | null; // null = admin (full access), [] = no access, [...] = specific modules
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userModules, setUserModules] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Important: avoid toggling the global loader again on tab focus/multi-tab auth events.
@@ -36,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('role')
       .eq('user_id', userId);
 
+    let highestRole: AppRole = 'colaborador';
+    
     if (rolesError || !rolesData || rolesData.length === 0) {
       // Default role when no role is configured / visible for the user
       setUserRole('colaborador');
@@ -43,8 +47,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Priority: admin > gestor > agente_dp > colaborador
       const rolePriority: AppRole[] = ['admin', 'gestor', 'agente_dp', 'colaborador'];
       const userRoles = rolesData.map((r) => r.role as AppRole);
-      const highestRole = rolePriority.find((role) => userRoles.includes(role)) || 'colaborador';
+      highestRole = rolePriority.find((role) => userRoles.includes(role)) || 'colaborador';
       setUserRole(highestRole);
+    }
+
+    // Fetch user modules - admins have full access (null), others have specific modules
+    if (highestRole === 'admin') {
+      setUserModules(null); // null means full access to all modules
+    } else {
+      const { data: modulesData } = await supabase
+        .from('user_module_permissions')
+        .select('module')
+        .eq('user_id', userId);
+      
+      // Filter out invalid aggregate IDs that shouldn't be in the database
+      const validModules = (modulesData?.map(m => m.module) || []).filter(
+        m => !['convenios', 'beneficios'].includes(m)
+      );
+      setUserModules(validModules);
     }
 
     // Fetch user profile
@@ -95,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userDataLoadedRef.current = false;
         setUserRole(null);
         setUserName(null);
+        setUserModules(null);
         setLoading(false);
       }
     });
@@ -140,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUserRole(null);
     setUserName(null);
+    setUserModules(null);
     userDataLoadedRef.current = false;
   };
 
@@ -160,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         userRole,
         userName,
+        userModules,
         loading,
         login,
         logout,
