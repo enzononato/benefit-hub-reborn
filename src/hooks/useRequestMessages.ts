@@ -20,10 +20,10 @@ export function useRequestMessages(requestId: string | null) {
   const { toast } = useToast();
   const { user, userName } = useAuth();
 
-  const fetchMessages = useCallback(async () => {
+  const fetchMessages = useCallback(async (isInitialLoad = false) => {
     if (!requestId) return;
     
-    setLoading(true);
+    if (isInitialLoad) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('request_messages')
@@ -36,7 +36,7 @@ export function useRequestMessages(requestId: string | null) {
     } catch (error) {
       console.error('Erro ao buscar mensagens:', error);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) setLoading(false);
     }
   }, [requestId]);
 
@@ -44,10 +44,10 @@ export function useRequestMessages(requestId: string | null) {
   useEffect(() => {
     if (!requestId) return;
     
-    fetchMessages();
+    fetchMessages(true); // Initial load with loading state
     
-    // Poll every 5 seconds for new messages
-    const interval = setInterval(fetchMessages, 5000);
+    // Poll every 5 seconds for new messages (without loading indicator)
+    const interval = setInterval(() => fetchMessages(false), 5000);
     
     return () => clearInterval(interval);
   }, [requestId, fetchMessages]);
