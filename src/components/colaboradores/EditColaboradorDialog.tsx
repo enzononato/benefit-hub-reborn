@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,9 @@ const DEPARTAMENTOS = [
   { value: '803', label: '803 – ENTREGA - CSC' },
 ];
 
+// Cache global para unidades - evita recarregar ao mudar de aba
+let unitsCache: Unit[] | null = null;
+
 export function EditColaboradorDialog({
   profile,
   onSuccess,
@@ -64,7 +67,7 @@ export function EditColaboradorDialog({
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [units, setUnits] = useState<Unit[]>(unitsCache || []);
   const [formData, setFormData] = useState({
     full_name: profile.full_name,
     unit_id: profile.unit_id || '',
@@ -76,10 +79,23 @@ export function EditColaboradorDialog({
     position: profile.position || '',
     credit_limit: profile.credit_limit?.toString() || '',
   });
+  
+  // Track the profile id to detect when we're editing a different profile
+  const currentProfileIdRef = useRef(profile.id);
 
+  // Load units only once (use cache if available)
   useEffect(() => {
-    if (open) {
+    if (open && units.length === 0 && !unitsCache) {
       fetchUnits();
+    } else if (unitsCache && units.length === 0) {
+      setUnits(unitsCache);
+    }
+  }, [open]);
+
+  // Update form data when profile changes or dialog opens for a new profile
+  useEffect(() => {
+    if (open && currentProfileIdRef.current !== profile.id) {
+      currentProfileIdRef.current = profile.id;
       setFormData({
         full_name: profile.full_name,
         unit_id: profile.unit_id || '',
@@ -100,7 +116,8 @@ export function EditColaboradorDialog({
       console.error('Erro ao buscar unidades:', error);
       toast.error('Erro ao carregar unidades');
     } else if (data && data.length > 0) {
-      setUnits(data as Unit[]);
+      unitsCache = data as Unit[];
+      setUnits(unitsCache);
     }
   };
 
