@@ -274,14 +274,31 @@ export function SolicitacaoDetailsSheet({
         return;
       }
 
-      // Validate credit limit
-      if (status === "aprovada" && creditInfo && parsedApprovedValue > creditInfo.available) {
-        toast.error(
-          `Valor aprovado excede o limite disponível de R$ ${creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-          { description: `Limite total: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Utilizado: R$ ${creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
-        );
-        setLoading(false);
-        return;
+      // Validate credit limit - check if installment value would make limit negative
+      if (status === "aprovada" && creditInfo) {
+        const parsedInstallmentsVal = parseInt(totalInstallments) || 1;
+        const installmentValue = parsedApprovedValue / parsedInstallmentsVal;
+        const newCreditLimit = creditInfo.limit - installmentValue;
+
+        if (newCreditLimit < 0) {
+          toast.error(
+            `O valor da parcela excede o limite de crédito do colaborador`,
+            { 
+              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite atual: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O limite ficaria negativo em R$ ${Math.abs(newCreditLimit).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`
+            }
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (parsedApprovedValue > creditInfo.available) {
+          toast.error(
+            `Valor aprovado excede o limite disponível de R$ ${creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            { description: `Limite total: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Utilizado: R$ ${creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+          );
+          setLoading(false);
+          return;
+        }
       }
 
       if (status === "recusada" && !rejectionReason.trim()) {
