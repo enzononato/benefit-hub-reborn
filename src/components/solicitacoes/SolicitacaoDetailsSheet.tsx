@@ -307,7 +307,7 @@ export function SolicitacaoDetailsSheet({
         updateData.pdf_url = pdfUrl;
         updateData.approved_value = parsedApprovedValue;
         updateData.total_installments = parsedInstallments;
-        updateData.paid_installments = 0;
+        updateData.paid_installments = 1; // Primeira parcela já é deduzida na aprovação
         updateData.rejection_reason = null;
       } else if (status === "recusada") {
         updateData.rejection_reason = rejectionReason;
