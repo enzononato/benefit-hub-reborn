@@ -274,87 +274,22 @@ export function SolicitacaoDetailsSheet({
         return;
       }
 
-      // Validate credit limit - check if installment value would make limit negative
+      // Validação do limite - verificar se o valor da parcela caberia no limite atual
+      // Nota: Com desconto mensal dinâmico (Opção C), o limite só será deduzido pelo job mensal
       if (status === "aprovada" && creditInfo) {
         const parsedInstallmentsVal = parseInt(totalInstallments) || 1;
         const installmentValue = parsedApprovedValue / parsedInstallmentsVal;
-        const newCreditLimit = creditInfo.limit - installmentValue;
 
-        if (newCreditLimit < 0) {
+        // Validar se o colaborador tem limite suficiente para pelo menos uma parcela
+        if (installmentValue > creditInfo.limit) {
           toast.error(
             `O valor da parcela excede o limite de crédito do colaborador`,
             { 
-              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite atual: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. O limite ficaria negativo em R$ ${Math.abs(newCreditLimit).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`
+              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite atual: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             }
           );
           setLoading(false);
           return;
-        }
-
-        if (parsedApprovedValue > creditInfo.available) {
-          toast.error(
-            `Valor aprovado excede o limite disponível de R$ ${creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            { description: `Limite total: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Utilizado: R$ ${creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
-          );
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (status === "recusada" && !rejectionReason.trim()) {
-        toast.error("Por favor, informe o motivo da rejeição");
-        setLoading(false);
-        return;
-      }
-
-      if (!closingMessage.trim()) {
-        toast.error("Por favor, insira uma mensagem para o colaborador");
-        setLoading(false);
-        return;
-      }
-
-      const finalStatus: BenefitStatus =
-        status === "aprovada" ? "aprovada" : "recusada";
-
-      const parsedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
-      const parsedInstallments = parseInt(totalInstallments) || 1;
-
-      const { error: updateError } = await supabase
-        .from("benefit_requests")
-        .update({
-          status: finalStatus,
-          pdf_url: pdfUrl,
-          pdf_file_name: pdfFile?.name || request.pdf_file_name,
-          rejection_reason: status === "recusada" ? rejectionReason : null,
-          closing_message: closingMessage,
-          closed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          approved_value: status === "aprovada" ? parsedValue : null,
-          total_installments: status === "aprovada" ? parsedInstallments : 1,
-          paid_installments: 0,
-        })
-        .eq("id", request.id);
-
-      if (updateError) throw updateError;
-
-      // Atualizar limite de crédito do colaborador quando aprovado
-      if (status === "aprovada" && creditInfo) {
-        const installmentValue = parsedValue / parsedInstallments;
-        const newCreditLimit = Math.max(0, creditInfo.limit - installmentValue);
-
-        const { error: creditUpdateError } = await supabase
-          .from("profiles")
-          .update({ 
-            credit_limit: newCreditLimit,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", request.user_id);
-
-        if (creditUpdateError) {
-          console.error("Erro ao atualizar limite de crédito:", creditUpdateError);
-          // Não bloquear a aprovação, apenas logar o erro
-        } else {
-          console.log(`Limite de crédito atualizado: R$ ${creditInfo.limit.toFixed(2)} -> R$ ${newCreditLimit.toFixed(2)} (dedução de R$ ${installmentValue.toFixed(2)}/parcela)`);
         }
       }
 
