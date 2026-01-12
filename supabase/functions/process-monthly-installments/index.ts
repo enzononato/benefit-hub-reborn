@@ -109,8 +109,18 @@ serve(async (req) => {
       }
 
       const currentLimit = profile.credit_limit || 0;
-      const newLimit = Math.max(0, currentLimit - installmentValue);
       const newPaidInstallments = paidInstallments + 1;
+      const isLastInstallment = newPaidInstallments >= totalInstallments;
+
+      // CRÉDITO ROTATIVO:
+      // 1. Primeiro restaura a parcela anterior (colaborador pagou via folha)
+      // 2. Se não é a última parcela, deduz a próxima
+      // 3. Se é a última, apenas restaura (não há mais parcelas a cobrar)
+      
+      const restoredLimit = currentLimit + installmentValue;
+      const newLimit = isLastInstallment 
+        ? restoredLimit  // Última parcela: apenas restaura
+        : restoredLimit - installmentValue;  // Ainda há parcelas: restaura e deduz próxima
 
       // Atualizar o limite de crédito do colaborador
       const { error: updateProfileError } = await supabase
@@ -173,11 +183,14 @@ serve(async (req) => {
         continue;
       }
 
-      const isCompleted = newPaidInstallments >= totalInstallments;
+      const isCompleted = isLastInstallment;
+      const limitChangeDescription = isLastInstallment 
+        ? `+R$ ${installmentValue.toFixed(2)} (última parcela paga)`
+        : `R$ ${currentLimit.toFixed(2)} -> R$ ${newLimit.toFixed(2)} (parcela paga e próxima cobrada)`;
 
       console.log(
         `[${request.protocol}] Parcela ${newPaidInstallments}/${totalInstallments} processada. ` +
-        `Limite: R$ ${currentLimit.toFixed(2)} -> R$ ${newLimit.toFixed(2)} (-R$ ${installmentValue.toFixed(2)})`
+        `Limite: ${limitChangeDescription}`
       );
 
       results.push({
@@ -202,8 +215,11 @@ serve(async (req) => {
       successful: results.filter(r => r.status === "success" || r.status === "completed").length,
       completed: results.filter(r => r.status === "completed").length,
       errors: results.filter(r => r.status === "error").length,
-      total_deducted: results
-        .filter(r => r.status !== "error")
+      total_restored: results
+        .filter(r => r.status === "completed")
+        .reduce((sum, r) => sum + r.installmentValue, 0),
+      total_rotated: results
+        .filter(r => r.status === "success")
         .reduce((sum, r) => sum + r.installmentValue, 0)
     };
 
