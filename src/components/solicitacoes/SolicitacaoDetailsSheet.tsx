@@ -177,7 +177,10 @@ export function SolicitacaoDetailsSheet({
   if (!request) return null;
 
   const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
-  const exceedsCredit = creditInfo && parsedApprovedValue > creditInfo.available;
+  const parsedInstallments = parseInt(totalInstallments) || 1;
+  const installmentValue = parsedInstallments > 0 ? parsedApprovedValue / parsedInstallments : parsedApprovedValue;
+  // Validar se o valor da PARCELA excede o limite total (não o disponível)
+  const exceedsCredit = creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit;
 
   const handleApprove = () => {
     setStatus("aprovada");
@@ -274,22 +277,64 @@ export function SolicitacaoDetailsSheet({
         return;
       }
 
-      // Validação do limite - verificar se o valor da parcela caberia no limite atual
-      // Nota: Com desconto mensal dinâmico (Opção C), o limite só será deduzido pelo job mensal
-      if (status === "aprovada" && creditInfo) {
-        const parsedInstallmentsVal = parseInt(totalInstallments) || 1;
-        const installmentValue = parsedApprovedValue / parsedInstallmentsVal;
-
+      // Validação do limite - verificar se o valor da parcela cabe no limite total
+      if (status === "aprovada" && creditInfo && creditInfo.limit > 0) {
         // Validar se o colaborador tem limite suficiente para pelo menos uma parcela
         if (installmentValue > creditInfo.limit) {
           toast.error(
             `O valor da parcela excede o limite de crédito do colaborador`,
             { 
-              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite atual: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             }
           );
           setLoading(false);
           return;
+        }
+      }
+
+      // Obter o usuário atual para registrar quem encerrou
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Atualizar a solicitação no banco de dados
+      const updateData: any = {
+        status,
+        closing_message: closingMessage || null,
+        closed_at: new Date().toISOString(),
+        closed_by: user?.id || null,
+      };
+
+      if (status === "aprovada") {
+        updateData.pdf_url = pdfUrl;
+        updateData.approved_value = parsedApprovedValue;
+        updateData.total_installments = parsedInstallments;
+        updateData.paid_installments = 0;
+        updateData.rejection_reason = null;
+      } else if (status === "recusada") {
+        updateData.rejection_reason = rejectionReason;
+        updateData.approved_value = null;
+        updateData.total_installments = null;
+        updateData.paid_installments = null;
+      }
+
+      const { error: updateError } = await supabase
+        .from('benefit_requests')
+        .update(updateData)
+        .eq('id', request.id);
+
+      if (updateError) throw updateError;
+
+      // Se aprovada, deduzir o valor da parcela do limite do colaborador
+      if (status === "aprovada" && creditInfo && creditInfo.limit > 0) {
+        const newLimit = Math.max(0, creditInfo.limit - installmentValue);
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ credit_limit: newLimit })
+          .eq('user_id', request.user_id);
+        
+        if (profileError) {
+          console.error('Erro ao atualizar limite de crédito:', profileError);
+          // Não falhar a operação, apenas logar
         }
       }
 
@@ -633,7 +678,7 @@ export function SolicitacaoDetailsSheet({
                               {exceedsCredit && (
                                 <div className="flex items-center gap-2 text-xs text-destructive mt-2">
                                   <AlertCircle className="h-3 w-3" />
-                                  <span>Valor excede o limite disponível!</span>
+                                  <span>O valor da parcela (R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) excede o limite!</span>
                                 </div>
                               )}
                             </div>
