@@ -399,6 +399,62 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_settings: {
+        Row: {
+          config: Json | null
+          connection_status: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          integration_type: string
+          is_enabled: boolean | null
+          last_sync: string | null
+          room_id: string | null
+          server_url: string | null
+          sync_status: string | null
+          unit_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          connection_status?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          integration_type: string
+          is_enabled?: boolean | null
+          last_sync?: string | null
+          room_id?: string | null
+          server_url?: string | null
+          sync_status?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          connection_status?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          integration_type?: string
+          is_enabled?: boolean | null
+          last_sync?: string | null
+          room_id?: string | null
+          server_url?: string | null
+          sync_status?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_settings_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           brand: string | null
