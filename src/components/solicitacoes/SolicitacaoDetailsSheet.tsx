@@ -320,6 +320,27 @@ export function SolicitacaoDetailsSheet({
 
       if (updateError) throw updateError;
 
+      // Atualizar limite de crédito do colaborador quando aprovado
+      if (status === "aprovada" && creditInfo) {
+        const installmentValue = parsedValue / parsedInstallments;
+        const newCreditLimit = Math.max(0, creditInfo.limit - installmentValue);
+
+        const { error: creditUpdateError } = await supabase
+          .from("profiles")
+          .update({ 
+            credit_limit: newCreditLimit,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", request.user_id);
+
+        if (creditUpdateError) {
+          console.error("Erro ao atualizar limite de crédito:", creditUpdateError);
+          // Não bloquear a aprovação, apenas logar o erro
+        } else {
+          console.log(`Limite de crédito atualizado: R$ ${creditInfo.limit.toFixed(2)} -> R$ ${newCreditLimit.toFixed(2)} (dedução de R$ ${installmentValue.toFixed(2)}/parcela)`);
+        }
+      }
+
       // Enviar webhook após atualização bem-sucedida
       await sendWebhook(
         status === "aprovada" ? "aprovado" : "reprovado",
