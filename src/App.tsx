@@ -11,7 +11,7 @@ import Solicitacoes from "./pages/Solicitacoes";
 import Colaboradores from "./pages/Colaboradores";
 import Unidades from "./pages/Unidades";
 import Usuarios from "./pages/Usuarios";
-import WhatsApp from "./pages/WhatsApp";
+
 import Configuracoes from "./pages/Configuracoes";
 import Auditoria from "./pages/Auditoria";
 import Auth from "./pages/Auth";
@@ -63,11 +63,6 @@ const App = () => (
               <Route path="/usuarios" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Usuarios />
-                </ProtectedRoute>
-              } />
-              <Route path="/whatsapp" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <WhatsApp />
                 </ProtectedRoute>
               } />
               <Route path="/configuracoes" element={

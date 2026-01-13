@@ -1,1 +1,7 @@
 project_id = "wyhlezxtfhoolrvuqhfy"
+
+[functions.receive-whatsapp-message]
+verify_jwt = false
+
+[functions.send-chat-message]
+verify_jwt = false

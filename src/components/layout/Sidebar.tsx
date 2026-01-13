@@ -10,7 +10,6 @@ import {
   Users,
   Building2,
   Settings,
-  MessageSquare,
   LogOut,
   Moon,
   Sun,
@@ -79,13 +78,6 @@ const navigation: NavItem[] = [
     name: 'Auditoria',
     href: '/auditoria',
     icon: ClipboardList,
-    allowedRoles: ['admin']
-  },
-  {
-    name: 'WhatsApp',
-    href: '/whatsapp',
-    icon: MessageSquare,
-    badge: 'Em Dev',
     allowedRoles: ['admin']
   },
   {
