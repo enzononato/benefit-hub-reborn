@@ -121,8 +121,26 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Delete user from auth (cascades to profiles and user_roles)
+      // Try to delete user from auth
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+      // If user not found in auth, clean up orphaned data manually
+      if (deleteError && deleteError.message.includes("User not found")) {
+        console.log("Auth user not found, cleaning up orphaned profile and roles for:", userId);
+        
+        // Delete user_roles
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+        
+        // Delete user_module_permissions
+        await supabaseAdmin.from("user_module_permissions").delete().eq("user_id", userId);
+        
+        // Delete profile
+        await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
+        
+        return new Response(JSON.stringify({ success: true, note: "Orphaned user data cleaned up" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       if (deleteError) {
         console.error("Error deleting user:", deleteError);
