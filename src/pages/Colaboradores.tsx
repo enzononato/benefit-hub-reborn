@@ -5,16 +5,19 @@ import { roleLabels, UserRole } from '@/types/benefits';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet } from 'lucide-react';
+import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewColaboradorDialog } from '@/components/colaboradores/NewColaboradorDialog';
 import { ImportCSVDialog } from '@/components/colaboradores/ImportCSVDialog';
+import { SyncCSVDialog } from '@/components/colaboradores/SyncCSVDialog';
 import { DeleteColaboradorDialog } from '@/components/colaboradores/DeleteColaboradorDialog';
 import { EditColaboradorDialog } from '@/components/colaboradores/EditColaboradorDialog';
 import { ColaboradorHistorySheet } from '@/components/colaboradores/ColaboradorHistorySheet';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Unit {
   id: string;
@@ -54,9 +57,12 @@ interface Profile {
   departamento: string | null;
   credit_limit: number | null;
   credit_used: number;
+  status: string;
   units: { name: string } | null;
   user_roles: { role: UserRole }[];
 }
+
+type StatusFilter = 'ativo' | 'demitido' | 'todos';
 
 export default function Colaboradores() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,6 +70,7 @@ export default function Colaboradores() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(searchParams.get('unit') || null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams.get('status') as StatusFilter) || 'ativo');
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -92,7 +99,7 @@ export default function Colaboradores() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, user_id, full_name, cpf, birthday, phone, gender, position, unit_id, departamento, credit_limit')
+      .select('id, user_id, full_name, cpf, birthday, phone, gender, position, unit_id, departamento, credit_limit, status')
       .order('full_name');
 
     if (profilesError) {
@@ -130,6 +137,7 @@ export default function Colaboradores() {
         const roles = (rolesData || []).filter((r) => r.user_id === profile.user_id);
         return {
           ...profile,
+          status: profile.status || 'ativo',
           units: unit ? { name: unit.name } : null,
           user_roles: roles,
           credit_used: usageByUser[profile.user_id] || 0,
@@ -140,11 +148,26 @@ export default function Colaboradores() {
     setLoading(false);
   };
 
+  const handleReactivate = async (profile: Profile) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ status: 'ativo' })
+      .eq('id', profile.id);
+
+    if (error) {
+      toast.error('Erro ao reativar colaborador');
+    } else {
+      toast.success(`${profile.full_name} foi reativado!`);
+      fetchProfiles();
+    }
+  };
+
   const filteredProfiles = profiles.filter((profile) => {
     const matchesSearch = profile.full_name.toLowerCase().includes(search.toLowerCase()) ||
       (profile.cpf && profile.cpf.includes(search));
     const matchesUnit = !selectedUnitId || profile.unit_id === selectedUnitId;
-    return matchesSearch && matchesUnit;
+    const matchesStatus = statusFilter === 'todos' || profile.status === statusFilter;
+    return matchesSearch && matchesUnit && matchesStatus;
   });
 
   const getRoleLabel = (profile: Profile) => {
@@ -163,15 +186,24 @@ export default function Colaboradores() {
     currentPage * itemsPerPage
   );
 
+  const activeCount = profiles.filter(p => p.status === 'ativo').length;
+  const terminatedCount = profiles.filter(p => p.status === 'demitido').length;
+
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Colaboradores</h1>
-            <p className="mt-1 text-muted-foreground">Gerencie os colaboradores cadastrados</p>
+            <p className="mt-1 text-muted-foreground">
+              Gerencie os colaboradores cadastrados
+              <span className="ml-2 text-sm">
+                ({activeCount} ativos, {terminatedCount} demitidos)
+              </span>
+            </p>
           </div>
           <div className="flex gap-3">
+            <SyncCSVDialog onSuccess={fetchProfiles} />
             <ImportCSVDialog onSuccess={fetchProfiles} />
             <NewColaboradorDialog onSuccess={fetchProfiles} />
           </div>
@@ -202,7 +234,6 @@ export default function Colaboradores() {
             const newValue = value === "all" ? null : value;
             setSelectedUnitId(newValue); 
             setCurrentPage(1);
-            // Persist to URL
             const newParams = new URLSearchParams(searchParams);
             if (newValue) {
               newParams.set('unit', newValue);
@@ -219,6 +250,26 @@ export default function Colaboradores() {
               {units.map((unit) => (
                 <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(value: StatusFilter) => {
+            setStatusFilter(value);
+            setCurrentPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            if (value !== 'ativo') {
+              newParams.set('status', value);
+            } else {
+              newParams.delete('status');
+            }
+            setSearchParams(newParams, { replace: true });
+          }}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ativo">Ativos</SelectItem>
+              <SelectItem value="demitido">Demitidos</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -241,85 +292,121 @@ export default function Colaboradores() {
               Nenhum colaborador encontrado
             </div>
           ) : (
-            paginatedProfiles.map((profile) => (
-              <div key={profile.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-all">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-lg font-semibold">
-                    {profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            paginatedProfiles.map((profile) => {
+              const isTerminated = profile.status === 'demitido';
+              return (
+                <div 
+                  key={profile.id} 
+                  className={cn(
+                    "rounded-xl border bg-card p-5 hover:shadow-md transition-all",
+                    isTerminated 
+                      ? "border-destructive/30 opacity-70" 
+                      : "border-border"
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={cn(
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold",
+                      isTerminated 
+                        ? "bg-destructive/10 text-destructive" 
+                        : "bg-primary/10 text-primary"
+                    )}>
+                      {profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground truncate">{profile.full_name}</h3>
+                        {isTerminated && (
+                          <Badge variant="destructive" className="shrink-0 text-xs">
+                            Demitido
+                          </Badge>
+                        )}
+                      </div>
+                      {profile.cpf && (
+                        <p className="text-sm text-muted-foreground truncate">
+                          CPF: {profile.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{profile.full_name}</h3>
-                    {profile.cpf && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        CPF: {profile.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{profile.birthday || '-'}</span>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{profile.birthday || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{profile.phone || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building2 className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{profile.units?.name || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Briefcase className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{profile.position || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building2 className="h-4 w-4 opacity-70 shrink-0" />
+                      <span className="text-xs truncate">{profile.departamento ? DEPARTAMENTOS_LABELS[profile.departamento] || profile.departamento : '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm mt-2">
+                      <Wallet className="h-4 w-4 shrink-0 text-primary" />
+                      <span className={`font-medium ${profile.credit_limit && profile.credit_used >= profile.credit_limit ? 'text-destructive' : 'text-foreground'}`}>
+                        R$ {profile.credit_used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ {(profile.credit_limit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{profile.phone || '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Building2 className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{profile.units?.name || '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Briefcase className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{profile.position || '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Building2 className="h-4 w-4 opacity-70 shrink-0" />
-                    <span className="text-xs truncate">{profile.departamento ? DEPARTAMENTOS_LABELS[profile.departamento] || profile.departamento : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm mt-2">
-                    <Wallet className="h-4 w-4 shrink-0 text-primary" />
-                    <span className={`font-medium ${profile.credit_limit && profile.credit_used >= profile.credit_limit ? 'text-destructive' : 'text-foreground'}`}>
-                      R$ {profile.credit_used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / R$ {(profile.credit_limit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                  <Badge variant={getRoleVariant(profile)}>{getRoleLabel(profile)}</Badge>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { 
-                      setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); 
-                      setHistoryOpen(true);
-                      // Persist to URL
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.set('history', profile.user_id);
-                      setSearchParams(newParams, { replace: true });
-                    }} title="Histórico">
-                      <History className="h-4 w-4" />
-                    </Button>
-                    <EditColaboradorDialog 
-                      profile={profile} 
-                      onSuccess={fetchProfiles}
-                      open={editingProfileId === profile.id}
-                      onOpenChange={(open) => {
-                        const newParams = new URLSearchParams(searchParams);
-                        if (open) {
-                          setEditingProfileId(profile.id);
-                          newParams.set('edit', profile.id);
-                        } else {
-                          setEditingProfileId(null);
-                          newParams.delete('edit');
-                        }
-                        setSearchParams(newParams, { replace: true });
-                      }}
-                    />
-                    <DeleteColaboradorDialog profileId={profile.id} userId={profile.user_id} name={profile.full_name} onSuccess={fetchProfiles} />
+                  <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                    <Badge variant={getRoleVariant(profile)}>{getRoleLabel(profile)}</Badge>
+                    <div className="flex gap-2">
+                      {isTerminated ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          onClick={() => handleReactivate(profile)}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Reativar
+                        </Button>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { 
+                            setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); 
+                            setHistoryOpen(true);
+                            const newParams = new URLSearchParams(searchParams);
+                            newParams.set('history', profile.user_id);
+                            setSearchParams(newParams, { replace: true });
+                          }} title="Histórico">
+                            <History className="h-4 w-4" />
+                          </Button>
+                          <EditColaboradorDialog 
+                            profile={profile} 
+                            onSuccess={fetchProfiles}
+                            open={editingProfileId === profile.id}
+                            onOpenChange={(open) => {
+                              const newParams = new URLSearchParams(searchParams);
+                              if (open) {
+                                setEditingProfileId(profile.id);
+                                newParams.set('edit', profile.id);
+                              } else {
+                                setEditingProfileId(null);
+                                newParams.delete('edit');
+                              }
+                              setSearchParams(newParams, { replace: true });
+                            }}
+                          />
+                          <DeleteColaboradorDialog profileId={profile.id} userId={profile.user_id} name={profile.full_name} onSuccess={fetchProfiles} />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -339,7 +426,6 @@ export default function Colaboradores() {
             setHistoryOpen(open);
             if (!open) {
               setSelectedColaborador(null);
-              // Remove from URL when closing
               const newParams = new URLSearchParams(searchParams);
               newParams.delete('history');
               setSearchParams(newParams, { replace: true });
