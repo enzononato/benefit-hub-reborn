@@ -5,7 +5,7 @@ import { roleLabels, UserRole } from '@/types/benefits';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet, RotateCcw } from 'lucide-react';
+import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewColaboradorDialog } from '@/components/colaboradores/NewColaboradorDialog';
@@ -148,19 +148,6 @@ export default function Colaboradores() {
     setLoading(false);
   };
 
-  const handleReactivate = async (profile: Profile) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ status: 'ativo' })
-      .eq('id', profile.id);
-
-    if (error) {
-      toast.error('Erro ao reativar colaborador');
-    } else {
-      toast.success(`${profile.full_name} foi reativado!`);
-      fetchProfiles();
-    }
-  };
 
   const filteredProfiles = profiles.filter((profile) => {
     const matchesSearch = profile.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -362,27 +349,17 @@ export default function Colaboradores() {
                   <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                     <Badge variant={getRoleVariant(profile)}>{getRoleLabel(profile)}</Badge>
                     <div className="flex gap-2">
-                      {isTerminated ? (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => handleReactivate(profile)}
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                          Reativar
-                        </Button>
-                      ) : (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { 
+                        setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); 
+                        setHistoryOpen(true);
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('history', profile.user_id);
+                        setSearchParams(newParams, { replace: true });
+                      }} title="Histórico">
+                        <History className="h-4 w-4" />
+                      </Button>
+                      {!isTerminated && (
                         <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { 
-                            setSelectedColaborador({ user_id: profile.user_id, full_name: profile.full_name }); 
-                            setHistoryOpen(true);
-                            const newParams = new URLSearchParams(searchParams);
-                            newParams.set('history', profile.user_id);
-                            setSearchParams(newParams, { replace: true });
-                          }} title="Histórico">
-                            <History className="h-4 w-4" />
-                          </Button>
                           <EditColaboradorDialog 
                             profile={profile} 
                             onSuccess={fetchProfiles}
