@@ -769,6 +769,8 @@ export type Database = {
         Row: {
           avatar_url: string | null
           birthday: string | null
+          codigo_empregador: string | null
+          codigo_empresa: string | null
           cpf: string | null
           created_at: string
           credit_limit: number | null
@@ -786,6 +788,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           birthday?: string | null
+          codigo_empregador?: string | null
+          codigo_empresa?: string | null
           cpf?: string | null
           created_at?: string
           credit_limit?: number | null
@@ -803,6 +807,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           birthday?: string | null
+          codigo_empregador?: string | null
+          codigo_empresa?: string | null
           cpf?: string | null
           created_at?: string
           credit_limit?: number | null
