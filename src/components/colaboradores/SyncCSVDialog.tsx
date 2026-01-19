@@ -348,6 +348,15 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
 
       setProgress(100);
       setResult(result);
+
+      // Save last sync date
+      await supabase
+        .from('system_config')
+        .upsert({
+          key: 'last_colaboradores_sync',
+          value: { timestamp: new Date().toISOString() },
+          description: 'Data da última sincronização de colaboradores via CSV'
+        }, { onConflict: 'key' });
       
       if (result.errors.length === 0) {
         toast.success('Sincronização concluída com sucesso!');

@@ -5,7 +5,9 @@ import { roleLabels, UserRole } from '@/types/benefits';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet } from 'lucide-react';
+import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet, RefreshCw } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewColaboradorDialog } from '@/components/colaboradores/NewColaboradorDialog';
@@ -76,10 +78,24 @@ export default function Colaboradores() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedColaborador, setSelectedColaborador] = useState<{ user_id: string; full_name: string } | null>(null);
   const [editingProfileId, setEditingProfileId] = useState<string | null>(searchParams.get('edit') || null);
+  const [lastSyncDate, setLastSyncDate] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfiles();
+    fetchLastSyncDate();
   }, []);
+
+  const fetchLastSyncDate = async () => {
+    const { data } = await supabase
+      .from('system_config')
+      .select('value')
+      .eq('key', 'last_colaboradores_sync')
+      .single();
+    
+    if (data?.value && typeof data.value === 'object' && 'timestamp' in data.value) {
+      setLastSyncDate(data.value.timestamp as string);
+    }
+  };
 
   // Restore history sheet from URL
   useEffect(() => {
@@ -188,8 +204,14 @@ export default function Colaboradores() {
               </span>
             </p>
           </div>
-          <div className="flex gap-3">
-            <SyncCSVDialog onSuccess={fetchProfiles} />
+          <div className="flex items-center gap-3">
+            {lastSyncDate && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                <RefreshCw className="h-3 w-3" />
+                <span>Último sync: {format(new Date(lastSyncDate), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+              </div>
+            )}
+            <SyncCSVDialog onSuccess={() => { fetchProfiles(); fetchLastSyncDate(); }} />
             <NewColaboradorDialog onSuccess={fetchProfiles} />
           </div>
         </div>
