@@ -344,7 +344,13 @@ export default function Colaboradores() {
                         {(() => {
                           if (!profile.birthday) return '-';
                           try {
-                            const date = new Date(profile.birthday + 'T00:00:00');
+                            // Handle both formats: YYYY-MM-DD (ISO) and DD/MM/YYYY (legacy)
+                            const bday = profile.birthday;
+                            if (bday.includes('/')) {
+                              // Already in DD/MM/YYYY format
+                              return bday;
+                            }
+                            const date = new Date(bday + 'T00:00:00');
                             return isNaN(date.getTime()) ? '-' : format(date, 'dd/MM/yyyy');
                           } catch {
                             return '-';
