@@ -187,18 +187,33 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
     setProgress(0);
 
     const result: SyncResult = { updated: 0, created: 0, terminated: 0, errors: [] };
-    const totalSteps = csvData.length + preview.toTerminate.length;
-    let currentStep = 0;
 
     try {
-      // Get headers again
-      const headers = ['nome_completo', 'cpf', 'data_aniversario', 'telefone', 'sexo', 'cargo', 'codigo_unidade', 'departamento', 'codigo_empresa', 'codigo_empregador'];
+      // Column indices
       const nameIdx = 0, cpfIdx = 1, birthdayIdx = 2, phoneIdx = 3, genderIdx = 4, positionIdx = 5, unitCodeIdx = 6, deptIdx = 7, empCodeIdx = 8, empIdIdx = 9;
 
       // Create unit code to ID map
       const unitMap = new Map(units.map(u => [u.code, u.id]));
 
-      // Process CSV rows (update or create)
+      setProgress(10);
+
+      // Step 1: Fetch all existing profiles in ONE query
+      const { data: existingProfiles } = await supabase
+        .from('profiles')
+        .select('id, cpf');
+
+      const cpfToProfileId = new Map(
+        (existingProfiles || [])
+          .filter(p => p.cpf)
+          .map(p => [cleanCPF(p.cpf), p.id])
+      );
+
+      setProgress(20);
+
+      // Step 2: Separate updates from creates
+      const toUpdateBatch: { id: string; data: Record<string, unknown> }[] = [];
+      const toCreateBatch: Record<string, unknown>[] = [];
+
       for (const row of csvData) {
         const cpf = cleanCPF(row[cpfIdx]);
         const name = row[nameIdx];
@@ -210,21 +225,14 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
         const departamento = row[deptIdx];
         const codigoEmpresa = row[empCodeIdx];
         const codigoEmpregador = row[empIdIdx];
-
         const unitId = unitMap.get(unitCode);
 
-        // Check if exists
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('cpf', cpf)
-          .single();
+        const existingId = cpfToProfileId.get(cpf);
 
-        if (existing) {
-          // UPDATE - only basic fields, NOT credit_limit
-          const { error } = await supabase
-            .from('profiles')
-            .update({
+        if (existingId) {
+          toUpdateBatch.push({
+            id: existingId,
+            data: {
               full_name: name,
               phone: phone || null,
               birthday: birthday,
@@ -234,73 +242,111 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
               departamento: departamento || null,
               codigo_empresa: codigoEmpresa || null,
               codigo_empregador: codigoEmpregador || null,
-              status: 'ativo', // Reactivate if was terminated
-            })
-            .eq('id', existing.id);
+              status: 'ativo',
+            }
+          });
+        } else {
+          const newUserId = crypto.randomUUID();
+          toCreateBatch.push({
+            user_id: newUserId,
+            full_name: name,
+            email: `${cpf}@placeholder.local`,
+            cpf: cpf,
+            phone: phone || null,
+            birthday: birthday,
+            gender: gender,
+            position: position || null,
+            unit_id: unitId || null,
+            departamento: departamento || null,
+            codigo_empresa: codigoEmpresa || null,
+            codigo_empregador: codigoEmpregador || null,
+            credit_limit: 0,
+            status: 'ativo',
+          });
+        }
+      }
 
-          if (error) {
-            result.errors.push(`Erro ao atualizar ${name}: ${error.message}`);
+      setProgress(30);
+
+      // Step 3: Batch updates (in chunks of 50)
+      const updateChunkSize = 50;
+      for (let i = 0; i < toUpdateBatch.length; i += updateChunkSize) {
+        const chunk = toUpdateBatch.slice(i, i + updateChunkSize);
+        
+        // Process chunk in parallel
+        const updatePromises = chunk.map(item =>
+          supabase
+            .from('profiles')
+            .update(item.data)
+            .eq('id', item.id)
+        );
+
+        const results = await Promise.all(updatePromises);
+        results.forEach((res, idx) => {
+          if (res.error) {
+            result.errors.push(`Erro ao atualizar: ${res.error.message}`);
           } else {
             result.updated++;
           }
-        } else {
-          // CREATE new profile - need to create auth user first
-          // For new collaborators, we'll insert directly into profiles
-          // They won't have auth access until admin creates their account
-          const newUserId = crypto.randomUUID();
-          
-          const { error } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: newUserId,
-              full_name: name,
-              email: `${cpf}@placeholder.local`,
-              cpf: cpf,
-              phone: phone || null,
-              birthday: birthday,
-              gender: gender,
-              position: position || null,
-              unit_id: unitId || null,
-              departamento: departamento || null,
-              codigo_empresa: codigoEmpresa || null,
-              codigo_empregador: codigoEmpregador || null,
-              credit_limit: 0,
-              status: 'ativo',
-            });
+        });
 
-          if (error) {
-            result.errors.push(`Erro ao criar ${name}: ${error.message}`);
-          } else {
-            // Add colaborador role
-            await supabase.from('user_roles').insert({
-              user_id: newUserId,
-              role: 'colaborador',
-            });
-            result.created++;
+        setProgress(30 + Math.round((i / toUpdateBatch.length) * 40));
+      }
+
+      setProgress(70);
+
+      // Step 4: Batch inserts (in chunks of 100)
+      const createChunkSize = 100;
+      for (let i = 0; i < toCreateBatch.length; i += createChunkSize) {
+        const chunk = toCreateBatch.slice(i, i + createChunkSize);
+        
+        const { error, data: insertedData } = await supabase
+          .from('profiles')
+          .insert(chunk)
+          .select('user_id');
+
+        if (error) {
+          result.errors.push(`Erro ao criar lote: ${error.message}`);
+        } else {
+          result.created += chunk.length;
+          
+          // Add colaborador roles in batch
+          if (insertedData && insertedData.length > 0) {
+            const roleInserts = insertedData.map(p => ({
+              user_id: p.user_id,
+              role: 'colaborador' as const,
+            }));
+            await supabase.from('user_roles').insert(roleInserts);
           }
         }
 
-        currentStep++;
-        setProgress(Math.round((currentStep / totalSteps) * 100));
+        setProgress(70 + Math.round((i / Math.max(toCreateBatch.length, 1)) * 15));
       }
 
-      // Terminate profiles not in CSV
-      for (const toTerm of preview.toTerminate) {
-        const { error } = await supabase
+      setProgress(85);
+
+      // Step 5: Batch terminate (in chunks of 50)
+      const terminateCpfs = preview.toTerminate.map(t => t.cpf);
+      const terminateChunkSize = 50;
+      
+      for (let i = 0; i < terminateCpfs.length; i += terminateChunkSize) {
+        const chunk = terminateCpfs.slice(i, i + terminateChunkSize);
+        
+        const { error, count } = await supabase
           .from('profiles')
           .update({ status: 'demitido' })
-          .eq('cpf', toTerm.cpf);
+          .in('cpf', chunk);
 
         if (error) {
-          result.errors.push(`Erro ao demitir ${toTerm.name}: ${error.message}`);
+          result.errors.push(`Erro ao demitir lote: ${error.message}`);
         } else {
-          result.terminated++;
+          result.terminated += chunk.length;
         }
 
-        currentStep++;
-        setProgress(Math.round((currentStep / totalSteps) * 100));
+        setProgress(85 + Math.round((i / Math.max(terminateCpfs.length, 1)) * 15));
       }
 
+      setProgress(100);
       setResult(result);
       
       if (result.errors.length === 0) {
