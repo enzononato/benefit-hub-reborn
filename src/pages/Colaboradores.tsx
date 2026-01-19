@@ -340,7 +340,11 @@ export default function Colaboradores() {
                   <div className="mt-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{profile.birthday || '-'}</span>
+                      <span className="truncate">
+                        {profile.birthday 
+                          ? format(new Date(profile.birthday + 'T00:00:00'), 'dd/MM/yyyy')
+                          : '-'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Phone className="h-4 w-4 shrink-0" />
