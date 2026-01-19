@@ -73,8 +73,8 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
   const parseGender = (gender: string): string | null => {
     if (!gender) return null;
     const lower = gender.toLowerCase().trim();
-    if (lower === 'masculino' || lower === 'm') return 'M';
-    if (lower === 'feminino' || lower === 'f') return 'F';
+    if (lower === 'masculino' || lower === 'm') return 'masculino';
+    if (lower === 'feminino' || lower === 'f') return 'feminino';
     return null;
   };
 
