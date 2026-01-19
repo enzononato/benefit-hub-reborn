@@ -13,6 +13,7 @@ interface Unit {
 }
 
 const DEPARTAMENTOS_VALIDOS = ['101', '102', '201', '202', '301', '302', '401', '402', '501', '502', '601', '602', '701', '702', '801', '802', '803'];
+const CODIGOS_EMPRESA_VALIDOS = ['1', '2', '4', '5'];
 
 export function ImportCSVDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -41,9 +42,9 @@ export function ImportCSVDialog({ onSuccess }: { onSuccess?: () => void }) {
 
   const handleDownloadExample = () => {
     const exampleUnit = units[0]?.code || '04690106000115';
-    const csvContent = `nome_completo,cpf,data_aniversario,telefone,sexo,cargo,codigo_unidade,departamento
-João Silva,12345678900,01/10/1990,(11) 98765-4321,masculino,Analista,${exampleUnit},301
-Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUnit},401`;
+    const csvContent = `nome_completo,cpf,data_aniversario,telefone,sexo,cargo,codigo_unidade,departamento,codigo_empresa,codigo_empregador
+João Silva,12345678900,01/10/1990,(11) 98765-4321,masculino,Analista,${exampleUnit},301,1,12345
+Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUnit},401,2,67890`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -71,7 +72,7 @@ Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUn
       }
 
       const headers = lines[0].split(',').map(h => h.trim());
-      const expectedHeaders = ['nome_completo', 'cpf', 'data_aniversario', 'telefone', 'sexo', 'cargo', 'codigo_unidade', 'departamento'];
+      const expectedHeaders = ['nome_completo', 'cpf', 'data_aniversario', 'telefone', 'sexo', 'cargo', 'codigo_unidade', 'departamento', 'codigo_empresa', 'codigo_empregador'];
 
       const hasValidHeaders = expectedHeaders.every(h => headers.includes(h));
       if (!hasValidHeaders) {
@@ -106,6 +107,8 @@ Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUn
           cargo: values[headers.indexOf('cargo')],
           codigo_unidade: values[headers.indexOf('codigo_unidade')],
           departamento: values[headers.indexOf('departamento')],
+          codigo_empresa: values[headers.indexOf('codigo_empresa')]?.trim(),
+          codigo_empregador: values[headers.indexOf('codigo_empregador')]?.trim(),
         };
 
         const unitId = unitMap.get(rowData.codigo_unidade);
@@ -129,6 +132,16 @@ Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUn
           continue;
         }
 
+        if (!rowData.codigo_empresa || !CODIGOS_EMPRESA_VALIDOS.includes(rowData.codigo_empresa)) {
+          errors.push(`Linha ${i + 1}: Código de empresa "${rowData.codigo_empresa}" inválido. Use: ${CODIGOS_EMPRESA_VALIDOS.join(', ')}`);
+          continue;
+        }
+
+        if (!rowData.codigo_empregador || !/^\d+$/.test(rowData.codigo_empregador)) {
+          errors.push(`Linha ${i + 1}: Código do empregador deve ser numérico`);
+          continue;
+        }
+
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
@@ -140,6 +153,8 @@ Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUn
             position: rowData.cargo,
             unit_id: unitId,
             departamento: rowData.departamento,
+            codigo_empresa: rowData.codigo_empresa,
+            codigo_empregador: rowData.codigo_empregador,
             email: `${rowData.cpf}@temp.com`,
             user_id: crypto.randomUUID(),
           });
@@ -203,7 +218,9 @@ Maria Santos,98765432100,15/05/1985,(11) 91234-5678,feminino,Gerente,${exampleUn
               <li><strong>sexo</strong>: masculino ou feminino</li>
               <li><strong>cargo</strong>: Cargo do colaborador</li>
               <li><strong>codigo_unidade</strong>: CNPJ da unidade (apenas números)</li>
-              <li><strong>departamento</strong>: Código (101, 201, 301, 401 ou 501)</li>
+              <li><strong>departamento</strong>: Código do departamento</li>
+              <li><strong>codigo_empresa</strong>: Código da empresa (1, 2, 4 ou 5)</li>
+              <li><strong>codigo_empregador</strong>: Código numérico do empregador</li>
             </ul>
           </div>
 
