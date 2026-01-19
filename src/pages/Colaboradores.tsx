@@ -9,7 +9,6 @@ import { Search, Building2, Calendar, Phone, Briefcase, History, Wallet } from '
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewColaboradorDialog } from '@/components/colaboradores/NewColaboradorDialog';
-import { ImportCSVDialog } from '@/components/colaboradores/ImportCSVDialog';
 import { SyncCSVDialog } from '@/components/colaboradores/SyncCSVDialog';
 import { DeleteColaboradorDialog } from '@/components/colaboradores/DeleteColaboradorDialog';
 import { EditColaboradorDialog } from '@/components/colaboradores/EditColaboradorDialog';
@@ -191,7 +190,6 @@ export default function Colaboradores() {
           </div>
           <div className="flex gap-3">
             <SyncCSVDialog onSuccess={fetchProfiles} />
-            <ImportCSVDialog onSuccess={fetchProfiles} />
             <NewColaboradorDialog onSuccess={fetchProfiles} />
           </div>
         </div>
