@@ -123,7 +123,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       // Extract CPFs from CSV
       const csvCpfs = new Set(dataRows.map(row => cleanCPF(row[cpfIdx])));
 
-      // Get all active collaborators from DB (only colaborador role)
+      // Get all active collaborators from DB
       const { data: dbProfiles } = await supabase
         .from('profiles')
         .select('id, user_id, full_name, cpf, status')
@@ -133,13 +133,15 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
         .from('user_roles')
         .select('user_id, role');
 
-      // Filter only colaboradors
-      const colaboradorUserIds = new Set(
-        (rolesData || []).filter(r => r.role === 'colaborador').map(r => r.user_id)
+      // Identify system users (admin, gestor, agente_dp) to exclude
+      const systemRoles = ['admin', 'gestor', 'agente_dp'];
+      const systemUserIds = new Set(
+        (rolesData || []).filter(r => systemRoles.includes(r.role)).map(r => r.user_id)
       );
 
+      // Filter to get only collaborators (exclude system users)
       const activeColaboradores = (dbProfiles || []).filter(p => 
-        colaboradorUserIds.has(p.user_id) && p.cpf
+        !systemUserIds.has(p.user_id) && p.cpf
       );
 
       // Build preview
