@@ -341,9 +341,15 @@ export default function Colaboradores() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 shrink-0" />
                       <span className="truncate">
-                        {profile.birthday 
-                          ? format(new Date(profile.birthday + 'T00:00:00'), 'dd/MM/yyyy')
-                          : '-'}
+                        {(() => {
+                          if (!profile.birthday) return '-';
+                          try {
+                            const date = new Date(profile.birthday + 'T00:00:00');
+                            return isNaN(date.getTime()) ? '-' : format(date, 'dd/MM/yyyy');
+                          } catch {
+                            return '-';
+                          }
+                        })()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
