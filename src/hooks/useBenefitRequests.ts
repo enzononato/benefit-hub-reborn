@@ -30,6 +30,9 @@ export interface BenefitRequest {
   reviewed_by?: string | null;
   reviewed_at?: string | null;
   reviewer_name?: string | null;
+  // Evolution API direct integration
+  whatsapp_jid?: string | null;
+  // Legacy: Chatwoot integration (for backward compatibility)
   account_id?: number | null;
   conversation_id?: number | null;
   profile?: {

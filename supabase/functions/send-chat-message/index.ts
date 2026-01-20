@@ -22,6 +22,9 @@ Deno.serve(async (req) => {
       sender_name, 
       message, 
       send_via_whatsapp,
+      // New: whatsapp_jid (Evolution API direct integration)
+      whatsapp_jid,
+      // Legacy: Chatwoot integration (for backward compatibility)
       account_id,
       conversation_id,
       user_name,
@@ -34,6 +37,13 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Fetch protocol for the webhook
+    const { data: requestData } = await supabase
+      .from("benefit_requests")
+      .select("protocol")
+      .eq("id", benefit_request_id)
+      .single();
 
     // Insert message into database
     const { data: insertedMessage, error: insertError } = await supabase
@@ -58,19 +68,33 @@ Deno.serve(async (req) => {
 
     // If send_via_whatsapp is enabled, call the n8n webhook
     let whatsappSent = false;
-    if (send_via_whatsapp && account_id && conversation_id) {
+    
+    // Priority: whatsapp_jid (Evolution API) > account_id + conversation_id (Chatwoot legacy)
+    if (send_via_whatsapp && (whatsapp_jid || (account_id && conversation_id))) {
       try {
+        const webhookPayload: Record<string, unknown> = {
+          message: message.trim(),
+          sender_name: sender_name || "Administrador",
+          user_name,
+          user_phone,
+          protocol: requestData?.protocol,
+        };
+
+        // Add whatsapp_jid for Evolution API direct integration
+        if (whatsapp_jid) {
+          webhookPayload.whatsapp_jid = whatsapp_jid;
+        }
+
+        // Add legacy Chatwoot fields for backward compatibility
+        if (account_id && conversation_id) {
+          webhookPayload.account_id = account_id;
+          webhookPayload.conversation_id = conversation_id;
+        }
+
         const webhookResponse = await fetch("https://n8n.revalle.com.br/webhook/chat-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: message.trim(),
-            account_id,
-            conversation_id,
-            sender_name: sender_name || "Administrador",
-            user_name,
-            user_phone,
-          }),
+          body: JSON.stringify(webhookPayload),
         });
 
         if (webhookResponse.ok) {

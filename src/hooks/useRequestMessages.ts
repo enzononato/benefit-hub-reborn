@@ -56,8 +56,7 @@ export function useRequestMessages(requestId: string | null) {
     message: string,
     sendViaWhatsapp: boolean = false,
     webhookData?: {
-      accountId?: number | null;
-      conversationId?: number | null;
+      whatsappJid?: string | null;
       userName?: string;
       userPhone?: string;
     }
@@ -74,8 +73,7 @@ export function useRequestMessages(requestId: string | null) {
           sender_name: userName || 'Administrador',
           message: message.trim(),
           send_via_whatsapp: sendViaWhatsapp,
-          account_id: webhookData?.accountId,
-          conversation_id: webhookData?.conversationId,
+          whatsapp_jid: webhookData?.whatsappJid,
           user_name: webhookData?.userName,
           user_phone: webhookData?.userPhone,
         },

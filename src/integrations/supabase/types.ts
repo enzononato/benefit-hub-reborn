@@ -229,6 +229,7 @@ export type Database = {
           total_installments: number | null
           updated_at: string
           user_id: string
+          whatsapp_jid: string | null
         }
         Insert: {
           account_id?: number | null
@@ -255,6 +256,7 @@ export type Database = {
           total_installments?: number | null
           updated_at?: string
           user_id: string
+          whatsapp_jid?: string | null
         }
         Update: {
           account_id?: number | null
@@ -281,6 +283,7 @@ export type Database = {
           total_installments?: number | null
           updated_at?: string
           user_id?: string
+          whatsapp_jid?: string | null
         }
         Relationships: []
       }
@@ -1055,6 +1058,16 @@ export type Database = {
               p_cpf: string
               p_name: string
               p_protocol: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_benefit_text: string
+              p_cpf: string
+              p_name: string
+              p_protocol: string
+              p_whatsapp_jid?: string
             }
             Returns: Json
           }
