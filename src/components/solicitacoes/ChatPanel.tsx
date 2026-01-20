@@ -14,16 +14,14 @@ interface ChatPanelProps {
   requestId: string;
   userName?: string;
   userPhone?: string;
-  accountId?: number | null;
-  conversationId?: number | null;
+  whatsappJid?: string | null;
 }
 
 export function ChatPanel({
   requestId,
   userName,
   userPhone,
-  accountId,
-  conversationId,
+  whatsappJid,
 }: ChatPanelProps) {
   const [newMessage, setNewMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -31,8 +29,8 @@ export function ChatPanel({
   
   const { messages, loading, sending, sendMessage } = useRequestMessages(requestId);
 
-  // Verifica se pode enviar via WhatsApp (tem dados da conversa original)
-  const canSendWhatsapp = Boolean(accountId && conversationId);
+  // Verifica se pode enviar via WhatsApp (tem whatsapp_jid)
+  const canSendWhatsapp = Boolean(whatsappJid);
 
   // Auto scroll to last message
   useEffect(() => {
@@ -44,10 +42,9 @@ export function ChatPanel({
   const handleSend = async () => {
     if (!newMessage.trim()) return;
     
-    // Se tiver dados de WhatsApp, envia automaticamente via WhatsApp também
+    // Se tiver whatsapp_jid, envia automaticamente via WhatsApp também
     const success = await sendMessage(newMessage, canSendWhatsapp, {
-      accountId,
-      conversationId,
+      whatsappJid,
       userName,
       userPhone,
     });
@@ -62,6 +59,20 @@ export function ChatPanel({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Formatar o número de WhatsApp para exibição
+  const formatWhatsappNumber = (jid: string) => {
+    // Remove @s.whatsapp.net ou @c.us
+    const number = jid.replace(/@s\.whatsapp\.net|@c\.us/g, '');
+    // Formatar como telefone brasileiro
+    if (number.length === 13 && number.startsWith('55')) {
+      const ddd = number.slice(2, 4);
+      const part1 = number.slice(4, 9);
+      const part2 = number.slice(9);
+      return `(${ddd}) ${part1}-${part2}`;
+    }
+    return number;
   };
 
   return (
@@ -157,11 +168,11 @@ export function ChatPanel({
         
         {canSendWhatsapp ? (
           <p className="text-[10px] text-muted-foreground">
-            Encaminhamento via WhatsApp habilitado (requer workflow n8n ativo)
+            WhatsApp: {formatWhatsappNumber(whatsappJid!)} • Mensagens serão encaminhadas automaticamente
           </p>
         ) : (
           <p className="text-[10px] text-muted-foreground">
-            * Envio via WhatsApp não disponível (protocolo sem dados de conversa)
+            * Envio via WhatsApp não disponível (protocolo sem número associado)
           </p>
         )}
       </div>

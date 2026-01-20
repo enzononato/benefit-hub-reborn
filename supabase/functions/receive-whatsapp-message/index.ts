@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { protocol, sender_name, message, account_id, conversation_id } = await req.json();
+    const { protocol, sender_name, message, account_id, conversation_id, whatsapp_jid } = await req.json();
 
     // Validação
     if (!message) {
@@ -25,27 +25,42 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!protocol && !(account_id && conversation_id)) {
+    // Prioridade: protocol > whatsapp_jid > account_id + conversation_id
+    if (!protocol && !whatsapp_jid && !(account_id && conversation_id)) {
       return new Response(
-        JSON.stringify({ error: "Informe protocol OU (account_id + conversation_id)" }),
+        JSON.stringify({ error: "Informe protocol, whatsapp_jid, ou (account_id + conversation_id)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Buscar benefit_request
+    // Buscar benefit_request com ordem de prioridade
     let query = supabase.from("benefit_requests").select("id, user_id, protocol");
     
     if (protocol) {
+      // Prioridade 1: buscar por protocolo
       query = query.eq("protocol", protocol);
+    } else if (whatsapp_jid) {
+      // Prioridade 2: buscar por whatsapp_jid (pegar o mais recente)
+      query = query.eq("whatsapp_jid", whatsapp_jid).order("created_at", { ascending: false }).limit(1);
     } else {
+      // Fallback: compatibilidade com Chatwoot (account_id + conversation_id)
       query = query.eq("account_id", account_id).eq("conversation_id", conversation_id);
     }
 
-    const { data: request, error: requestError } = await query.single();
+    const { data: requests, error: requestError } = await query;
 
-    if (requestError || !request) {
+    if (requestError) {
       return new Response(
-        JSON.stringify({ error: "Solicitação não encontrada", details: requestError?.message }),
+        JSON.stringify({ error: "Erro ao buscar solicitação", details: requestError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const request = requests?.[0];
+
+    if (!request) {
+      return new Response(
+        JSON.stringify({ error: "Solicitação não encontrada" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

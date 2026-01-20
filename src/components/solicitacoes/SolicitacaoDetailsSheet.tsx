@@ -57,6 +57,9 @@ interface SolicitacaoDetailsSheetProps {
     reviewed_by?: string | null;
     reviewed_at?: string | null;
     reviewer_name?: string | null;
+    // Evolution API direct integration
+    whatsapp_jid?: string | null;
+    // Legacy: Chatwoot (for backward compatibility)
     account_id?: number | null;
     conversation_id?: number | null;
     approved_value?: number | null;
@@ -795,8 +798,7 @@ export function SolicitacaoDetailsSheet({
               requestId={request.id}
               userName={request.profile?.full_name}
               userPhone={request.profile?.phone || undefined}
-              accountId={request.account_id}
-              conversationId={request.conversation_id}
+              whatsappJid={request.whatsapp_jid}
             />
           </TabsContent>
         </Tabs>
