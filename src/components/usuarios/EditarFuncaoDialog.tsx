@@ -42,6 +42,11 @@ const AGGREGATE_MODULES = [
     label: 'Benefícios',
     includes: ['plano_odontologico', 'plano_saude', 'vale_transporte'] as BenefitType[]
   },
+  { 
+    id: 'outros_group', 
+    label: 'Outros',
+    includes: ['listagem_funcionarios', 'listagem_aniversariantes', 'listagem_dependentes', 'listagem_pdcs', 'informacoes_diversas'] as BenefitType[]
+  },
 ];
 
 // Módulos individuais (DP)

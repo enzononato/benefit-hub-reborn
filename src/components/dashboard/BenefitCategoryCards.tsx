@@ -5,7 +5,8 @@ import { BenefitType, benefitTypeLabels } from '@/types/benefits';
 import { 
   Car, Pill, Wrench, Cylinder, BookOpen, Glasses, HelpCircle, Handshake,
   CalendarDays, FileText, Stethoscope, Receipt, Clock,
-  AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, Gift, ChevronDown
+  AlertTriangle, Sun, ClipboardList, Smile, HeartPulse, Bus, Gift, ChevronDown,
+  Users, Cake, UserPlus, FileSpreadsheet, Info, MoreHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,12 @@ const soltoTypes: BenefitType[] = [
 // Benefícios (3 itens)
 const beneficiosTypes: BenefitType[] = [
   'plano_odontologico', 'plano_saude', 'vale_transporte'
+];
+
+// Outros (5 itens) - submenu similar a convênios
+const outrosTypes: BenefitType[] = [
+  'listagem_funcionarios', 'listagem_aniversariantes', 'listagem_dependentes',
+  'listagem_pdcs', 'informacoes_diversas'
 ];
 
 const iconMap: Record<string, React.ElementType> = {
@@ -44,6 +51,12 @@ const iconMap: Record<string, React.ElementType> = {
   vale_transporte: Bus,
   relato_anomalia: AlertTriangle,
   outros: HelpCircle,
+  // Categoria Outros
+  listagem_funcionarios: Users,
+  listagem_aniversariantes: Cake,
+  listagem_dependentes: UserPlus,
+  listagem_pdcs: FileSpreadsheet,
+  informacoes_diversas: Info,
 };
 
 const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
@@ -68,6 +81,12 @@ const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
   plano_saude: { iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
   vale_transporte: { iconBg: 'bg-lime-100', iconColor: 'text-lime-600' },
   outros: { iconBg: 'bg-gray-100', iconColor: 'text-gray-600' },
+  // Categoria Outros
+  listagem_funcionarios: { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  listagem_aniversariantes: { iconBg: 'bg-fuchsia-100', iconColor: 'text-fuchsia-600' },
+  listagem_dependentes: { iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
+  listagem_pdcs: { iconBg: 'bg-stone-100', iconColor: 'text-stone-600' },
+  informacoes_diversas: { iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
 };
 
 interface BenefitTypeData {
@@ -85,21 +104,26 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
   const navigate = useNavigate();
   const [isConveniosOpen, setIsConveniosOpen] = useState(false);
   const [isBeneficiosOpen, setIsBeneficiosOpen] = useState(false);
+  const [isOutrosOpen, setIsOutrosOpen] = useState(false);
 
   const allowedSet = allowedTypes ? new Set(allowedTypes) : null;
 
   const visibleConvenioTypes = allowedSet ? convenioTypes.filter((t) => allowedSet.has(t)) : convenioTypes;
   const visibleBeneficiosTypes = allowedSet ? beneficiosTypes.filter((t) => allowedSet.has(t)) : beneficiosTypes;
   const visibleSoltoTypes = allowedSet ? soltoTypes.filter((t) => allowedSet.has(t)) : soltoTypes;
+  const visibleOutrosTypes = allowedSet ? outrosTypes.filter((t) => allowedSet.has(t)) : outrosTypes;
 
   const showConvenios = visibleConvenioTypes.length > 0;
   const showBeneficios = visibleBeneficiosTypes.length > 0;
+  const showOutros = visibleOutrosTypes.length > 0;
 
   const conveniosData = data.filter((item) => visibleConvenioTypes.includes(item.type));
   const beneficiosData = data.filter((item) => visibleBeneficiosTypes.includes(item.type));
+  const outrosData = data.filter((item) => visibleOutrosTypes.includes(item.type));
 
   const totalConvenios = conveniosData.reduce((sum, item) => sum + item.count, 0);
   const totalBeneficios = beneficiosData.reduce((sum, item) => sum + item.count, 0);
+  const totalOutros = outrosData.reduce((sum, item) => sum + item.count, 0);
 
   const soltoFirst = visibleSoltoTypes.slice(0, 4);
   const soltoLast = visibleSoltoTypes.slice(4);
@@ -117,6 +141,12 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
   const handleBeneficiosClick = () => {
     if (!showBeneficios) return;
     const types = visibleBeneficiosTypes.join(',');
+    navigate(`/solicitacoes?benefit_type=${types}`);
+  };
+
+  const handleOutrosClick = () => {
+    if (!showOutros) return;
+    const types = visibleOutrosTypes.join(',');
     navigate(`/solicitacoes?benefit_type=${types}`);
   };
 
@@ -235,6 +265,19 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
 
         {/* Cards Soltos */}
         {soltoLast.map((type) => renderCard(type))}
+
+        {/* Card OUTROS */}
+        {showOutros &&
+          renderGroupCard(
+            'OUTROS',
+            totalOutros,
+            MoreHorizontal,
+            'bg-indigo-100',
+            'text-indigo-600',
+            isOutrosOpen,
+            setIsOutrosOpen,
+            handleOutrosClick
+          )}
       </div>
 
       {/* Convênios expandidos */}
@@ -265,6 +308,23 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
               </h4>
               <div className="grid grid-cols-3 gap-3">
                 {visibleBeneficiosTypes.map((type) => renderCard(type))}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Outros expandidos */}
+      {showOutros && (
+        <Collapsible open={isOutrosOpen} onOpenChange={setIsOutrosOpen}>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="bg-muted/30 rounded-xl p-4 border">
+              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <MoreHorizontal className="h-4 w-4 text-indigo-600" />
+                Outros
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {visibleOutrosTypes.map((type) => renderCard(type))}
               </div>
             </div>
           </CollapsibleContent>

@@ -56,8 +56,14 @@ export const dpTypes: BenefitType[] = [
   'plano_odontologico', 'plano_saude', 'vale_transporte', 'relato_anomalia'
 ];
 
+// Benefit types list - Outros
+export const outrosTypes: BenefitType[] = [
+  'listagem_funcionarios', 'listagem_aniversariantes', 'listagem_dependentes',
+  'listagem_pdcs', 'informacoes_diversas'
+];
+
 // All benefit types (for backward compatibility)
-export const benefitTypes: BenefitType[] = [...convenioTypes, ...dpTypes];
+export const benefitTypes: BenefitType[] = [...convenioTypes, ...dpTypes, ...outrosTypes];
 
 // Status list (sem concluida na UI)
 export const statuses: BenefitStatus[] = ['aberta', 'em_analise', 'aprovada', 'recusada'];
