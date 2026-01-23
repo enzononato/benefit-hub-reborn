@@ -18,7 +18,13 @@ export type BenefitType =
   | 'plano_saude'
   | 'vale_transporte'
   | 'relato_anomalia'
-  | 'outros';
+  | 'outros'
+  // Categoria "Outros" - subcategorias
+  | 'listagem_funcionarios'
+  | 'listagem_aniversariantes'
+  | 'listagem_dependentes'
+  | 'listagem_pdcs'
+  | 'informacoes_diversas';
 
 export type BenefitStatus = 'aberta' | 'em_analise' | 'aprovada' | 'recusada';
 
@@ -98,6 +104,12 @@ export const benefitTypeLabels: Record<BenefitType, string> = {
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
   outros: 'Outros',
+  // Categoria "Outros" - subcategorias
+  listagem_funcionarios: 'Listagem de Funcionários',
+  listagem_aniversariantes: 'Listagem de Aniversariantes',
+  listagem_dependentes: 'Listagem de Dependentes',
+  listagem_pdcs: "Listagem de PDC's",
+  informacoes_diversas: 'Informações Diversas',
 };
 
 export const statusLabels: Record<BenefitStatus, string> = {
@@ -133,6 +145,12 @@ export const benefitTypeFilterLabels: Record<Exclude<BenefitType, 'outros'>, str
   plano_saude: 'Plano de Saúde',
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
+  // Categoria "Outros" - subcategorias
+  listagem_funcionarios: 'Listagem de Funcionários',
+  listagem_aniversariantes: 'Listagem de Aniversariantes',
+  listagem_dependentes: 'Listagem de Dependentes',
+  listagem_pdcs: "Listagem de PDC's",
+  informacoes_diversas: 'Informações Diversas',
 };
 
 export const roleLabels: Record<UserRole, string> = {

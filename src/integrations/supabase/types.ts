@@ -1116,6 +1116,11 @@ export type Database = {
         | "plano_saude"
         | "vale_transporte"
         | "relato_anomalia"
+        | "listagem_funcionarios"
+        | "listagem_aniversariantes"
+        | "listagem_dependentes"
+        | "listagem_pdcs"
+        | "informacoes_diversas"
       inventory_status: "active" | "maintenance" | "disposed"
       inventory_type:
         | "pc"
@@ -1289,6 +1294,11 @@ export const Constants = {
         "plano_saude",
         "vale_transporte",
         "relato_anomalia",
+        "listagem_funcionarios",
+        "listagem_aniversariantes",
+        "listagem_dependentes",
+        "listagem_pdcs",
+        "informacoes_diversas",
       ],
       inventory_status: ["active", "maintenance", "disposed"],
       inventory_type: [
