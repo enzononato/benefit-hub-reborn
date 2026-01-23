@@ -1055,6 +1055,18 @@ export type Database = {
           }
         | {
             Args: {
+              p_account_id?: number
+              p_benefit_text?: string
+              p_conversation_id?: number
+              p_cpf: string
+              p_name?: string
+              p_protocol: string
+              p_whatsapp_jid?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
               p_benefit_text: string
               p_cpf: string
               p_name: string
