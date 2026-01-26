@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     // Verify the requesting user is an admin
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ success: false, error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -28,20 +28,25 @@ Deno.serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !user) {
+    // Use getClaims to validate the JWT token
+    const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error("Token validation error:", claimsError);
       return new Response(JSON.stringify({ success: false, error: "Token inválido" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const requestingUserId = claimsData.claims.sub as string;
+
     // Check if user is admin
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", requestingUserId)
       .eq("role", "admin")
       .maybeSingle();
 
@@ -114,7 +119,7 @@ Deno.serve(async (req) => {
       }
 
       // Prevent self-deletion
-      if (userId === user.id) {
+      if (userId === requestingUserId) {
         return new Response(JSON.stringify({ success: false, error: "Você não pode remover a si mesmo" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
