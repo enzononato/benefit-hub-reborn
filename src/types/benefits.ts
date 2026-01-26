@@ -18,6 +18,7 @@ export type BenefitType =
   | 'plano_saude'
   | 'vale_transporte'
   | 'relato_anomalia'
+  | 'plantao_duvidas'
   | 'outros'
   // Categoria "Outros" - subcategorias
   | 'listagem_funcionarios'
@@ -103,6 +104,7 @@ export const benefitTypeLabels: Record<BenefitType, string> = {
   plano_saude: 'Plano de Saúde',
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
+  plantao_duvidas: 'Plantão de Dúvidas',
   outros: 'Outros',
   // Categoria "Outros" - subcategorias
   listagem_funcionarios: 'Listagem de Funcionários',
@@ -145,6 +147,7 @@ export const benefitTypeFilterLabels: Record<Exclude<BenefitType, 'outros'>, str
   plano_saude: 'Plano de Saúde',
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
+  plantao_duvidas: 'Plantão de Dúvidas',
   // Categoria "Outros" - subcategorias
   listagem_funcionarios: 'Listagem de Funcionários',
   listagem_aniversariantes: 'Listagem de Aniversariantes',

@@ -15,10 +15,11 @@ const convenioTypes: BenefitType[] = [
   'autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'
 ];
 
-// Cards Soltos (8 itens) - exibidos diretamente no grid principal
+// Cards Soltos (10 itens) - exibidos diretamente no grid principal
 const soltoTypes: BenefitType[] = [
   'alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque',
-  'abono_horas', 'operacao_domingo', 'relatorio_ponto', 'relato_anomalia'
+  'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto', 
+  'relato_anomalia', 'plantao_duvidas'
 ];
 
 // Benefícios (3 itens)
@@ -44,8 +45,10 @@ const iconMap: Record<string, React.ElementType> = {
   atestado: Stethoscope,
   contracheque: Receipt,
   abono_horas: Clock,
+  alteracao_horario: Clock,
   operacao_domingo: Sun,
   relatorio_ponto: ClipboardList,
+  plantao_duvidas: HelpCircle,
   plano_odontologico: Smile,
   plano_saude: HeartPulse,
   vale_transporte: Bus,
@@ -73,9 +76,11 @@ const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
   atestado: { iconBg: 'bg-red-100', iconColor: 'text-red-500' },
   contracheque: { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
   abono_horas: { iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
+  alteracao_horario: { iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
   operacao_domingo: { iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
   relatorio_ponto: { iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
   relato_anomalia: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+  plantao_duvidas: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
   // Benefícios
   plano_odontologico: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
   plano_saude: { iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
