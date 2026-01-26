@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user is authenticated (JWT)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ success: false, error: "Não autorizado" }), {
@@ -27,24 +27,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create a client with the user's token to validate it
-    const supabaseUserClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const token = authHeader.replace("Bearer ", "");
+
+    // Validate the token using ANON client + signing-keys compatible flow
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Validate the token by getting the user
-    const { data: { user: requestingUser }, error: authError } = await supabaseUserClient.auth.getUser();
-    
-    if (authError || !requestingUser) {
-      console.error("Token validation error:", authError);
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("Token validation error:", claimsError);
       return new Response(JSON.stringify({ success: false, error: "Token inválido" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const requestingUserId = requestingUser.id;
+    const requestingUserId = claimsData.claims.sub as string;
 
     // Check if user is admin
     const { data: roleData } = await supabaseAdmin
