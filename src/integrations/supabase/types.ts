@@ -1121,6 +1121,7 @@ export type Database = {
         | "listagem_dependentes"
         | "listagem_pdcs"
         | "informacoes_diversas"
+        | "plantao_duvidas"
       inventory_status: "active" | "maintenance" | "disposed"
       inventory_type:
         | "pc"
@@ -1299,6 +1300,7 @@ export const Constants = {
         "listagem_dependentes",
         "listagem_pdcs",
         "informacoes_diversas",
+        "plantao_duvidas",
       ],
       inventory_status: ["active", "maintenance", "disposed"],
       inventory_type: [
