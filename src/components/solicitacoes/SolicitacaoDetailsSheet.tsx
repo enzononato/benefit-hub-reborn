@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
 import { ChatPanel } from "./ChatPanel";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface SolicitacaoDetailsSheetProps {
   open: boolean;
@@ -134,6 +135,8 @@ export function SolicitacaoDetailsSheet({
   const [selectedBenefitType, setSelectedBenefitType] = useState<BenefitType>(request?.benefit_type || 'outros');
   const [isEditingType, setIsEditingType] = useState(false);
   const [savingType, setSavingType] = useState(false);
+  const [pendingTypeChange, setPendingTypeChange] = useState<BenefitType | null>(null);
+  const [showTypeConfirmDialog, setShowTypeConfirmDialog] = useState(false);
 
   // Fetch credit limit info when request changes
   useEffect(() => {
@@ -190,21 +193,30 @@ export function SolicitacaoDetailsSheet({
     }
   }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url, request?.benefit_type]);
 
-  // Função para alterar o tipo do protocolo com log
-  const handleChangeBenefitType = async (newType: BenefitType) => {
+  // Função para iniciar a confirmação de alteração de tipo
+  const handleRequestTypeChange = (newType: BenefitType) => {
     if (newType === request?.benefit_type) {
       setIsEditingType(false);
       return;
     }
+    setPendingTypeChange(newType);
+    setShowTypeConfirmDialog(true);
+  };
 
+  // Função para confirmar e alterar o tipo do protocolo com log
+  const handleConfirmTypeChange = async () => {
+    if (!pendingTypeChange) return;
+    
+    setShowTypeConfirmDialog(false);
     setSavingType(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Atualizar o tipo no banco
       const { error: updateError } = await supabase
         .from('benefit_requests')
-        .update({ benefit_type: newType })
+        .update({ benefit_type: pendingTypeChange })
         .eq('id', request?.id);
 
       if (updateError) throw updateError;
@@ -217,17 +229,17 @@ export function SolicitacaoDetailsSheet({
         p_details: {
           protocol: request?.protocol,
           old_type: request?.benefit_type,
-          new_type: newType,
+          new_type: pendingTypeChange,
           old_type_label: benefitTypeLabels[request?.benefit_type || 'outros'],
-          new_type_label: benefitTypeLabels[newType],
+          new_type_label: benefitTypeLabels[pendingTypeChange],
         },
         p_user_id: user?.id,
       });
 
-      setSelectedBenefitType(newType);
+      setSelectedBenefitType(pendingTypeChange);
       setIsEditingType(false);
       toast.success('Tipo alterado com sucesso!', {
-        description: `De "${benefitTypeLabels[request?.benefit_type || 'outros']}" para "${benefitTypeLabels[newType]}"`,
+        description: `De "${benefitTypeLabels[request?.benefit_type || 'outros']}" para "${benefitTypeLabels[pendingTypeChange]}"`,
       });
       
       // Atualizar a lista
@@ -238,7 +250,14 @@ export function SolicitacaoDetailsSheet({
       setSelectedBenefitType(request?.benefit_type || 'outros');
     } finally {
       setSavingType(false);
+      setPendingTypeChange(null);
     }
+  };
+
+  // Cancelar a alteração de tipo
+  const handleCancelTypeChange = () => {
+    setShowTypeConfirmDialog(false);
+    setPendingTypeChange(null);
   };
 
   if (!request) return null;
@@ -585,7 +604,7 @@ export function SolicitacaoDetailsSheet({
                         <div className="flex gap-2">
                           <Select
                             value={selectedBenefitType}
-                            onValueChange={(value) => handleChangeBenefitType(value as BenefitType)}
+                            onValueChange={(value) => handleRequestTypeChange(value as BenefitType)}
                             disabled={savingType}
                           >
                             <SelectTrigger className="flex-1">
@@ -997,6 +1016,17 @@ export function SolicitacaoDetailsSheet({
           </div>
         )}
       </SheetContent>
+
+      {/* Dialog de confirmação para alteração de tipo */}
+      <ConfirmDialog
+        open={showTypeConfirmDialog}
+        onOpenChange={setShowTypeConfirmDialog}
+        title="Confirmar alteração de tipo"
+        description={`Deseja realmente alterar o tipo do protocolo de "${benefitTypeLabels[request?.benefit_type || 'outros']}" para "${pendingTypeChange ? benefitTypeLabels[pendingTypeChange] : ''}"? Esta ação será registrada no histórico.`}
+        confirmLabel="Alterar tipo"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmTypeChange}
+      />
     </Sheet>
   );
 }
