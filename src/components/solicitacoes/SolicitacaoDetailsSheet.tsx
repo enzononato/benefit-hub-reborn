@@ -182,6 +182,9 @@ export function SolicitacaoDetailsSheet({
   // Tipos de convênio que exigem valor, parcelas e PDF
   const convenioTypes: BenefitType[] = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
   const isConvenio = convenioTypes.includes(request.benefit_type);
+  
+  // Atestado exige upload de arquivo (PDF ou JPG) mas não valor/parcelas
+  const isAtestado = request.benefit_type === 'atestado';
 
   const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
   const parsedInstallments = parseInt(totalInstallments) || 1;
@@ -191,7 +194,13 @@ export function SolicitacaoDetailsSheet({
 
   const handleApprove = () => {
     setStatus("aprovada");
-    toast.success("Status alterado para Aprovado. Faça o upload do PDF.");
+    if (isConvenio) {
+      toast.success("Status alterado para Aprovado. Faça o upload do PDF.");
+    } else if (isAtestado) {
+      toast.success("Status alterado para Aprovado. Faça o upload do atestado (PDF ou JPG).");
+    } else {
+      toast.success("Status alterado para Aprovado.");
+    }
   };
 
   const handleReject = () => {
@@ -202,15 +211,25 @@ export function SolicitacaoDetailsSheet({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
-      toast.error("Por favor, selecione um arquivo PDF");
+    // Para atestado, aceitar PDF ou imagens (JPG, JPEG, PNG)
+    const allowedTypes = isAtestado 
+      ? ["application/pdf", "image/jpeg", "image/jpg", "image/png"]
+      : ["application/pdf"];
+    
+    if (!allowedTypes.includes(file.type)) {
+      if (isAtestado) {
+        toast.error("Por favor, selecione um arquivo PDF ou imagem (JPG, PNG)");
+      } else {
+        toast.error("Por favor, selecione um arquivo PDF");
+      }
       return;
     }
 
     setPdfFile(file);
     setLoading(true);
     try {
-      const fileName = `${request.protocol}_${Date.now()}.pdf`;
+      const fileExtension = file.name.split('.').pop() || 'pdf';
+      const fileName = `${request.protocol}_${Date.now()}.${fileExtension}`;
       const { error: uploadError } = await supabase.storage
         .from("benefit-pdfs")
         .upload(fileName, file);
@@ -222,10 +241,10 @@ export function SolicitacaoDetailsSheet({
         .getPublicUrl(fileName);
 
       setPdfUrl(urlData.publicUrl);
-      toast.success("PDF enviado com sucesso");
+      toast.success("Arquivo enviado com sucesso");
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
-      toast.error("Erro ao enviar PDF: " + error.message);
+      toast.error("Erro ao enviar arquivo: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -299,6 +318,13 @@ export function SolicitacaoDetailsSheet({
         }
       }
 
+      // Validação para atestado - exige upload de arquivo
+      if (status === "aprovada" && isAtestado && !pdfUrl) {
+        toast.error("É necessário fazer o upload do atestado antes de enviar");
+        setLoading(false);
+        return;
+      }
+
       // Obter o usuário atual para registrar quem encerrou
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -318,6 +344,10 @@ export function SolicitacaoDetailsSheet({
           updateData.approved_value = parsedApprovedValue;
           updateData.total_installments = parsedInstallments;
           updateData.paid_installments = 1; // Primeira parcela já é deduzida na aprovação
+        }
+        // Atestado tem apenas o arquivo anexado
+        if (isAtestado) {
+          updateData.pdf_url = pdfUrl;
         }
       } else if (status === "recusada") {
         updateData.rejection_reason = rejectionReason;
@@ -770,6 +800,39 @@ export function SolicitacaoDetailsSheet({
                               className="text-xs text-primary hover:underline"
                             >
                               Ver PDF atual
+                            </a>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Upload de arquivo para Atestado (PDF ou JPG) */}
+                      {isApproved && isAtestado && (
+                        <div className="space-y-2">
+                          <Label>Upload do Atestado (PDF ou JPG) *</Label>
+                          <Button
+                            onClick={() => document.getElementById("atestado-upload")?.click()}
+                            variant="outline"
+                            disabled={loading}
+                            className="w-full"
+                          >
+                            <FileUp className="w-4 h-4 mr-2" />
+                            {pdfFile ? pdfFile.name : pdfUrl ? "Substituir arquivo" : "Selecionar arquivo"}
+                          </Button>
+                          <input
+                            id="atestado-upload"
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/jpg,image/png"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                          {pdfUrl && (
+                            <a
+                              href={pdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Ver arquivo atual
                             </a>
                           )}
                         </div>
