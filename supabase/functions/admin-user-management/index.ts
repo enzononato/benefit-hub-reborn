@@ -146,31 +146,36 @@ Deno.serve(async (req) => {
       // Try to delete user from auth
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
-      // If user not found in auth, clean up orphaned data manually
-      if (deleteError && deleteError.message.includes("User not found")) {
-        console.log("Auth user not found, cleaning up orphaned profile and roles for:", userId);
-        
-        // Delete user_roles
-        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-        
-        // Delete user_module_permissions
-        await supabaseAdmin.from("user_module_permissions").delete().eq("user_id", userId);
-        
-        // Delete profile
-        await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
-        
-        return new Response(JSON.stringify({ success: true, note: "Orphaned user data cleaned up" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      if (deleteError) {
+      // If auth deletion failed for reason OTHER than "not found", return error
+      if (deleteError && !deleteError.message.includes("User not found")) {
         console.error("Error deleting user:", deleteError);
         return new Response(JSON.stringify({ success: false, error: deleteError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      if (deleteError?.message.includes("User not found")) {
+        console.log("Auth user not found, cleaning up orphaned data for:", userId);
+      }
+
+      // Always clean up related data (profiles, roles, permissions)
+      // This ensures no orphaned records remain regardless of auth deletion result
+      const cleanupPromises = [
+        supabaseAdmin.from("user_module_permissions").delete().eq("user_id", userId),
+        supabaseAdmin.from("user_roles").delete().eq("user_id", userId),
+        supabaseAdmin.from("profiles").delete().eq("user_id", userId),
+      ];
+
+      const results = await Promise.allSettled(cleanupPromises);
+      
+      // Log any cleanup errors but don't fail the overall operation
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const tables = ["user_module_permissions", "user_roles", "profiles"];
+          console.warn(`Warning: Failed to clean up ${tables[index]}:`, result.reason);
+        }
+      });
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
