@@ -18,6 +18,52 @@ export const useUsuarios = () => {
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const invokeAdminUserManagement = useCallback(async (body: Record<string, unknown>) => {
+    const callOnce = async (accessToken: string) => {
+      const { data, error } = await supabase.functions.invoke('admin-user-management', {
+        body,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const serverMessage = typeof (data as any)?.error === 'string' ? (data as any).error : null;
+      return { data, error, serverMessage };
+    };
+
+    const sessionResult = await supabase.auth.getSession();
+    const accessToken = sessionResult.data.session?.access_token;
+
+    if (!accessToken) {
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+
+    let res = await callOnce(accessToken);
+
+    // If unauthorized (common when the access token references a deleted session), try refresh once and retry.
+    const status = (res.error as any)?.context?.status ?? (res.error as any)?.status;
+    const message = String((res.error as any)?.message ?? '');
+    const isUnauthorized = status === 401 || message.includes('401') || res.serverMessage?.toLowerCase().includes('sessão') || res.serverMessage?.toLowerCase().includes('token');
+
+    if (res.error && isUnauthorized) {
+      const refresh = await supabase.auth.refreshSession();
+      const refreshedToken = refresh.data.session?.access_token;
+
+      if (refresh.error || !refreshedToken) {
+        await supabase.auth.signOut();
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      res = await callOnce(refreshedToken);
+    }
+
+    if (res.error) {
+      throw new Error(res.serverMessage || (res.error as any)?.message || 'Erro ao chamar a função');
+    }
+
+    return res.data;
+  }, []);
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -78,17 +124,14 @@ export const useUsuarios = () => {
 
   const createUser = async (data: { email: string; password: string; fullName: string; role: SystemRole }) => {
     try {
-      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          action: 'create',
-          email: data.email,
-          password: data.password,
-          fullName: data.fullName,
-          role: data.role,
-        },
+      const result: any = await invokeAdminUserManagement({
+        action: 'create',
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        role: data.role,
       });
 
-      if (error) throw error;
       if (!result?.success) throw new Error(result?.error || 'Erro ao criar usuário');
 
       toast.success('Usuário criado com sucesso!');
@@ -122,14 +165,11 @@ export const useUsuarios = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          action: 'delete',
-          userId,
-        },
+      const result: any = await invokeAdminUserManagement({
+        action: 'delete',
+        userId,
       });
 
-      if (error) throw error;
       if (!result?.success) throw new Error(result?.error || 'Erro ao remover usuário');
 
       setUsers(prev => prev.filter(u => u.user_id !== userId));
@@ -143,15 +183,12 @@ export const useUsuarios = () => {
 
   const changePassword = async (userId: string, newPassword: string) => {
     try {
-      const { data: result, error } = await supabase.functions.invoke('admin-user-management', {
-        body: {
-          action: 'changePassword',
-          userId,
-          newPassword,
-        },
+      const result: any = await invokeAdminUserManagement({
+        action: 'changePassword',
+        userId,
+        newPassword,
       });
 
-      if (error) throw error;
       if (!result?.success) throw new Error(result?.error || 'Erro ao alterar senha');
 
       toast.success('Senha alterada com sucesso!');
