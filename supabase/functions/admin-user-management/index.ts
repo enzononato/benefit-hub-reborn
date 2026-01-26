@@ -42,10 +42,19 @@ Deno.serve(async (req) => {
 
     if (userError || !userData?.user?.id) {
       console.error("Token validation error:", userError);
-      return new Response(JSON.stringify({ success: false, error: "Token inválido" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const isSessionMissing = (userError as any)?.name === "AuthSessionMissingError";
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: isSessionMissing
+            ? "Sessão expirada. Faça login novamente."
+            : "Token inválido",
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const requestingUserId = userData.user.id;
