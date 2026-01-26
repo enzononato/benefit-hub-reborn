@@ -27,25 +27,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "").trim();
 
-    // Validate the token using ANON client + signing-keys compatible flow
-    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    // Validate the token using Auth API (works without a persisted session in Edge Runtime)
+    const supabaseAuth = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        auth: { autoRefreshToken: false, persistSession: false },
+      },
+    );
 
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
 
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("Token validation error:", claimsError);
+    if (userError || !userData?.user?.id) {
+      console.error("Token validation error:", userError);
       return new Response(JSON.stringify({ success: false, error: "Token inválido" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const requestingUserId = claimsData.claims.sub as string;
+    const requestingUserId = userData.user.id;
 
     // Check if user is admin
     const { data: roleData } = await supabaseAdmin
