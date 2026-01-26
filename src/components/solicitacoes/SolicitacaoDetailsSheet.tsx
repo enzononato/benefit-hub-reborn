@@ -42,6 +42,8 @@ import {
   MessageSquare,
   ClipboardList,
   Pencil,
+  History,
+  ArrowRight,
 } from "lucide-react";
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
 import { ChatPanel } from "./ChatPanel";
@@ -137,6 +139,16 @@ export function SolicitacaoDetailsSheet({
   const [savingType, setSavingType] = useState(false);
   const [pendingTypeChange, setPendingTypeChange] = useState<BenefitType | null>(null);
   const [showTypeConfirmDialog, setShowTypeConfirmDialog] = useState(false);
+  const [typeChangeHistory, setTypeChangeHistory] = useState<Array<{
+    id: string;
+    created_at: string;
+    old_type: string;
+    new_type: string;
+    old_type_label: string;
+    new_type_label: string;
+    user_name?: string;
+  }>>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Fetch credit limit info when request changes
   useEffect(() => {
@@ -177,6 +189,62 @@ export function SolicitacaoDetailsSheet({
       fetchCreditInfo();
     }
   }, [open, request?.user_id, request?.id]);
+
+  // Buscar histórico de alterações de tipo
+  useEffect(() => {
+    const fetchTypeChangeHistory = async () => {
+      if (!request?.id) return;
+      
+      setLoadingHistory(true);
+      try {
+        const { data, error } = await supabase
+          .from('logs')
+          .select('id, created_at, details, user_id')
+          .eq('entity_type', 'benefit_request')
+          .eq('entity_id', request.id)
+          .eq('action', 'benefit_type_changed')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Buscar nomes dos usuários
+        const historyWithNames = await Promise.all(
+          (data || []).map(async (log) => {
+            let userName = 'Sistema';
+            if (log.user_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', log.user_id)
+                .maybeSingle();
+              userName = profile?.full_name || 'Usuário';
+            }
+            
+            const details = log.details as Record<string, any> || {};
+            return {
+              id: log.id,
+              created_at: log.created_at,
+              old_type: details.old_type || '',
+              new_type: details.new_type || '',
+              old_type_label: details.old_type_label || '',
+              new_type_label: details.new_type_label || '',
+              user_name: userName,
+            };
+          })
+        );
+
+        setTypeChangeHistory(historyWithNames);
+      } catch (error) {
+        console.error('Erro ao buscar histórico de alterações:', error);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    if (open && request) {
+      fetchTypeChangeHistory();
+    }
+  }, [open, request?.id]);
 
   useEffect(() => {
     if (request) {
@@ -235,6 +303,23 @@ export function SolicitacaoDetailsSheet({
         },
         p_user_id: user?.id,
       });
+
+      // Adicionar ao histórico local imediatamente
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user?.id || '')
+        .maybeSingle();
+
+      setTypeChangeHistory(prev => [{
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        old_type: request?.benefit_type || '',
+        new_type: pendingTypeChange,
+        old_type_label: benefitTypeLabels[request?.benefit_type || 'outros'],
+        new_type_label: benefitTypeLabels[pendingTypeChange],
+        user_name: currentProfile?.full_name || 'Usuário',
+      }, ...prev]);
 
       setSelectedBenefitType(pendingTypeChange);
       setIsEditingType(false);
@@ -646,6 +731,42 @@ export function SolicitacaoDetailsSheet({
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                           )}
+                        </div>
+                      )}
+                      
+                      {/* Histórico de alterações de tipo */}
+                      {typeChangeHistory.length > 0 && (
+                        <div className="col-span-2 mt-2">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                            <History className="h-3 w-3" />
+                            Histórico de Alterações
+                          </p>
+                          <div className="space-y-2">
+                            {typeChangeHistory.map((change) => (
+                              <div 
+                                key={change.id} 
+                                className="text-xs bg-muted/50 rounded p-2 border-l-2 border-primary/30"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-muted-foreground">
+                                    {format(new Date(change.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                  </span>
+                                  <span className="text-muted-foreground font-medium">
+                                    {change.user_name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="line-through text-muted-foreground">
+                                    {change.old_type_label}
+                                  </span>
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium text-foreground">
+                                    {change.new_type_label}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
