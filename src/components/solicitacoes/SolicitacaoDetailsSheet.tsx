@@ -179,11 +179,15 @@ export function SolicitacaoDetailsSheet({
 
   if (!request) return null;
 
+  // Tipos de convênio que exigem valor, parcelas e PDF
+  const convenioTypes: BenefitType[] = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
+  const isConvenio = convenioTypes.includes(request.benefit_type);
+
   const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
   const parsedInstallments = parseInt(totalInstallments) || 1;
   const installmentValue = parsedInstallments > 0 ? parsedApprovedValue / parsedInstallments : parsedApprovedValue;
-  // Validar se o valor da PARCELA excede o limite total (não o disponível)
-  const exceedsCredit = creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit;
+  // Validar se o valor da PARCELA excede o limite total (não o disponível) - apenas para convênios
+  const exceedsCredit = isConvenio && creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit;
 
   const handleApprove = () => {
     setStatus("aprovada");
@@ -268,22 +272,22 @@ export function SolicitacaoDetailsSheet({
   const handleSend = async () => {
     setLoading(true);
     try {
-      if (status === "aprovada" && !pdfUrl) {
-        toast.error("É necessário fazer o upload do PDF antes de enviar");
-        setLoading(false);
-        return;
-      }
+      // Validações apenas para convênios
+      if (status === "aprovada" && isConvenio) {
+        if (!pdfUrl) {
+          toast.error("É necessário fazer o upload do PDF antes de enviar");
+          setLoading(false);
+          return;
+        }
 
-      if (status === "aprovada" && !approvedValue.trim()) {
-        toast.error("É necessário informar o valor aprovado");
-        setLoading(false);
-        return;
-      }
+        if (!approvedValue.trim()) {
+          toast.error("É necessário informar o valor aprovado");
+          setLoading(false);
+          return;
+        }
 
-      // Validação do limite - verificar se o valor da parcela cabe no limite total
-      if (status === "aprovada" && creditInfo && creditInfo.limit > 0) {
-        // Validar se o colaborador tem limite suficiente para pelo menos uma parcela
-        if (installmentValue > creditInfo.limit) {
+        // Validação do limite - verificar se o valor da parcela cabe no limite total
+        if (creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit) {
           toast.error(
             `O valor da parcela excede o limite de crédito do colaborador`,
             { 
@@ -307,11 +311,14 @@ export function SolicitacaoDetailsSheet({
       };
 
       if (status === "aprovada") {
-        updateData.pdf_url = pdfUrl;
-        updateData.approved_value = parsedApprovedValue;
-        updateData.total_installments = parsedInstallments;
-        updateData.paid_installments = 1; // Primeira parcela já é deduzida na aprovação
         updateData.rejection_reason = null;
+        // Apenas convênios têm valor, parcelas e PDF
+        if (isConvenio) {
+          updateData.pdf_url = pdfUrl;
+          updateData.approved_value = parsedApprovedValue;
+          updateData.total_installments = parsedInstallments;
+          updateData.paid_installments = 1; // Primeira parcela já é deduzida na aprovação
+        }
       } else if (status === "recusada") {
         updateData.rejection_reason = rejectionReason;
         updateData.approved_value = null;
@@ -326,8 +333,8 @@ export function SolicitacaoDetailsSheet({
 
       if (updateError) throw updateError;
 
-      // Se aprovada, deduzir o valor da parcela do limite do colaborador
-      if (status === "aprovada" && creditInfo && creditInfo.limit > 0) {
+      // Se aprovada (convênio), deduzir o valor da parcela do limite do colaborador
+      if (status === "aprovada" && isConvenio && creditInfo && creditInfo.limit > 0) {
         const newLimit = Math.max(0, creditInfo.limit - installmentValue);
         
         const { error: profileError } = await supabase
@@ -640,8 +647,8 @@ export function SolicitacaoDetailsSheet({
                         </div>
                       )}
 
-                      {/* Campos de valor aprovado e parcelas */}
-                      {isApproved && (
+                      {/* Campos de valor aprovado e parcelas - apenas para convênios */}
+                      {isApproved && isConvenio && (
                         <div className="space-y-4">
                           {/* Informação do Limite de Crédito */}
                           {creditInfo && creditInfo.limit > 0 && (
@@ -735,8 +742,8 @@ export function SolicitacaoDetailsSheet({
                         </div>
                       )}
 
-                      {/* Upload de PDF (aprovado) */}
-                      {isApproved && (
+                      {/* Upload de PDF (aprovado) - apenas para convênios */}
+                      {isApproved && isConvenio && (
                         <div className="space-y-2">
                           <Label>Upload de PDF *</Label>
                           <Button
