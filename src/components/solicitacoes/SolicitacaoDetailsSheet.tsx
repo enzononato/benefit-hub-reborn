@@ -13,6 +13,13 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -34,6 +41,7 @@ import {
   AlertCircle,
   MessageSquare,
   ClipboardList,
+  Pencil,
 } from "lucide-react";
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
 import { ChatPanel } from "./ChatPanel";
@@ -123,6 +131,9 @@ export function SolicitacaoDetailsSheet({
   const [creditInfo, setCreditInfo] = useState<{ limit: number; used: number; available: number } | null>(null);
   const [loadingCredit, setLoadingCredit] = useState(false);
   const [activeTab, setActiveTab] = useState("detalhes");
+  const [selectedBenefitType, setSelectedBenefitType] = useState<BenefitType>(request?.benefit_type || 'outros');
+  const [isEditingType, setIsEditingType] = useState(false);
+  const [savingType, setSavingType] = useState(false);
 
   // Fetch credit limit info when request changes
   useEffect(() => {
@@ -174,17 +185,70 @@ export function SolicitacaoDetailsSheet({
       setApprovedValue("");
       setTotalInstallments("1");
       setActiveTab("detalhes");
+      setSelectedBenefitType(request.benefit_type);
+      setIsEditingType(false);
     }
-  }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url]);
+  }, [request?.id, request?.status, request?.rejection_reason, request?.closing_message, request?.pdf_url, request?.benefit_type]);
+
+  // Função para alterar o tipo do protocolo com log
+  const handleChangeBenefitType = async (newType: BenefitType) => {
+    if (newType === request?.benefit_type) {
+      setIsEditingType(false);
+      return;
+    }
+
+    setSavingType(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Atualizar o tipo no banco
+      const { error: updateError } = await supabase
+        .from('benefit_requests')
+        .update({ benefit_type: newType })
+        .eq('id', request?.id);
+
+      if (updateError) throw updateError;
+
+      // Registrar no log via função do banco
+      await supabase.rpc('create_system_log', {
+        p_action: 'benefit_type_changed',
+        p_entity_type: 'benefit_request',
+        p_entity_id: request?.id,
+        p_details: {
+          protocol: request?.protocol,
+          old_type: request?.benefit_type,
+          new_type: newType,
+          old_type_label: benefitTypeLabels[request?.benefit_type || 'outros'],
+          new_type_label: benefitTypeLabels[newType],
+        },
+        p_user_id: user?.id,
+      });
+
+      setSelectedBenefitType(newType);
+      setIsEditingType(false);
+      toast.success('Tipo alterado com sucesso!', {
+        description: `De "${benefitTypeLabels[request?.benefit_type || 'outros']}" para "${benefitTypeLabels[newType]}"`,
+      });
+      
+      // Atualizar a lista
+      onSuccess?.();
+    } catch (error: any) {
+      console.error('Erro ao alterar tipo:', error);
+      toast.error('Erro ao alterar tipo: ' + error.message);
+      setSelectedBenefitType(request?.benefit_type || 'outros');
+    } finally {
+      setSavingType(false);
+    }
+  };
 
   if (!request) return null;
 
-  // Tipos de convênio que exigem valor, parcelas e PDF
+  // Tipos de convênio que exigem valor, parcelas e PDF - usar o tipo atual selecionado
   const convenioTypes: BenefitType[] = ['autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica'];
-  const isConvenio = convenioTypes.includes(request.benefit_type);
+  const isConvenio = convenioTypes.includes(selectedBenefitType);
   
   // Atestado exige upload de arquivo (PDF ou JPG) mas não valor/parcelas
-  const isAtestado = request.benefit_type === 'atestado';
+  const isAtestado = selectedBenefitType === 'atestado';
 
   const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
   const parsedInstallments = parseInt(totalInstallments) || 1;
@@ -513,13 +577,58 @@ export function SolicitacaoDetailsSheet({
 
                 {/* Detalhes do convênio */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Convênio</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground">Solicitação</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Tipo</p>
-                      <p className="font-medium">
-                        {benefitTypeLabels[request.benefit_type]}
-                      </p>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground mb-1">Tipo</p>
+                      {isEditingType ? (
+                        <div className="flex gap-2">
+                          <Select
+                            value={selectedBenefitType}
+                            onValueChange={(value) => handleChangeBenefitType(value as BenefitType)}
+                            disabled={savingType}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {Object.entries(benefitTypeLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setIsEditingType(false);
+                              setSelectedBenefitType(request.benefit_type);
+                            }}
+                            disabled={savingType}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">
+                            {benefitTypeLabels[selectedBenefitType]}
+                          </p>
+                          {!isClosed && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setIsEditingType(true)}
+                              title="Alterar tipo"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Data de Abertura</p>
