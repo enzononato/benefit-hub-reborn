@@ -63,7 +63,7 @@ interface Profile {
   user_roles: { role: UserRole }[];
 }
 
-type StatusFilter = 'ativo' | 'demitido' | 'todos';
+type StatusFilter = 'ativo' | 'demitido' | 'afastado' | 'todos';
 
 export default function Colaboradores() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -190,6 +190,7 @@ export default function Colaboradores() {
 
   const activeCount = profiles.filter(p => p.status === 'ativo').length;
   const terminatedCount = profiles.filter(p => p.status === 'demitido').length;
+  const leaveCount = profiles.filter(p => p.status === 'afastado').length;
 
   return (
     <MainLayout>
@@ -200,7 +201,7 @@ export default function Colaboradores() {
             <p className="mt-1 text-muted-foreground">
               Gerencie os colaboradores cadastrados
               <span className="ml-2 text-sm">
-                ({activeCount} ativos, {terminatedCount} demitidos)
+                ({activeCount} ativos, {leaveCount} afastados, {terminatedCount} demitidos)
               </span>
             </p>
           </div>
@@ -275,6 +276,7 @@ export default function Colaboradores() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ativo">Ativos</SelectItem>
+              <SelectItem value="afastado">Afastados</SelectItem>
               <SelectItem value="demitido">Demitidos</SelectItem>
               <SelectItem value="todos">Todos</SelectItem>
             </SelectContent>
@@ -301,22 +303,24 @@ export default function Colaboradores() {
           ) : (
             paginatedProfiles.map((profile) => {
               const isTerminated = profile.status === 'demitido';
+              const isOnLeave = profile.status === 'afastado';
+              const isInactive = isTerminated || isOnLeave;
               return (
                 <div 
                   key={profile.id} 
                   className={cn(
                     "rounded-xl border bg-card p-5 hover:shadow-md transition-all",
-                    isTerminated 
-                      ? "border-destructive/30 opacity-70" 
-                      : "border-border"
+                    isTerminated && "border-destructive/30 opacity-70",
+                    isOnLeave && "border-warning/30 opacity-80",
+                    !isInactive && "border-border"
                   )}
                 >
                   <div className="flex items-start gap-4">
                     <div className={cn(
                       "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold",
-                      isTerminated 
-                        ? "bg-destructive/10 text-destructive" 
-                        : "bg-primary/10 text-primary"
+                      isTerminated && "bg-destructive/10 text-destructive",
+                      isOnLeave && "bg-yellow-500/10 text-yellow-600",
+                      !isInactive && "bg-primary/10 text-primary"
                     )}>
                       {profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
@@ -326,6 +330,11 @@ export default function Colaboradores() {
                         {isTerminated && (
                           <Badge variant="destructive" className="shrink-0 text-xs">
                             Demitido
+                          </Badge>
+                        )}
+                        {isOnLeave && (
+                          <Badge className="shrink-0 text-xs bg-yellow-500/20 text-yellow-700 border-yellow-500/30">
+                            Afastado
                           </Badge>
                         )}
                       </div>
@@ -397,7 +406,7 @@ export default function Colaboradores() {
                       {!isTerminated && (
                         <>
                           <EditColaboradorDialog 
-                            profile={profile} 
+                            profile={{ ...profile, status: profile.status }} 
                             onSuccess={fetchProfiles}
                             open={editingProfileId === profile.id}
                             onOpenChange={(open) => {
