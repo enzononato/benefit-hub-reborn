@@ -27,7 +27,14 @@ interface Profile {
   unit_id: string | null;
   departamento: string | null;
   credit_limit: number | null;
+  status: string;
 }
+
+const STATUS_OPTIONS = [
+  { value: 'ativo', label: 'Ativo' },
+  { value: 'afastado', label: 'Afastado' },
+  { value: 'demitido', label: 'Demitido' },
+];
 
 const DEPARTAMENTOS = [
   { value: '101', label: '101 – PUXADA' },
@@ -78,6 +85,7 @@ export function EditColaboradorDialog({
     gender: profile.gender || '',
     position: profile.position || '',
     credit_limit: profile.credit_limit?.toString() || '',
+    status: profile.status || 'ativo',
   });
   
   const prevOpenRef = useRef(false);
@@ -104,6 +112,7 @@ export function EditColaboradorDialog({
         gender: profile.gender || '',
         position: profile.position || '',
         credit_limit: profile.credit_limit?.toString() || '',
+        status: profile.status || 'ativo',
       });
     }
     prevOpenRef.current = open;
@@ -173,6 +182,8 @@ export function EditColaboradorDialog({
     try {
       const oldCreditLimit = profile.credit_limit || 0;
       const newCreditLimit = formData.credit_limit ? parseFloat(formData.credit_limit.replace(',', '.')) : 0;
+      const oldStatus = profile.status || 'ativo';
+      const newStatus = formData.status;
 
       const { error } = await supabase
         .from('profiles')
@@ -186,6 +197,7 @@ export function EditColaboradorDialog({
           unit_id: formData.unit_id,
           departamento: formData.departamento,
           credit_limit: newCreditLimit,
+          status: newStatus,
         })
         .eq('id', profile.id);
 
@@ -200,6 +212,19 @@ export function EditColaboradorDialog({
             full_name: formData.full_name,
             old_credit_limit: oldCreditLimit,
             new_credit_limit: newCreditLimit,
+          },
+        });
+      }
+
+      if (oldStatus !== newStatus) {
+        await supabase.rpc('create_system_log', {
+          p_action: 'collaborator_status_changed',
+          p_entity_type: 'profile',
+          p_entity_id: profile.id,
+          p_details: {
+            full_name: formData.full_name,
+            old_status: oldStatus,
+            new_status: newStatus,
           },
         });
       }
@@ -354,6 +379,22 @@ export function EditColaboradorDialog({
               }}
               placeholder="0,00"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Situação *</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Selecione a situação" />
+              </SelectTrigger>
+              <SelectContent className="z-50">
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-3 pt-4">
