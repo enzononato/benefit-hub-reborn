@@ -403,26 +403,24 @@ export default function Colaboradores() {
                       }} title="Histórico">
                         <History className="h-4 w-4" />
                       </Button>
+                      <EditColaboradorDialog 
+                        profile={{ ...profile, status: profile.status }} 
+                        onSuccess={fetchProfiles}
+                        open={editingProfileId === profile.id}
+                        onOpenChange={(open) => {
+                          const newParams = new URLSearchParams(searchParams);
+                          if (open) {
+                            setEditingProfileId(profile.id);
+                            newParams.set('edit', profile.id);
+                          } else {
+                            setEditingProfileId(null);
+                            newParams.delete('edit');
+                          }
+                          setSearchParams(newParams, { replace: true });
+                        }}
+                      />
                       {!isTerminated && (
-                        <>
-                          <EditColaboradorDialog 
-                            profile={{ ...profile, status: profile.status }} 
-                            onSuccess={fetchProfiles}
-                            open={editingProfileId === profile.id}
-                            onOpenChange={(open) => {
-                              const newParams = new URLSearchParams(searchParams);
-                              if (open) {
-                                setEditingProfileId(profile.id);
-                                newParams.set('edit', profile.id);
-                              } else {
-                                setEditingProfileId(null);
-                                newParams.delete('edit');
-                              }
-                              setSearchParams(newParams, { replace: true });
-                            }}
-                          />
-                          <DeleteColaboradorDialog profileId={profile.id} userId={profile.user_id} name={profile.full_name} onSuccess={fetchProfiles} />
-                        </>
+                        <DeleteColaboradorDialog profileId={profile.id} userId={profile.user_id} name={profile.full_name} onSuccess={fetchProfiles} />
                       )}
                     </div>
                   </div>
