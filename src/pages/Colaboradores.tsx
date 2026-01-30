@@ -63,7 +63,7 @@ interface Profile {
   user_roles: { role: UserRole }[];
 }
 
-type StatusFilter = 'ativo' | 'demitido' | 'afastado' | 'todos';
+type StatusFilter = 'ativo' | 'demitido' | 'afastado' | 'ferias' | 'todos';
 
 export default function Colaboradores() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -191,6 +191,7 @@ export default function Colaboradores() {
   const activeCount = profiles.filter(p => p.status === 'ativo').length;
   const terminatedCount = profiles.filter(p => p.status === 'demitido').length;
   const leaveCount = profiles.filter(p => p.status === 'afastado').length;
+  const vacationCount = profiles.filter(p => p.status === 'ferias').length;
 
   return (
     <MainLayout>
@@ -201,7 +202,7 @@ export default function Colaboradores() {
             <p className="mt-1 text-muted-foreground">
               Gerencie os colaboradores cadastrados
               <span className="ml-2 text-sm">
-                ({activeCount} ativos, {leaveCount} afastados, {terminatedCount} demitidos)
+                ({activeCount} ativos, {vacationCount} férias, {leaveCount} afastados, {terminatedCount} demitidos)
               </span>
             </p>
           </div>
@@ -276,6 +277,7 @@ export default function Colaboradores() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ativo">Ativos</SelectItem>
+              <SelectItem value="ferias">Férias</SelectItem>
               <SelectItem value="afastado">Afastados</SelectItem>
               <SelectItem value="demitido">Demitidos</SelectItem>
               <SelectItem value="todos">Todos</SelectItem>
@@ -304,7 +306,8 @@ export default function Colaboradores() {
             paginatedProfiles.map((profile) => {
               const isTerminated = profile.status === 'demitido';
               const isOnLeave = profile.status === 'afastado';
-              const isInactive = isTerminated || isOnLeave;
+              const isOnVacation = profile.status === 'ferias';
+              const isInactive = isTerminated || isOnLeave || isOnVacation;
               return (
                 <div 
                   key={profile.id} 
@@ -312,6 +315,7 @@ export default function Colaboradores() {
                     "rounded-xl border bg-card p-5 hover:shadow-md transition-all",
                     isTerminated && "border-destructive/30 opacity-70",
                     isOnLeave && "border-warning/30 opacity-80",
+                    isOnVacation && "border-info/30 opacity-85",
                     !isInactive && "border-border"
                   )}
                 >
@@ -320,6 +324,7 @@ export default function Colaboradores() {
                       "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-semibold",
                       isTerminated && "bg-destructive/10 text-destructive",
                       isOnLeave && "bg-yellow-500/10 text-yellow-600",
+                      isOnVacation && "bg-info/10 text-info",
                       !isInactive && "bg-primary/10 text-primary"
                     )}>
                       {profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -335,6 +340,11 @@ export default function Colaboradores() {
                         {isOnLeave && (
                           <Badge className="shrink-0 text-xs bg-yellow-500/20 text-yellow-700 border-yellow-500/30">
                             Afastado
+                          </Badge>
+                        )}
+                        {isOnVacation && (
+                          <Badge className="shrink-0 text-xs bg-info/20 text-info border-info/30">
+                            Férias
                           </Badge>
                         )}
                       </div>

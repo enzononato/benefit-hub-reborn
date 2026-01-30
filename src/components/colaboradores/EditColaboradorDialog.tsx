@@ -32,6 +32,7 @@ interface Profile {
 
 const STATUS_OPTIONS = [
   { value: 'ativo', label: 'Ativo' },
+  { value: 'ferias', label: 'Férias' },
   { value: 'afastado', label: 'Afastado' },
   { value: 'demitido', label: 'Demitido' },
 ];
