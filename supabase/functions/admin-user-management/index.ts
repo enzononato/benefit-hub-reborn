@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       }
 
       // Validate role is a system role
-      if (!["admin", "gestor", "agente_dp"].includes(role)) {
+      if (!["admin", "gestor", "agente_dp", "rh"].includes(role)) {
         return new Response(JSON.stringify({ success: false, error: "Papel inválido" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
