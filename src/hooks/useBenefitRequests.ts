@@ -130,22 +130,23 @@ const fetchBenefitRequests = async (allowedModules: string[] | null, userRole: s
   })) as BenefitRequest[];
 
   // For DP/Gestor/Admin, filter out alteracao_ferias that haven't been approved by HR yet
-  // (unless they are already closed)
+  // The two-step workflow: RH approves first, then DP/Gestor can see and finalize
   if (userRole !== 'rh') {
     requestsWithProfiles = requestsWithProfiles.filter(req => {
-      // If not alteracao_ferias, show it
+      // If not alteracao_ferias, show it normally
       if (req.benefit_type !== 'alteracao_ferias') {
         return true;
       }
-      // If alteracao_ferias is closed (aprovada/recusada), show it
-      if (req.status === 'aprovada' || req.status === 'recusada') {
-        return true;
-      }
-      // If HR has approved, show it
+      // Only show alteracao_ferias to DP/Gestor/Admin if:
+      // 1. HR has approved (hr_status === 'aprovada') - appears as new open request
+      // 2. OR it's already finalized by DP (status === 'aprovada' or 'recusada')
       if (req.hr_status === 'aprovada') {
         return true;
       }
-      // Otherwise, hide it (pending HR approval)
+      if (req.status === 'aprovada' || req.status === 'recusada') {
+        return true;
+      }
+      // Hide all alteracao_ferias pending HR approval (hr_status null or 'pendente')
       return false;
     });
   }
