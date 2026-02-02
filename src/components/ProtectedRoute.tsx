@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { FullPageLoading } from '@/components/ui/loading-spinner';
 
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, userRole, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <FullPageLoading message="Verificando acesso..." />;
@@ -26,6 +27,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Check if user has the required role
   if (!userRole || !allowedRoles.includes(userRole)) {
+    // RH users should be redirected to /solicitacoes instead of access denied
+    if (userRole === 'rh' && location.pathname === '/') {
+      return <Navigate to="/solicitacoes" replace />;
+    }
     return <Navigate to="/acesso-negado" replace />;
   }
 
