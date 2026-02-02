@@ -141,8 +141,8 @@ export function HrApprovalSection({
     }
   };
 
-  // If request is already closed, don't show the section
-  if (!isPending && !isHrApproved && !isHrRejected) {
+  // Only hide section if there's nothing to show (no HR review happened and request is closed)
+  if (!isPending && !isHrApproved && !isHrRejected && !hrReviewedAt) {
     return null;
   }
 
