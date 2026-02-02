@@ -91,10 +91,10 @@ export default function Solicitacoes() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingViewRequest, setPendingViewRequest] = useState<{ id: string; index: number } | null>(null);
   
-  const { userModules } = useAuth();
+  const { userModules, userRole } = useAuth();
   const { configs: slaConfigs } = useSlaConfigs();
   const { holidays } = useHolidays();
-  const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests(userModules);
+  const { requests, loading, refetch, updateLocalRequest } = useBenefitRequests(userModules, userRole);
 
   // Cache holiday dates set for performance
   const holidayDatesSet = getHolidayDatesSet(holidays);

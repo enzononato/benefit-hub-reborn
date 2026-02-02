@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { FullPageLoading } from '@/components/ui/loading-spinner';
 
-export type AppRole = 'admin' | 'gestor' | 'agente_dp' | 'colaborador';
+export type AppRole = 'admin' | 'gestor' | 'agente_dp' | 'rh' | 'colaborador';
 
 interface AuthContextType {
   isAuthenticated: boolean;

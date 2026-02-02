@@ -46,7 +46,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/solicitacoes" element={
-                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp']}>
+                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp', 'rh']}>
                   <Solicitacoes />
                 </ProtectedRoute>
               } />

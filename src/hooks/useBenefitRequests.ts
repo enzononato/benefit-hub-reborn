@@ -35,6 +35,11 @@ export interface BenefitRequest {
   // Legacy: Chatwoot integration (for backward compatibility)
   account_id?: number | null;
   conversation_id?: number | null;
+  // HR approval fields
+  hr_status?: string | null;
+  hr_reviewed_by?: string | null;
+  hr_reviewed_at?: string | null;
+  hr_notes?: string | null;
   profile?: {
     full_name: string;
     cpf?: string | null;
@@ -46,7 +51,43 @@ export interface BenefitRequest {
   } | null;
 }
 
-const fetchBenefitRequests = async (allowedModules: string[] | null): Promise<BenefitRequest[]> => {
+const fetchBenefitRequests = async (allowedModules: string[] | null, userRole: string | null): Promise<BenefitRequest[]> => {
+  // RH users can only see alteracao_ferias (RLS enforces this, but we explicitly set modules)
+  if (userRole === 'rh') {
+    // RLS already filters to only alteracao_ferias for RH
+    // Just fetch what RLS allows
+    const { data: requestsData, error: requestsError } = await supabase
+      .from('benefit_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (requestsError) {
+      console.error('Error fetching requests:', requestsError);
+      throw requestsError;
+    }
+
+    // Fetch profiles
+    const userIds = [...new Set(requestsData?.map(r => r.user_id) || [])];
+    
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, cpf, phone, unit_id, unit:units(name)')
+      .in('user_id', userIds);
+
+    const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+    const requestsWithProfiles = (requestsData || []).map(req => ({
+      ...req,
+      profile: profilesMap.get(req.user_id) || null
+    }));
+
+    return requestsWithProfiles as BenefitRequest[];
+  }
+
   // If user has no modules configured (empty array), return empty
   if (allowedModules !== null && allowedModules.length === 0) {
     return [];
@@ -83,30 +124,51 @@ const fetchBenefitRequests = async (allowedModules: string[] | null): Promise<Be
 
   const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
 
-  const requestsWithProfiles = (requestsData || []).map(req => ({
+  let requestsWithProfiles = (requestsData || []).map(req => ({
     ...req,
     profile: profilesMap.get(req.user_id) || null
-  }));
+  })) as BenefitRequest[];
 
-  return requestsWithProfiles as BenefitRequest[];
+  // For DP/Gestor/Admin, filter out alteracao_ferias that haven't been approved by HR yet
+  // (unless they are already closed)
+  if (userRole !== 'rh') {
+    requestsWithProfiles = requestsWithProfiles.filter(req => {
+      // If not alteracao_ferias, show it
+      if (req.benefit_type !== 'alteracao_ferias') {
+        return true;
+      }
+      // If alteracao_ferias is closed (aprovada/recusada), show it
+      if (req.status === 'aprovada' || req.status === 'recusada') {
+        return true;
+      }
+      // If HR has approved, show it
+      if (req.hr_status === 'aprovada') {
+        return true;
+      }
+      // Otherwise, hide it (pending HR approval)
+      return false;
+    });
+  }
+
+  return requestsWithProfiles;
 };
 
-export const useBenefitRequests = (allowedModules: string[] | null = null) => {
+export const useBenefitRequests = (allowedModules: string[] | null = null, userRole: string | null = null) => {
   const queryClient = useQueryClient();
 
   // Normalize queryKey to prevent unnecessary refetches when array order changes
   const normalizedModules = allowedModules ? [...allowedModules].sort() : null;
 
   const query = useQuery({
-    queryKey: ['benefit-requests', normalizedModules],
-    queryFn: () => fetchBenefitRequests(allowedModules),
+    queryKey: ['benefit-requests', normalizedModules, userRole],
+    queryFn: () => fetchBenefitRequests(allowedModules, userRole),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
 
   // Use ref to track current queryKey for realtime updates
-  const queryKeyRef = useRef(['benefit-requests', normalizedModules]);
-  queryKeyRef.current = ['benefit-requests', normalizedModules];
+  const queryKeyRef = useRef(['benefit-requests', normalizedModules, userRole]);
+  queryKeyRef.current = ['benefit-requests', normalizedModules, userRole];
 
   // Realtime subscription - uses ref to always have current queryKey
   useEffect(() => {
@@ -203,7 +265,7 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules], (old) => {
+      queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules, userRole], (old) => {
         if (!old) return old;
         return old.map((r) => (r.id === data.id ? { ...r, ...data } : r));
       });
@@ -211,11 +273,11 @@ export const useBenefitRequests = (allowedModules: string[] | null = null) => {
   });
 
   const updateLocalRequest = useCallback((id: string, updates: Partial<BenefitRequest>) => {
-    queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules], (old) => {
+    queryClient.setQueryData<BenefitRequest[]>(['benefit-requests', normalizedModules, userRole], (old) => {
       if (!old) return old;
       return old.map((r) => (r.id === id ? { ...r, ...updates } : r));
     });
-  }, [queryClient, normalizedModules]);
+  }, [queryClient, normalizedModules, userRole]);
 
   return {
     requests: query.data || [],
