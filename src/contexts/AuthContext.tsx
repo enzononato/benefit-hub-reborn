@@ -44,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Default role when no role is configured / visible for the user
       setUserRole('colaborador');
     } else {
-      // Priority: admin > gestor > agente_dp > colaborador
-      const rolePriority: AppRole[] = ['admin', 'gestor', 'agente_dp', 'colaborador'];
+      // Priority: admin > gestor > agente_dp > rh > colaborador
+      const rolePriority: AppRole[] = ['admin', 'gestor', 'agente_dp', 'rh', 'colaborador'];
       const userRoles = rolesData.map((r) => r.role as AppRole);
       highestRole = rolePriority.find((role) => userRoles.includes(role)) || 'colaborador';
       setUserRole(highestRole);
