@@ -47,20 +47,20 @@ const navigation: NavItem[] = [
     name: 'Dashboard',
     href: '/',
     icon: LayoutDashboard,
-    allowedRoles: ['admin', 'gestor', 'agente_dp']
+    allowedRoles: ['admin', 'gestor', 'agente_dp', 'rh']
   },
   {
     name: 'Protocolos',
     href: '/solicitacoes',
     icon: FileText,
     showOpenCount: true,
-    allowedRoles: ['admin', 'gestor', 'agente_dp']
+    allowedRoles: ['admin', 'gestor', 'agente_dp', 'rh']
   },
   {
     name: 'Colaboradores',
     href: '/colaboradores',
     icon: Users,
-    allowedRoles: ['admin', 'gestor', 'agente_dp']
+    allowedRoles: ['admin', 'gestor', 'agente_dp', 'rh']
   },
   {
     name: 'Unidades',
