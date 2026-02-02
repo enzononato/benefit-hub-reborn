@@ -41,7 +41,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/acesso-negado" element={<AccessDenied />} />
               <Route path="/" element={
-                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp']}>
+                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp', 'rh']}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
@@ -51,7 +51,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/colaboradores" element={
-                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp']}>
+                <ProtectedRoute allowedRoles={['admin', 'gestor', 'agente_dp', 'rh']}>
                   <Colaboradores />
                 </ProtectedRoute>
               } />
