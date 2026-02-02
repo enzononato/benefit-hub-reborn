@@ -48,6 +48,8 @@ import {
 import { benefitTypeLabels, type BenefitStatus, type BenefitType } from "@/types/benefits";
 import { ChatPanel } from "./ChatPanel";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { HrApprovalSection } from "./HrApprovalSection";
+import { useAuth, AppRole } from "@/contexts/AuthContext";
 
 interface SolicitacaoDetailsSheetProps {
   open: boolean;
@@ -76,6 +78,11 @@ interface SolicitacaoDetailsSheetProps {
     approved_value?: number | null;
     total_installments?: number | null;
     paid_installments?: number | null;
+    // HR approval fields
+    hr_status?: string | null;
+    hr_reviewed_by?: string | null;
+    hr_reviewed_at?: string | null;
+    hr_notes?: string | null;
     profile?: {
       full_name: string;
       cpf?: string | null;
@@ -123,6 +130,7 @@ export function SolicitacaoDetailsSheet({
   totalItems = 1,
   onNavigate,
 }: SolicitacaoDetailsSheetProps) {
+  const { userRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<BenefitStatus>(request?.status || 'aberta');
   const [rejectionReason, setRejectionReason] = useState("");
@@ -569,6 +577,16 @@ export function SolicitacaoDetailsSheet({
   const isRejected = status === "recusada";
   const isClosed = request.status === "aprovada" || request.status === "recusada";
 
+  // HR approval logic for "alteracao_ferias"
+  const isAlteracaoFerias = selectedBenefitType === 'alteracao_ferias';
+  const isRhUser = userRole === 'rh';
+  const isDpOrGestor = userRole === 'admin' || userRole === 'gestor' || userRole === 'agente_dp';
+  const hrNeedsApproval = isAlteracaoFerias && (!request.hr_status || request.hr_status === 'pendente');
+  const hrApproved = request.hr_status === 'aprovada';
+  
+  // DP/Gestor can only act on alteracao_ferias if HR has approved
+  const canDpActOnRequest = !isAlteracaoFerias || hrApproved;
+
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < totalItems - 1;
 
@@ -883,8 +901,22 @@ export function SolicitacaoDetailsSheet({
                   </>
                 )}
 
-                {/* Ações (se pendente) */}
-                {isPending && !isClosed && (
+                {/* HR Approval Section for alteracao_ferias */}
+                {isAlteracaoFerias && isPending && !isClosed && (
+                  <HrApprovalSection
+                    requestId={request.id}
+                    hrStatus={request.hr_status || null}
+                    hrReviewedBy={request.hr_reviewed_by || null}
+                    hrReviewedAt={request.hr_reviewed_at || null}
+                    hrNotes={request.hr_notes || null}
+                    userRole={userRole}
+                    isPending={isPending}
+                    onSuccess={onSuccess}
+                  />
+                )}
+
+                {/* Ações (se pendente) - Para RH, só mostra na seção de RH */}
+                {isPending && !isClosed && !isRhUser && canDpActOnRequest && (
                   <>
                     <Separator />
                     <div className="space-y-4">

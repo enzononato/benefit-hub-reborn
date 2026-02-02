@@ -43,18 +43,20 @@ import { Plus, Pencil, Trash2, Loader2, Search, UserCog, KeyRound } from 'lucide
 import { cn } from '@/lib/utils';
 import { EditarFuncaoDialog } from '@/components/usuarios/EditarFuncaoDialog';
 
-type SystemRole = 'admin' | 'gestor' | 'agente_dp';
+type SystemRole = 'admin' | 'gestor' | 'agente_dp' | 'rh';
 
 const roleLabels: Record<SystemRole, string> = {
   admin: 'Administrador',
   gestor: 'Gestor',
   agente_dp: 'Agente de DP',
+  rh: 'RH',
 };
 
 const roleColors: Record<SystemRole, string> = {
   admin: 'bg-destructive/10 text-destructive border-destructive/20',
   gestor: 'bg-warning/10 text-warning border-warning/20',
   agente_dp: 'bg-primary/10 text-primary border-primary/20',
+  rh: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
 };
 
 // Módulos de Convênios e Benefícios (para agrupar na exibição)
@@ -298,6 +300,7 @@ export default function Usuarios() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="rh">RH</SelectItem>
                       <SelectItem value="gestor">Gestor</SelectItem>
                       <SelectItem value="agente_dp">Agente de DP</SelectItem>
                     </SelectContent>

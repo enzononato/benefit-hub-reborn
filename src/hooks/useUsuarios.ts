@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 
-type SystemRole = 'admin' | 'gestor' | 'agente_dp';
+type SystemRole = 'admin' | 'gestor' | 'agente_dp' | 'rh';
 
 export interface SystemUser {
   id: string;
@@ -69,11 +69,11 @@ export const useUsuarios = () => {
     try {
       setLoading(true);
 
-      // Fetch only system roles (admin, gestor, agente_dp)
+      // Fetch only system roles (admin, gestor, agente_dp, rh)
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role')
-        .in('role', ['admin', 'gestor', 'agente_dp']);
+        .in('role', ['admin', 'gestor', 'agente_dp', 'rh']);
 
       if (rolesError) throw rolesError;
 

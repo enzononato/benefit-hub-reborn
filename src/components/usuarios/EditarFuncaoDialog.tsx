@@ -22,12 +22,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { BenefitType } from '@/types/benefits';
 
-type SystemRole = 'admin' | 'gestor' | 'agente_dp';
+type SystemRole = 'admin' | 'gestor' | 'agente_dp' | 'rh';
 
 const roleLabels: Record<SystemRole, string> = {
   admin: 'Administrador',
   gestor: 'Gestor',
   agente_dp: 'Agente de DP',
+  rh: 'RH',
 };
 
 // Módulos agregadores (selecionam múltiplos módulos de uma vez)
@@ -244,6 +245,7 @@ export const EditarFuncaoDialog: React.FC<EditarFuncaoDialogProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Administrador</SelectItem>
+              <SelectItem value="rh">RH</SelectItem>
               <SelectItem value="gestor">Gestor</SelectItem>
               <SelectItem value="agente_dp">Agente de DP</SelectItem>
             </SelectContent>

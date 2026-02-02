@@ -216,6 +216,10 @@ export type Database = {
           conversation_id: number | null
           created_at: string
           details: string | null
+          hr_notes: string | null
+          hr_reviewed_at: string | null
+          hr_reviewed_by: string | null
+          hr_status: string | null
           id: string
           paid_installments: number | null
           pdf_file_name: string | null
@@ -243,6 +247,10 @@ export type Database = {
           conversation_id?: number | null
           created_at?: string
           details?: string | null
+          hr_notes?: string | null
+          hr_reviewed_at?: string | null
+          hr_reviewed_by?: string | null
+          hr_status?: string | null
           id?: string
           paid_installments?: number | null
           pdf_file_name?: string | null
@@ -270,6 +278,10 @@ export type Database = {
           conversation_id?: number | null
           created_at?: string
           details?: string | null
+          hr_notes?: string | null
+          hr_reviewed_at?: string | null
+          hr_reviewed_by?: string | null
+          hr_status?: string | null
           id?: string
           paid_installments?: number | null
           pdf_file_name?: string | null

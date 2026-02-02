@@ -93,6 +93,7 @@ const roleLabels: Record<AppRole, string> = {
   admin: 'Administrador',
   gestor: 'Gestor',
   agente_dp: 'Agente de DP',
+  rh: 'RH',
   colaborador: 'Colaborador',
 };
 
