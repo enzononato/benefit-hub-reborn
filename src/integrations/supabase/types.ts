@@ -1085,7 +1085,7 @@ export type Database = {
     Enums: {
       alert_severity: "critical" | "warning" | "info"
       alert_status: "active" | "acknowledged" | "resolved"
-      app_role: "admin" | "gestor" | "colaborador" | "agente_dp"
+      app_role: "admin" | "gestor" | "colaborador" | "agente_dp" | "rh"
       asset_status: "operational" | "warning" | "critical" | "maintenance"
       asset_type:
         | "server"
@@ -1263,7 +1263,7 @@ export const Constants = {
     Enums: {
       alert_severity: ["critical", "warning", "info"],
       alert_status: ["active", "acknowledged", "resolved"],
-      app_role: ["admin", "gestor", "colaborador", "agente_dp"],
+      app_role: ["admin", "gestor", "colaborador", "agente_dp", "rh"],
       asset_status: ["operational", "warning", "critical", "maintenance"],
       asset_type: [
         "server",
