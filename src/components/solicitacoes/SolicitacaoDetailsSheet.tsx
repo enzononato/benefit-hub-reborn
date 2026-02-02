@@ -901,8 +901,8 @@ export function SolicitacaoDetailsSheet({
                   </>
                 )}
 
-                {/* HR Approval Section for alteracao_ferias */}
-                {isAlteracaoFerias && isPending && !isClosed && (
+                {/* HR Approval Section for alteracao_ferias - always show for history, allow actions only when pending */}
+                {isAlteracaoFerias && (
                   <HrApprovalSection
                     requestId={request.id}
                     hrStatus={request.hr_status || null}
@@ -910,7 +910,7 @@ export function SolicitacaoDetailsSheet({
                     hrReviewedAt={request.hr_reviewed_at || null}
                     hrNotes={request.hr_notes || null}
                     userRole={userRole}
-                    isPending={isPending}
+                    isPending={isPending && !isClosed}
                     onSuccess={onSuccess}
                   />
                 )}
