@@ -112,15 +112,11 @@ serve(async (req) => {
       const newPaidInstallments = paidInstallments + 1;
       const isLastInstallment = newPaidInstallments >= totalInstallments;
 
-      // CRÉDITO ROTATIVO:
-      // 1. Primeiro restaura a parcela anterior (colaborador pagou via folha)
-      // 2. Se não é a última parcela, deduz a próxima
-      // 3. Se é a última, apenas restaura (não há mais parcelas a cobrar)
+      // DEDUÇÃO TOTAL NA APROVAÇÃO:
+      // O valor total foi deduzido na aprovação
+      // A cada mês, restauramos o valor da parcela paga ao limite
       
-      const restoredLimit = currentLimit + installmentValue;
-      const newLimit = isLastInstallment 
-        ? restoredLimit  // Última parcela: apenas restaura
-        : restoredLimit - installmentValue;  // Ainda há parcelas: restaura e deduz próxima
+      const newLimit = currentLimit + installmentValue;
 
       // Atualizar o limite de crédito do colaborador
       const { error: updateProfileError } = await supabase
@@ -184,9 +180,7 @@ serve(async (req) => {
       }
 
       const isCompleted = isLastInstallment;
-      const limitChangeDescription = isLastInstallment 
-        ? `+R$ ${installmentValue.toFixed(2)} (última parcela paga)`
-        : `R$ ${currentLimit.toFixed(2)} -> R$ ${newLimit.toFixed(2)} (parcela paga e próxima cobrada)`;
+      const limitChangeDescription = `+R$ ${installmentValue.toFixed(2)} (parcela ${newPaidInstallments}/${totalInstallments} paga)`;
 
       console.log(
         `[${request.protocol}] Parcela ${newPaidInstallments}/${totalInstallments} processada. ` +
