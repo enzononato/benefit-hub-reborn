@@ -365,8 +365,8 @@ export function SolicitacaoDetailsSheet({
   const parsedApprovedValue = parseFloat(approvedValue.replace(',', '.')) || 0;
   const parsedInstallments = parseInt(totalInstallments) || 1;
   const installmentValue = parsedInstallments > 0 ? parsedApprovedValue / parsedInstallments : parsedApprovedValue;
-  // Validar se o valor da PARCELA excede o limite total (não o disponível) - apenas para convênios
-  const exceedsCredit = isConvenio && creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit;
+  // Validar se o valor TOTAL excede o limite de crédito - apenas para convênios
+  const exceedsCredit = isConvenio && creditInfo && creditInfo.limit > 0 && parsedApprovedValue > creditInfo.limit;
 
   const handleApprove = () => {
     setStatus("aprovada");
@@ -481,12 +481,12 @@ export function SolicitacaoDetailsSheet({
           return;
         }
 
-        // Validação do limite - verificar se o valor da parcela cabe no limite total
-        if (creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit) {
+        // Validação do limite - verificar se o valor total cabe no limite de crédito
+        if (creditInfo && creditInfo.limit > 0 && parsedApprovedValue > creditInfo.limit) {
           toast.error(
-            `O valor da parcela excede o limite de crédito do colaborador`,
+            `O valor total excede o limite de crédito do colaborador`,
             { 
-              description: `Parcela: R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+              description: `Valor total: R$ ${parsedApprovedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} | Limite: R$ ${creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
             }
           );
           setLoading(false);
@@ -539,9 +539,9 @@ export function SolicitacaoDetailsSheet({
 
       if (updateError) throw updateError;
 
-      // Se aprovada (convênio), deduzir o valor da parcela do limite do colaborador
+      // Se aprovada (convênio), deduzir o valor TOTAL do limite do colaborador
       if (status === "aprovada" && isConvenio && creditInfo && creditInfo.limit > 0) {
-        const newLimit = Math.max(0, creditInfo.limit - installmentValue);
+        const newLimit = Math.max(0, creditInfo.limit - parsedApprovedValue);
         
         const { error: profileError } = await supabase
           .from('profiles')
