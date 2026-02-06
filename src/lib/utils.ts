@@ -75,7 +75,7 @@ export function getSLATime(date: Date | string): string {
   return `${diffDays}d`;
 }
 
-export function truncateFileName(name: string, maxLength: number = 30): string {
+export function truncateFileName(name: string, maxLength: number = 50): string {
   if (name.length <= maxLength) return name;
   
   const lastDot = name.lastIndexOf('.');
