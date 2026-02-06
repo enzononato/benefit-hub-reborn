@@ -1,0 +1,1 @@
+DELETE FROM benefit_requests WHERE id = 'e7d7a9a6-eee0-4867-b7a5-b6ab062fc3e8';
