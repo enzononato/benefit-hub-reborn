@@ -964,42 +964,76 @@ export function SolicitacaoDetailsSheet({
                           {/* Informação do Limite de Crédito */}
                           {creditInfo && creditInfo.limit > 0 && (
                             <div className={cn(
-                              "rounded-lg p-3 space-y-2",
+                              "rounded-lg p-4 space-y-3",
                               exceedsCredit 
                                 ? "bg-destructive/10 border border-destructive/30" 
                                 : "bg-muted/50 border border-border"
                             )}>
                               <div className="flex items-center gap-2">
                                 <Wallet className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium">Limite de Crédito</span>
+                                <span className="text-sm font-medium">Impacto no Limite de Crédito</span>
                               </div>
-                              <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                  <span className="text-muted-foreground block">Total</span>
-                                  <span className="font-medium">
-                                    R$ {creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground block">Utilizado</span>
-                                  <span className="font-medium text-amber-600 dark:text-amber-400">
-                                    R$ {creditInfo.used.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground block">Disponível</span>
-                                  <span className={cn(
-                                    "font-bold",
-                                    exceedsCredit ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
+                              
+                              {/* Limite atual */}
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Limite atual:</span>
+                                <span className="font-semibold">
+                                  R$ {creditInfo.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              
+                              {/* Valor a ser deduzido */}
+                              {parsedApprovedValue > 0 && (
+                                <>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Valor total a deduzir:</span>
+                                    <span className="font-semibold text-amber-600 dark:text-amber-400">
+                                      - R$ {parsedApprovedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Barra visual de impacto */}
+                                  <div className="space-y-1">
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                      <div 
+                                        className={cn(
+                                          "h-full transition-all duration-300",
+                                          exceedsCredit 
+                                            ? "bg-destructive" 
+                                            : "bg-primary"
+                                        )}
+                                        style={{ 
+                                          width: `${Math.min(100, (parsedApprovedValue / creditInfo.limit) * 100)}%` 
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                      <span>{Math.round((parsedApprovedValue / creditInfo.limit) * 100)}% do limite</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Limite após aprovação */}
+                                  <div className={cn(
+                                    "flex items-center justify-between text-sm pt-2 border-t",
+                                    exceedsCredit ? "border-destructive/30" : "border-border"
                                   )}>
-                                    R$ {creditInfo.available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                              </div>
+                                    <span className="text-muted-foreground font-medium">Limite após aprovação:</span>
+                                    <span className={cn(
+                                      "font-bold text-base",
+                                      exceedsCredit 
+                                        ? "text-destructive" 
+                                        : "text-emerald-600 dark:text-emerald-400"
+                                    )}>
+                                      R$ {Math.max(0, creditInfo.limit - parsedApprovedValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                              
                               {exceedsCredit && (
-                                <div className="flex items-center gap-2 text-xs text-destructive mt-2">
-                                  <AlertCircle className="h-3 w-3" />
-                                  <span>O valor da parcela (R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) excede o limite!</span>
+                                <div className="flex items-center gap-2 text-xs text-destructive pt-1">
+                                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                                  <span>O valor total (R$ {parsedApprovedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) excede o limite disponível!</span>
                                 </div>
                               )}
                             </div>
