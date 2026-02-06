@@ -1,107 +1,115 @@
 
 
-# Plano: Alterar Lógica de Limite de Crédito para Valor Total
+# Plano: Limitar Tamanho do Nome de Arquivo nos Botões de Upload
 
-## Resumo da Mudança
+## Problema Identificado
 
-**Modelo Atual (Rotativo):** Deduz apenas o valor de uma parcela por vez
-**Modelo Novo (Total):** Deduz o valor total aprovado de uma só vez
+Quando um arquivo com nome muito longo é selecionado para upload, o nome completo é exibido dentro do botão, fazendo com que ele expanda e quebre o layout dos detalhes do protocolo.
 
-### Exemplo Prático da Mudança
-
-Colaborador com limite de R$1.000 solicita R$600 em 3x de R$200:
-
-| Modelo | Aprovação | Limite Após |
-|--------|-----------|-------------|
-| **Atual (Parcela)** | Deduz R$200 (1ª parcela) | R$800 |
-| **Novo (Total)** | Deduz R$600 (total) | R$400 |
+Os elementos afetados estao nos botões de upload de PDF/arquivo que exibem `pdfFile.name` diretamente sem truncar.
 
 ---
 
-## Arquivos que Serão Modificados
+## Solução
+
+Criar uma função utilitária para truncar nomes de arquivos muito longos e aplicá-la nos botões de upload.
+
+### Estratégia de Truncamento
+
+- Manter no máximo **30 caracteres** visíveis
+- Preservar a extensão do arquivo (ex: `.pdf`, `.jpg`)
+- Formato: `nome-do-arq...ivo.pdf`
+
+---
+
+## Arquivos a Modificar
 
 ### 1. `src/components/solicitacoes/SolicitacaoDetailsSheet.tsx`
 
-**Na validação (linha ~369):**
-- Mudar de: `installmentValue > creditInfo.limit`
-- Para: `parsedApprovedValue > creditInfo.limit` (valor total)
-
-**Na dedução do limite (linhas ~542-555):**
-- Mudar de: `creditInfo.limit - installmentValue`
-- Para: `creditInfo.limit - parsedApprovedValue` (deduz valor total)
-
-**Nas mensagens de erro:**
-- Atualizar texto para mencionar "valor total" em vez de "valor da parcela"
-
-### 2. `supabase/functions/process-monthly-installments/index.ts`
-
-**Simplificar a lógica mensal:**
-- O job mensal agora só precisa restaurar o valor da parcela conforme é paga
-- Não precisa mais fazer a rotação (restaurar + deduzir próxima)
-- Na última parcela: comportamento permanece igual (limite já estará correto)
-
-**Lógica atualizada:**
-```
-Mês X: Colaborador paga parcela → Restaura valor da parcela ao limite
+**Adicionar função de truncamento:**
+```typescript
+const truncateFileName = (name: string, maxLength: number = 30) => {
+  if (name.length <= maxLength) return name;
+  
+  const extension = name.lastIndexOf('.') > -1 
+    ? name.slice(name.lastIndexOf('.')) 
+    : '';
+  const nameWithoutExt = name.slice(0, name.lastIndexOf('.') || name.length);
+  const truncatedLength = maxLength - extension.length - 3; // 3 para "..."
+  
+  if (truncatedLength <= 0) return name.slice(0, maxLength - 3) + '...';
+  
+  return nameWithoutExt.slice(0, truncatedLength) + '...' + extension;
+};
 ```
 
-Exemplo com R$600 em 3x:
-| Momento | Ação | Limite |
-|---------|------|--------|
-| Aprovação | Deduz R$600 (total) | R$400 |
-| Mês 2 | Restaura parcela paga (+R$200) | R$600 |
-| Mês 3 | Restaura parcela paga (+R$200) | R$800 |
-| Quitação | Restaura última parcela (+R$200) | R$1.000 |
+**Aplicar nos botões (linhas 1101 e 1134):**
+```typescript
+// Linha 1101 - Upload de PDF
+{pdfFile ? truncateFileName(pdfFile.name) : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
 
-### 3. `memory/features/credit-limit-installment-logic.md`
+// Linha 1134 - Upload de Atestado
+{pdfFile ? truncateFileName(pdfFile.name) : pdfUrl ? "Substituir arquivo" : "Selecionar arquivo"}
+```
 
-- Atualizar a documentação para refletir o novo modelo
+**Adicionar estilos ao botão para garantir truncamento:**
+- Adicionar `truncate` e `max-w-full` às classes do botão
+
+### 2. `src/components/benefits/BenefitDetailsSheet.tsx`
+
+Aplicar a mesma correção na linha 524.
 
 ---
 
 ## Detalhes Técnicos
 
-### Mudanças no Frontend (SolicitacaoDetailsSheet.tsx)
+### Função truncateFileName
 
-**Validação de aprovação:**
 ```typescript
-// ANTES: validava valor da parcela
-const exceedsCredit = isConvenio && creditInfo && creditInfo.limit > 0 && installmentValue > creditInfo.limit;
-
-// DEPOIS: valida valor total
-const exceedsCredit = isConvenio && creditInfo && creditInfo.limit > 0 && parsedApprovedValue > creditInfo.limit;
+const truncateFileName = (name: string, maxLength: number = 30): string => {
+  if (name.length <= maxLength) return name;
+  
+  const lastDot = name.lastIndexOf('.');
+  const extension = lastDot > -1 ? name.slice(lastDot) : '';
+  const baseName = lastDot > -1 ? name.slice(0, lastDot) : name;
+  
+  const availableLength = maxLength - extension.length - 3;
+  
+  if (availableLength <= 0) {
+    return name.slice(0, maxLength - 3) + '...';
+  }
+  
+  return baseName.slice(0, availableLength) + '...' + extension;
+};
 ```
 
-**Dedução do limite:**
+### Exemplos de Resultado
+
+| Nome Original | Resultado |
+|--------------|-----------|
+| `documento.pdf` | `documento.pdf` (sem alteração) |
+| `arquivo_muito_grande_com_nome_enorme.pdf` | `arquivo_muito_grande_co....pdf` |
+| `1234567890123456789012345678901234567890.jpg` | `123456789012345678901....jpg` |
+
+### Classes CSS Adicionais no Botão
+
 ```typescript
-// ANTES: deduzia valor da parcela
-const newLimit = Math.max(0, creditInfo.limit - installmentValue);
-
-// DEPOIS: deduz valor total
-const newLimit = Math.max(0, creditInfo.limit - parsedApprovedValue);
-```
-
-### Mudanças no Edge Function (process-monthly-installments)
-
-**Lógica mensal simplificada:**
-```typescript
-// ANTES: restaurava parcela anterior e deduzia próxima (rotativo)
-const restoredLimit = currentLimit + installmentValue;
-const newLimit = isLastInstallment 
-  ? restoredLimit  
-  : restoredLimit - installmentValue;
-
-// DEPOIS: apenas restaura a parcela paga (valor total já foi deduzido)
-const newLimit = currentLimit + installmentValue;
+<Button
+  className="w-full overflow-hidden"
+>
+  <FileUp className="w-4 h-4 mr-2 flex-shrink-0" />
+  <span className="truncate">
+    {pdfFile ? truncateFileName(pdfFile.name) : ...}
+  </span>
+</Button>
 ```
 
 ---
 
-## Considerações
+## Resultado Esperado
 
-1. **Solicitações existentes:** Solicitações já aprovadas continuarão funcionando normalmente - o cron job restaurará as parcelas conforme forem pagas
-
-2. **Limite mais restritivo:** Com o novo modelo, o colaborador precisa ter o limite total disponível para aprovar, não apenas o valor de uma parcela
-
-3. **Parcelas ainda serão rastreadas:** Os campos `total_installments` e `paid_installments` continuam sendo usados para controlar a restauração mensal do limite
+- Nomes de arquivo longos serão truncados com "..." no meio
+- A extensão do arquivo será preservada para clareza
+- O layout dos detalhes do protocolo permanecerá estável
+- O usuário ainda poderá ver o arquivo completo ao passar o mouse (com title)
 
