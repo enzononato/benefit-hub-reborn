@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, truncateFileName } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -1095,10 +1095,13 @@ export function SolicitacaoDetailsSheet({
                             onClick={() => document.getElementById("pdf-upload")?.click()}
                             variant="outline"
                             disabled={loading}
-                            className="w-full"
+                            className="w-full overflow-hidden"
+                            title={pdfFile?.name}
                           >
-                            <FileUp className="w-4 h-4 mr-2" />
-                            {pdfFile ? pdfFile.name : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
+                            <FileUp className="w-4 h-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">
+                              {pdfFile ? truncateFileName(pdfFile.name) : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
+                            </span>
                           </Button>
                           <input
                             id="pdf-upload"
@@ -1128,10 +1131,13 @@ export function SolicitacaoDetailsSheet({
                             onClick={() => document.getElementById("atestado-upload")?.click()}
                             variant="outline"
                             disabled={loading}
-                            className="w-full"
+                            className="w-full overflow-hidden"
+                            title={pdfFile?.name}
                           >
-                            <FileUp className="w-4 h-4 mr-2" />
-                            {pdfFile ? pdfFile.name : pdfUrl ? "Substituir arquivo" : "Selecionar arquivo"}
+                            <FileUp className="w-4 h-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">
+                              {pdfFile ? truncateFileName(pdfFile.name) : pdfUrl ? "Substituir arquivo" : "Selecionar arquivo"}
+                            </span>
                           </Button>
                           <input
                             id="atestado-upload"

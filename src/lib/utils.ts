@@ -74,3 +74,19 @@ export function getSLATime(date: Date | string): string {
   }
   return `${diffDays}d`;
 }
+
+export function truncateFileName(name: string, maxLength: number = 30): string {
+  if (name.length <= maxLength) return name;
+  
+  const lastDot = name.lastIndexOf('.');
+  const extension = lastDot > -1 ? name.slice(lastDot) : '';
+  const baseName = lastDot > -1 ? name.slice(0, lastDot) : name;
+  
+  const availableLength = maxLength - extension.length - 3;
+  
+  if (availableLength <= 0) {
+    return name.slice(0, maxLength - 3) + '...';
+  }
+  
+  return baseName.slice(0, availableLength) + '...' + extension;
+}

@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { truncateFileName } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -518,10 +519,13 @@ export function BenefitDetailsSheet({
                           onClick={() => document.getElementById("pdf-upload")?.click()}
                           variant="outline"
                           disabled={loading}
-                          className="w-full"
+                          className="w-full overflow-hidden"
+                          title={pdfFile?.name}
                         >
-                          <FileUp className="w-4 h-4 mr-2" />
-                          {pdfFile ? pdfFile.name : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
+                          <FileUp className="w-4 h-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">
+                            {pdfFile ? truncateFileName(pdfFile.name) : pdfUrl ? "Substituir PDF" : "Selecionar PDF"}
+                          </span>
                         </Button>
                         <input
                           id="pdf-upload"
