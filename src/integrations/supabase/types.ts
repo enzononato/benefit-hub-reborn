@@ -203,6 +203,56 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          company_id: string | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       benefit_requests: {
         Row: {
           account_id: number | null
@@ -349,6 +399,121 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          cnpj: string
+          created_at: string | null
+          email: string | null
+          endereco: Json | null
+          id: string
+          limite_transacoes_mes: number | null
+          logo_url: string | null
+          nome_fantasia: string | null
+          plano: string | null
+          razao_social: string
+          status: string | null
+          telefone: string | null
+          unit_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          limite_transacoes_mes?: number | null
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          plano?: string | null
+          razao_social: string
+          status?: string | null
+          telefone?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          limite_transacoes_mes?: number | null
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          plano?: string | null
+          razao_social?: string
+          status?: string | null
+          telefone?: string | null
+          unit_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_pix_settings: {
+        Row: {
+          certificate_url: string | null
+          client_id_encrypted: string | null
+          client_secret_encrypted: string | null
+          company_id: string
+          created_at: string | null
+          environment: string | null
+          id: string
+          is_active: boolean | null
+          pix_key: string | null
+          pix_key_type: string | null
+          provider: string
+          updated_at: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          certificate_url?: string | null
+          client_id_encrypted?: string | null
+          client_secret_encrypted?: string | null
+          company_id: string
+          created_at?: string | null
+          environment?: string | null
+          id?: string
+          is_active?: boolean | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          provider?: string
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          certificate_url?: string | null
+          client_id_encrypted?: string | null
+          client_secret_encrypted?: string | null
+          company_id?: string
+          created_at?: string | null
+          environment?: string | null
+          id?: string
+          is_active?: boolean | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          provider?: string
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_pix_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_limits: {
         Row: {
           benefit_type: string | null
@@ -386,6 +551,265 @@ export type Database = {
             columns: ["partnership_id"]
             isOneToOne: false
             referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          email: string | null
+          endereco: Json | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          email?: string | null
+          endereco?: Json | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_orders: {
+        Row: {
+          amount_cents: number
+          assigned_at: string | null
+          charge_id: string | null
+          company_id: string
+          created_at: string | null
+          customer_id: string | null
+          delivered_at: string | null
+          delivery_address: Json | null
+          description: string | null
+          driver_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_status: string | null
+          reference_code: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_cents: number
+          assigned_at?: string | null
+          charge_id?: string | null
+          company_id: string
+          created_at?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_address?: Json | null
+          description?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          reference_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          assigned_at?: string | null
+          charge_id?: string | null
+          company_id?: string
+          created_at?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_address?: Json | null
+          description?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          reference_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_orders_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "pix_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_commissions: {
+        Row: {
+          amount_cents: number
+          charge_id: string | null
+          created_at: string | null
+          driver_id: string
+          id: string
+          order_id: string | null
+          paid_at: string | null
+          status: string | null
+        }
+        Insert: {
+          amount_cents: number
+          charge_id?: string | null
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          order_id?: string | null
+          paid_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          charge_id?: string | null
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          order_id?: string | null
+          paid_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_commissions_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "pix_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_commissions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          codigo_promax: string | null
+          comissao_tipo: string | null
+          comissao_valor: number | null
+          company_id: string
+          cpf: string | null
+          created_at: string | null
+          email: string | null
+          foto_url: string | null
+          id: string
+          mapa_atual: string | null
+          mapa_data: string | null
+          nome: string
+          placa_veiculo: string | null
+          status: string | null
+          telefone: string | null
+          tipo_veiculo: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          codigo_promax?: string | null
+          comissao_tipo?: string | null
+          comissao_valor?: number | null
+          company_id: string
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          mapa_atual?: string | null
+          mapa_data?: string | null
+          nome: string
+          placa_veiculo?: string | null
+          status?: string | null
+          telefone?: string | null
+          tipo_veiculo?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          codigo_promax?: string | null
+          comissao_tipo?: string | null
+          comissao_valor?: number | null
+          company_id?: string
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          mapa_atual?: string | null
+          mapa_data?: string | null
+          nome?: string
+          placa_veiculo?: string | null
+          status?: string | null
+          telefone?: string | null
+          tipo_veiculo?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -780,6 +1204,163 @@ export type Database = {
           },
         ]
       }
+      pix_charges: {
+        Row: {
+          amount_cents: number
+          brcode: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          provider: string
+          provider_charge_id: string | null
+          qr_image_url: string | null
+          status: string
+          txid: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          brcode?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          provider?: string
+          provider_charge_id?: string | null
+          qr_image_url?: string | null
+          status?: string
+          txid: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          brcode?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          provider?: string
+          provider_charge_id?: string | null
+          qr_image_url?: string | null
+          status?: string
+          txid?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_charges_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pix_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pix_charges_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pix_events: {
+        Row: {
+          event_type: string
+          id: string
+          payload: Json
+          provider: string
+          provider_charge_id: string | null
+          received_at: string
+          txid: string | null
+          unit_id: string | null
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          payload: Json
+          provider: string
+          provider_charge_id?: string | null
+          received_at?: string
+          txid?: string | null
+          unit_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          payload?: Json
+          provider?: string
+          provider_charge_id?: string | null
+          received_at?: string
+          txid?: string | null
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_events_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pix_orders: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          description: string | null
+          driver_user_id: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          driver_user_id?: string | null
+          id: string
+          paid_at?: string | null
+          status?: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          driver_user_id?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_orders_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1052,6 +1633,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_audit_log: {
+        Args: {
+          p_action: string
+          p_company_id: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_new_data?: Json
+          p_old_data?: Json
+        }
+        Returns: string
+      }
       create_request_from_bot: {
         Args: {
           p_account_id?: number
@@ -1075,7 +1667,12 @@ export type Database = {
         Returns: string
       }
       get_my_unit_id: { Args: never; Returns: string }
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_unit_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_company_access: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1088,6 +1685,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_gestor: { Args: never; Returns: boolean }
+      is_company_admin: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_same_unit: { Args: { _user_id: string }; Returns: boolean }
       promote_user_to_admin: {
         Args: { user_email: string }
@@ -1097,7 +1698,16 @@ export type Database = {
     Enums: {
       alert_severity: "critical" | "warning" | "info"
       alert_status: "active" | "acknowledged" | "resolved"
-      app_role: "admin" | "gestor" | "colaborador" | "agente_dp" | "rh"
+      app_role:
+        | "admin"
+        | "gestor"
+        | "colaborador"
+        | "agente_dp"
+        | "rh"
+        | "platform_admin"
+        | "company_admin"
+        | "company_finance"
+        | "driver"
       asset_status: "operational" | "warning" | "critical" | "maintenance"
       asset_type:
         | "server"
@@ -1275,7 +1885,17 @@ export const Constants = {
     Enums: {
       alert_severity: ["critical", "warning", "info"],
       alert_status: ["active", "acknowledged", "resolved"],
-      app_role: ["admin", "gestor", "colaborador", "agente_dp", "rh"],
+      app_role: [
+        "admin",
+        "gestor",
+        "colaborador",
+        "agente_dp",
+        "rh",
+        "platform_admin",
+        "company_admin",
+        "company_finance",
+        "driver",
+      ],
       asset_status: ["operational", "warning", "critical", "maintenance"],
       asset_type: [
         "server",
