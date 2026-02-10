@@ -6,7 +6,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import BenefitsChart from '@/components/dashboard/BenefitsChart';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import BenefitTypeChart from '@/components/dashboard/BenefitTypeChart';
+
 import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
 
 import { RecentRequests } from '@/components/dashboard/RecentRequests';
@@ -250,10 +250,7 @@ export default function Dashboard() {
 
         <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-          <BenefitsChart data={monthlyData} />
-          <BenefitTypeChart data={benefitTypeData} />
-        </div>
+        <BenefitsChart data={monthlyData} />
 
         <AgentPerformanceChart />
         <RecentRequests />
