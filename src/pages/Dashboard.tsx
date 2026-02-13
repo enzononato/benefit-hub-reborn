@@ -34,11 +34,12 @@ interface RequestData {
   benefit_type: string;
   user_id: string;
   created_at: string;
+  hr_status: string | null;
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { userModules, userName } = useAuth();
+  const { userModules, userName, userRole } = useAuth();
 
   // Garante que só tipos válidos do enum cheguem no Dashboard (remove agregados tipo "convenios")
   const allowedBenefitTypes = useMemo(() => {
@@ -73,7 +74,7 @@ export default function Dashboard() {
 
       let query = supabase
         .from('benefit_requests')
-        .select('status, benefit_type, user_id, created_at');
+        .select('status, benefit_type, user_id, created_at, hr_status');
 
       // Filter by user's allowed modules (if not admin)
       if (allowedBenefitTypes !== null) {
@@ -115,6 +116,17 @@ export default function Dashboard() {
         filteredData = filteredData.filter(r => validUserIds.has(r.user_id));
       }
 
+      // Apply same HR workflow filter as Solicitações page
+      // For non-RH users, hide alteracao_ferias pending HR review
+      if (userRole !== 'rh') {
+        filteredData = filteredData.filter(r => {
+          if (r.benefit_type !== 'alteracao_ferias') return true;
+          if (r.hr_status === 'aprovada' || r.hr_status === 'recusada') return true;
+          if (r.status === 'aprovada' || r.status === 'recusada') return true;
+          return false;
+        });
+      }
+
       setAllRequests(filteredData);
 
       const total = filteredData.length;
@@ -139,7 +151,7 @@ export default function Dashboard() {
       console.error('Error in fetchDashboardData:', err);
     }
     setLoading(false);
-  }, [allowedBenefitTypes, filters]);
+  }, [allowedBenefitTypes, filters, userRole]);
 
   useEffect(() => {
     fetchDashboardData();
