@@ -128,7 +128,7 @@ export default function Colaboradores() {
 
     setUnits(unitsData || []);
 
-    const systemRoles = ['admin', 'gestor', 'agente_dp'];
+    const systemRoles = ['admin', 'gestor', 'agente_dp', 'rh'];
     const systemUserIds = new Set(
       (rolesData || []).filter((r) => systemRoles.includes(r.role)).map((r) => r.user_id)
     );
