@@ -92,7 +92,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^\ufeff/, ''));
       
       // Validate headers
-      const requiredHeaders = ['nome_completo', 'cpf', 'codigo_unidade', 'departamento', 'codigo_empresa', 'codigo_empregador'];
+      const requiredHeaders = ['nome_completo', 'cpf', 'codigo_unidade', 'departamento', 'codigo_empresa', 'codigo_empregador', 'data_admissao'];
       const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
       if (missingHeaders.length > 0) {
         toast.error(`Colunas obrigatórias faltando: ${missingHeaders.join(', ')}`);
@@ -115,6 +115,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       const nameIdx = headers.indexOf('nome_completo');
       const cpfIdx = headers.indexOf('cpf');
       const birthdayIdx = headers.indexOf('data_aniversario');
+      const admissionIdx = headers.indexOf('data_admissao');
       const phoneIdx = headers.indexOf('telefone');
       const genderIdx = headers.indexOf('sexo');
       const positionIdx = headers.indexOf('cargo');
@@ -190,7 +191,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
 
     try {
       // Column indices
-      const nameIdx = 0, cpfIdx = 1, birthdayIdx = 2, phoneIdx = 3, genderIdx = 4, positionIdx = 5, unitCodeIdx = 6, deptIdx = 7, empCodeIdx = 8, empIdIdx = 9;
+      const nameIdx = 0, cpfIdx = 1, birthdayIdx = 2, admissionDateIdx = 3, phoneIdx = 4, genderIdx = 5, positionIdx = 6, unitCodeIdx = 7, deptIdx = 8, empCodeIdx = 9, empIdIdx = 10;
 
       // Create unit code to ID map
       const unitMap = new Map(units.map(u => [u.code, u.id]));
@@ -218,6 +219,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
         const cpf = cleanCPF(row[cpfIdx]);
         const name = row[nameIdx];
         const birthday = parseDate(row[birthdayIdx]);
+        const admissionDate = parseDate(row[admissionDateIdx]);
         const phone = row[phoneIdx];
         const gender = parseGender(row[genderIdx]);
         const position = row[positionIdx];
@@ -236,6 +238,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
               full_name: name,
               phone: phone || null,
               birthday: birthday,
+              admission_date: admissionDate,
               gender: gender,
               position: position || null,
               unit_id: unitId || null,
@@ -254,6 +257,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
             cpf: cpf,
             phone: phone || null,
             birthday: birthday,
+            admission_date: admissionDate,
             gender: gender,
             position: position || null,
             unit_id: unitId || null,

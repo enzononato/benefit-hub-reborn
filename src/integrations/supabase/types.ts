@@ -1363,6 +1363,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admission_date: string | null
           avatar_url: string | null
           birthday: string | null
           codigo_empregador: string | null
@@ -1383,6 +1384,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admission_date?: string | null
           avatar_url?: string | null
           birthday?: string | null
           codigo_empregador?: string | null
@@ -1403,6 +1405,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admission_date?: string | null
           avatar_url?: string | null
           birthday?: string | null
           codigo_empregador?: string | null
