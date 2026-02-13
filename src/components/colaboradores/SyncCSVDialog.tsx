@@ -201,12 +201,18 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       // Step 1: Fetch all existing profiles in ONE query
       const { data: existingProfiles } = await supabase
         .from('profiles')
-        .select('id, cpf');
+        .select('id, cpf, status');
 
       const cpfToProfileId = new Map(
         (existingProfiles || [])
           .filter(p => p.cpf)
           .map(p => [cleanCPF(p.cpf), p.id])
+      );
+
+      const cpfToStatus = new Map(
+        (existingProfiles || [])
+          .filter(p => p.cpf)
+          .map(p => [cleanCPF(p.cpf), p.status])
       );
 
       setProgress(20);
@@ -245,7 +251,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
               departamento: departamento || null,
               codigo_empresa: codigoEmpresa || null,
               codigo_empregador: codigoEmpregador || null,
-              status: 'ativo',
+              status: (cpfToStatus.get(cpf) === 'ferias' || cpfToStatus.get(cpf) === 'afastado') ? cpfToStatus.get(cpf) : 'ativo',
             }
           });
         } else {
