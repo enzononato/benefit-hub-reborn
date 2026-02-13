@@ -21,6 +21,7 @@ interface Profile {
   full_name: string;
   cpf: string | null;
   birthday: string | null;
+  admission_date: string | null;
   phone: string | null;
   gender: string | null;
   position: string | null;
@@ -82,6 +83,7 @@ export function EditColaboradorDialog({
     cpf: profile.cpf || '',
     departamento: profile.departamento || '',
     birthday: profile.birthday || '',
+    admission_date: profile.admission_date || '',
     phone: profile.phone || '',
     gender: profile.gender || '',
     position: profile.position || '',
@@ -109,6 +111,7 @@ export function EditColaboradorDialog({
         cpf: profile.cpf || '',
         departamento: profile.departamento || '',
         birthday: profile.birthday || '',
+        admission_date: profile.admission_date || '',
         phone: profile.phone || '',
         gender: profile.gender || '',
         position: profile.position || '',
@@ -192,6 +195,7 @@ export function EditColaboradorDialog({
           full_name: formData.full_name,
           cpf: formData.cpf.replace(/\D/g, ''),
           birthday: formData.birthday,
+          admission_date: formData.admission_date || null,
           phone: formData.phone.replace(/\D/g, ''),
           gender: formData.gender,
           position: formData.position,
@@ -328,6 +332,26 @@ export function EditColaboradorDialog({
               value={formData.birthday}
               onChange={handleBirthdayChange}
               placeholder="01/10/1990"
+              maxLength={10}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="admission_date">Data de Admissão</Label>
+            <Input
+              id="admission_date"
+              value={formData.admission_date}
+              onChange={(e) => {
+                const numbers = e.target.value.replace(/\D/g, '');
+                let formatted = numbers;
+                if (numbers.length <= 8) {
+                  formatted = numbers
+                    .replace(/(\d{2})(\d)/, '$1/$2')
+                    .replace(/(\d{2})(\d)/, '$1/$2');
+                }
+                setFormData({ ...formData, admission_date: formatted });
+              }}
+              placeholder="01/01/2024"
               maxLength={10}
             />
           </div>

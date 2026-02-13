@@ -51,6 +51,7 @@ interface Profile {
   full_name: string;
   cpf: string | null;
   birthday: string | null;
+  admission_date: string | null;
   phone: string | null;
   gender: string | null;
   position: string | null;
@@ -114,7 +115,7 @@ export default function Colaboradores() {
 
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, user_id, full_name, cpf, birthday, phone, gender, position, unit_id, departamento, credit_limit, status')
+      .select('id, user_id, full_name, cpf, birthday, admission_date, phone, gender, position, unit_id, departamento, credit_limit, status')
       .order('full_name');
 
     if (profilesError) {
@@ -389,6 +390,21 @@ export default function Colaboradores() {
                       <Briefcase className="h-4 w-4 shrink-0" />
                       <span className="truncate">{profile.position || '-'}</span>
                     </div>
+                    {profile.admission_date && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 shrink-0 opacity-70" />
+                        <span className="truncate">
+                          Admissão: {(() => {
+                            try {
+                              const d = profile.admission_date;
+                              if (d.includes('/')) return d;
+                              const date = new Date(d + 'T00:00:00');
+                              return isNaN(date.getTime()) ? d : format(date, 'dd/MM/yyyy');
+                            } catch { return profile.admission_date; }
+                          })()}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Building2 className="h-4 w-4 opacity-70 shrink-0" />
                       <span className="text-xs truncate">{profile.departamento ? DEPARTAMENTOS_LABELS[profile.departamento] || profile.departamento : '-'}</span>

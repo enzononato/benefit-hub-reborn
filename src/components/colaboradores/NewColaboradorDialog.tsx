@@ -45,6 +45,7 @@ export function NewColaboradorDialog({ onSuccess }: { onSuccess?: () => void }) 
     cpf: '',
     departamento: '',
     birthday: '',
+    admission_date: '',
     phone: '',
     gender: '',
     position: '',
@@ -125,6 +126,7 @@ export function NewColaboradorDialog({ onSuccess }: { onSuccess?: () => void }) 
           email: `${formData.cpf.replace(/\D/g, '')}@temp.com`,
           cpf: formData.cpf.replace(/\D/g, ''),
           birthday: formData.birthday,
+          admission_date: formData.admission_date || null,
           phone: formData.phone.replace(/\D/g, ''),
           gender: formData.gender,
           position: formData.position,
@@ -166,6 +168,7 @@ export function NewColaboradorDialog({ onSuccess }: { onSuccess?: () => void }) 
         cpf: '',
         departamento: '',
         birthday: '',
+        admission_date: '',
         phone: '',
         gender: '',
         position: '',
@@ -266,6 +269,26 @@ export function NewColaboradorDialog({ onSuccess }: { onSuccess?: () => void }) 
               value={formData.birthday}
               onChange={handleBirthdayChange}
               placeholder="01/10/1990"
+              maxLength={10}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="admission_date">Data de Admissão</Label>
+            <Input
+              id="admission_date"
+              value={formData.admission_date}
+              onChange={(e) => {
+                const numbers = e.target.value.replace(/\D/g, '');
+                let formatted = numbers;
+                if (numbers.length <= 8) {
+                  formatted = numbers
+                    .replace(/(\d{2})(\d)/, '$1/$2')
+                    .replace(/(\d{2})(\d)/, '$1/$2');
+                }
+                setFormData({ ...formData, admission_date: formatted });
+              }}
+              placeholder="01/01/2024"
               maxLength={10}
             />
           </div>
