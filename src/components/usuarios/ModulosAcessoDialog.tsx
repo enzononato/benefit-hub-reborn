@@ -36,6 +36,7 @@ const AVAILABLE_MODULES: { id: BenefitType; label: string; emoji: string }[] = [
   { id: 'relatorio_ponto', label: 'Relatório de Ponto', emoji: '📊' },
   { id: 'relato_anomalia', label: 'Relato de Anomalia', emoji: '⚠️' },
   { id: 'outros', label: 'Outros', emoji: '📌' },
+  { id: 'plantao_duvidas', label: 'Plantão de Dúvidas', emoji: '❓' },
 ];
 
 interface ModulosAcessoDialogProps {
