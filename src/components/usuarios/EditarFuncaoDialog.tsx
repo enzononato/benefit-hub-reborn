@@ -61,6 +61,7 @@ const INDIVIDUAL_MODULES = [
   { id: 'operacao_domingo' as BenefitType, label: 'Operação Domingo' },
   { id: 'relatorio_ponto' as BenefitType, label: 'Relatório de Ponto' },
   { id: 'relato_anomalia' as BenefitType, label: 'Relato de Anomalia' },
+  { id: 'plantao_duvidas' as BenefitType, label: 'Plantão de Dúvidas' },
   { id: 'outros' as BenefitType, label: 'Outros' },
 ];
 
