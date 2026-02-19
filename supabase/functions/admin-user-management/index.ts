@@ -74,7 +74,71 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, email, password, fullName, role, userId, newPassword } = await req.json();
+    const body = await req.json();
+    const { action, email, password, fullName, role, userId, newPassword, userIds, targetRole } = body;
+
+    // LIST ALL AUTH USERS
+    if (action === "listAuthUsers") {
+      const allUsers: any[] = [];
+      let page = 1;
+      const perPage = 100;
+      while (true) {
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (listError) {
+          return new Response(JSON.stringify({ success: false, error: listError.message }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        allUsers.push(...users);
+        if (users.length < perPage) break;
+        page++;
+      }
+      return new Response(JSON.stringify({ success: true, users: allUsers.map(u => ({ id: u.id, email: u.email })) }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // BULK ASSIGN ROLES
+    if (action === "bulkAssignRole") {
+      const ids: string[] = userIds || [];
+      const tRole: string = targetRole || "";
+      
+      if (!ids.length || !tRole) {
+        return new Response(JSON.stringify({ success: false, error: "userIds e targetRole obrigatórios" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const results: any[] = [];
+      for (const uid of ids) {
+        // Ensure profile exists
+        const { data: profile } = await supabaseAdmin.from("profiles").select("id").eq("user_id", uid).maybeSingle();
+        if (!profile) {
+          // Get user info from auth to create profile
+          const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(uid);
+          if (authUser) {
+            await supabaseAdmin.from("profiles").insert({
+              user_id: uid,
+              email: authUser.email || "",
+              full_name: authUser.user_metadata?.full_name || authUser.email || "Sem nome",
+            });
+          }
+        }
+
+        // Upsert role
+        const { data: existingRole } = await supabaseAdmin.from("user_roles").select("id").eq("user_id", uid).maybeSingle();
+        if (existingRole) {
+          await supabaseAdmin.from("user_roles").update({ role: tRole }).eq("user_id", uid);
+        } else {
+          await supabaseAdmin.from("user_roles").insert({ user_id: uid, role: tRole });
+        }
+        results.push({ userId: uid, success: true });
+      }
+
+      return new Response(JSON.stringify({ success: true, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // CREATE USER
     if (action === "create") {
