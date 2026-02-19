@@ -1,0 +1,1 @@
+SELECT promote_user_to_admin('projetos.ti@revalle.com.br');
