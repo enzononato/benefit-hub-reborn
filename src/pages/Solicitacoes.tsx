@@ -134,9 +134,14 @@ export default function Solicitacoes() {
       return null;
     }
 
-    if (!config) {
-      return { status: 'no-config', label: '—', dotColor: 'bg-muted' };
-    }
+    // Use default values if no config exists (24h green / 48h yellow)
+    const timeUnit = config ? ((config as any).time_unit || 'hours') : 'hours';
+    const greenLimit = config
+      ? (timeUnit === 'days' ? config.green_hours * 24 : config.green_hours)
+      : 24;
+    const yellowLimit = config
+      ? (timeUnit === 'days' ? config.yellow_hours * 24 : config.yellow_hours)
+      : 48;
 
     // Usar horas úteis (exclui sábados após 12h, domingos e feriados)
     const businessHoursElapsed = calculateBusinessHours(
@@ -144,11 +149,6 @@ export default function Solicitacoes() {
       new Date(),
       holidayDatesSet
     );
-    
-    // Converter limites para horas se a unidade for dias
-    const timeUnit = (config as any).time_unit || 'hours';
-    const greenLimit = timeUnit === 'days' ? config.green_hours * 24 : config.green_hours;
-    const yellowLimit = timeUnit === 'days' ? config.yellow_hours * 24 : config.yellow_hours;
     
     // Formatar label de acordo com a unidade
     const formatLabel = (hours: number) => {
