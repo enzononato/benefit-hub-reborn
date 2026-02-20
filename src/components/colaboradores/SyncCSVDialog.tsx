@@ -8,6 +8,21 @@ import { toast } from 'sonner';
 import { RefreshCw, AlertTriangle, CheckCircle2, Upload, FileText, UserMinus, UserPlus, UserCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const UNIT_CODE_ALIASES: Record<string, string> = {
+  'RV-AL': 'ALA',
+  'RV-BF': 'BON',
+  'RV-JZ': 'JUA',
+  'RV-PA': 'PAF',
+  'RV-PE': 'PET',
+  'RV-RP': 'RPO',
+  'RV-SE': 'SER',
+};
+
+function resolveUnitCode(code: string): string {
+  const normalized = code.trim().toUpperCase();
+  return UNIT_CODE_ALIASES[normalized] ?? normalized;
+}
+
 interface Unit {
   id: string;
   code: string;
@@ -233,7 +248,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
         const departamento = row[deptIdx];
         const codigoEmpresa = row[empCodeIdx];
         const codigoEmpregador = row[empIdIdx];
-        const unitId = unitMap.get(unitCode);
+        const unitId = unitMap.get(resolveUnitCode(unitCode));
 
         const existingId = cpfToProfileId.get(cpf);
 
