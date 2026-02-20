@@ -1,61 +1,76 @@
 
-## Suporte aos Códigos de Unidade do CSV (RV-XX)
+## Mudanças na Lógica de Sync e Prévia
 
-### Problema
+### O que muda
 
-O CSV usa códigos no formato `RV-AL`, `RV-BF`, etc., enquanto o banco de dados registra as unidades com os códigos `ALA`, `BON`, etc. Isso faz com que `unitMap.get('RV-AL')` retorne `undefined`, e todos os colaboradores sejam salvos sem unidade vinculada (`unit_id = null`).
+**Mudança 1 — Regra de demissão**
 
-### Solução
+A lógica anterior protegia colaboradores com status `ferias` ou `afastado` de serem demitidos se ausentes do CSV. A nova regra é mais simples: se não está no CSV, vai ser demitido, independente do status atual.
 
-Adicionar uma constante de mapeamento de aliases e uma função auxiliar `resolveUnitCode` no `SyncCSVDialog.tsx`. Em dois pontos do código onde o `unitCode` é usado para buscar o ID da unidade, a chamada `unitMap.get(unitCode)` será substituída por `unitMap.get(resolveUnitCode(unitCode))`.
+Isso afeta dois lugares:
 
-### Mapeamento exato
+- **Prévia (`handleFileUpload`):** A query do banco que busca quem pode ser demitido hoje filtra `.eq('status', 'ativo')`. Precisa mudar para incluir `ferias` e `afastado` também, ou remover o filtro e incluir todos os não-demitidos:
+  ```ts
+  // De:
+  .eq('status', 'ativo')
+  // Para:
+  .in('status', ['ativo', 'ferias', 'afastado'])
+  ```
+  E o loop de `toTerminate` — que atualmente já itera sobre `activeColaboradores` — já vai incluir todos naturalmente.
 
-```
-RV-AL  →  ALA  (Revalle Alagoinhas)
-RV-BF  →  BON  (Revalle Bonfim)
-RV-JZ  →  JUA  (Revalle Juazeiro)
-RV-PA  →  PAF  (Revalle Paulo Afonso)
-RV-PE  →  PET  (Revalle Petrolina)
-RV-RP  →  RPO  (Revalle Ribeira do Pombal)
-RV-SE  →  SER  (Revalle Serrinha)
-```
+- **Sync real (`handleSync`, linha 362):** Remover o filtro `.eq('status', 'ativo')` que impede a demissão de férias/afastados (esse filtro foi adicionado no plano anterior mas a lógica atual do código não o tem — confirmado na linha 360-363, o update já aplica em todos os CPFs do `toTerminate` sem filtro de status, o que está correto).
 
-### Arquivo a modificar
+**Mudança 2 — Lista de novos colaboradores na prévia**
 
-**`src/components/colaboradores/SyncCSVDialog.tsx`**
+Atualmente a prévia mostra uma lista dos colaboradores que serão demitidos (nomes e CPFs). Precisa adicionar uma seção equivalente para os que serão **criados**, mostrando nome e CPF de cada novo colaborador, com o mesmo comportamento de truncamento (mostrar os 20 primeiros + "e mais X").
 
-1. Adicionar antes do componente a constante:
+### Arquivos a modificar
+
+**`src/components/colaboradores/SyncCSVDialog.tsx`** — 2 alterações:
+
+**Alteração 1** — Linha 146: query da prévia, incluir férias e afastados no pool de comparação e demissão
 ```ts
-const UNIT_CODE_ALIASES: Record<string, string> = {
-  'RV-AL': 'ALA',
-  'RV-BF': 'BON',
-  'RV-JZ': 'JUA',
-  'RV-PA': 'PAF',
-  'RV-PE': 'PET',
-  'RV-RP': 'RPO',
-  'RV-SE': 'SER',
-};
+// De:
+.eq('status', 'ativo');
+// Para:
+.in('status', ['ativo', 'ferias', 'afastado']);
+```
+Com isso, a linha 182 (`for (const profile of activeColaboradores)`) já vai incluir os colaboradores de férias/afastados no cálculo de quem demitir automaticamente.
 
-function resolveUnitCode(code: string): string {
-  const normalized = code.trim().toUpperCase();
-  return UNIT_CODE_ALIASES[normalized] ?? normalized;
-}
+**Alteração 2** — Após o bloco de listagem de demitidos (linha ~500), adicionar bloco equivalente para novos colaboradores:
+```tsx
+{preview.toCreate.length > 0 && (
+  <div className="p-3 rounded-lg bg-muted">
+    <p className="text-sm font-medium text-muted-foreground mb-2">
+      Novos colaboradores que serão criados:
+    </p>
+    <div className="max-h-32 overflow-y-auto space-y-1">
+      {preview.toCreate.slice(0, 20).map((t, i) => (
+        <p key={i} className="text-sm text-foreground">{t.name} — {t.cpf}</p>
+      ))}
+      {preview.toCreate.length > 20 && (
+        <p className="text-sm text-muted-foreground">
+          ... e mais {preview.toCreate.length - 20}
+        </p>
+      )}
+    </div>
+  </div>
+)}
 ```
 
-2. Linha 236 — durante a análise do preview (função `handleFileUpload`): substituir `unitMap.get(unitCode)` → não aplicável aqui pois o preview não usa unitMap, mas a análise de preview não valida unidade.
+### Resumo da nova lógica de demissão
 
-3. Linha 236 — durante o sync real (função `handleSync`): substituir:
-```ts
-const unitId = unitMap.get(unitCode);
-```
-por:
-```ts
-const unitId = unitMap.get(resolveUnitCode(unitCode));
-```
+| Status no banco | No CSV | Ação |
+|---|---|---|
+| `ativo` | Sim | Atualizar |
+| `ferias` | Sim | Atualizar (preserva status férias) |
+| `afastado` | Sim | Atualizar (preserva status afastado) |
+| `ativo` | Não | **Demitir** |
+| `ferias` | Não | **Demitir** ← mudança |
+| `afastado` | Não | **Demitir** ← mudança |
+| `demitido` | Não | Ignorar |
 
 ### O que NÃO muda
-
-- Nenhuma alteração no banco de dados é necessária.
-- CSVs que já usam os códigos corretos (`ALA`, `BON`, etc.) continuam funcionando normalmente — a função `resolveUnitCode` retorna o próprio código se não houver alias.
-- A lógica de preservação de status `ferias`/`afastado` e de demissão automática não é alterada.
+- A preservação de status (`ferias`/`afastado`) para quem **está** no CSV continua igual — linha 269 não é alterada.
+- O mapeamento de códigos de unidade `RV-XX` permanece intacto.
+- Nenhuma alteração no banco de dados.
