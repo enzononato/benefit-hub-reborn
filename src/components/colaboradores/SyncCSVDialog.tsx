@@ -139,11 +139,11 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       // Extract CPFs from CSV
       const csvCpfs = new Set(dataRows.map(row => cleanCPF(row[cpfIdx])));
 
-      // Get all active collaborators from DB
+      // Get all non-terminated collaborators from DB (ativo, ferias, afastado)
       const { data: dbProfiles } = await supabase
         .from('profiles')
         .select('id, user_id, full_name, cpf, status')
-        .eq('status', 'ativo');
+        .in('status', ['ativo', 'ferias', 'afastado']);
 
       const { data: rolesData } = await supabase
         .from('user_roles')
@@ -480,6 +480,24 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
                     </p>
                   </div>
                 </div>
+
+                {preview.toCreate.length > 0 && (
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Novos colaboradores que serão criados:
+                    </p>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {preview.toCreate.slice(0, 20).map((t, i) => (
+                        <p key={i} className="text-sm text-foreground">{t.name} — {t.cpf}</p>
+                      ))}
+                      {preview.toCreate.length > 20 && (
+                        <p className="text-sm text-muted-foreground">
+                          ... e mais {preview.toCreate.length - 20}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {preview.toTerminate.length > 0 && (
                   <div className="p-3 rounded-lg bg-muted">
