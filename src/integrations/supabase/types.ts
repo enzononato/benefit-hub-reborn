@@ -203,6 +203,70 @@ export type Database = {
           },
         ]
       }
+      assinatura_recebimento: {
+        Row: {
+          assinatura_url: string | null
+          colaborador_id: string
+          created_at: string
+          data_hora_assinatura: string
+          id: string
+          ip_origem: string | null
+          pdf_hash_sha256: string | null
+          solicitacao_id: string
+          tenant_id: string
+          termo_texto_versao: string
+          user_agent: string | null
+        }
+        Insert: {
+          assinatura_url?: string | null
+          colaborador_id: string
+          created_at?: string
+          data_hora_assinatura?: string
+          id?: string
+          ip_origem?: string | null
+          pdf_hash_sha256?: string | null
+          solicitacao_id: string
+          tenant_id: string
+          termo_texto_versao: string
+          user_agent?: string | null
+        }
+        Update: {
+          assinatura_url?: string | null
+          colaborador_id?: string
+          created_at?: string
+          data_hora_assinatura?: string
+          id?: string
+          ip_origem?: string | null
+          pdf_hash_sha256?: string | null
+          solicitacao_id?: string
+          tenant_id?: string
+          termo_texto_versao?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinatura_recebimento_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinatura_recebimento_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinatura_recebimento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -249,6 +313,57 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_epi: {
+        Row: {
+          data_hora: string
+          detalhes_json: Json | null
+          entidade: string
+          entidade_id: string | null
+          evento: string
+          id: string
+          tenant_id: string
+          unidade_id: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          data_hora?: string
+          detalhes_json?: Json | null
+          entidade: string
+          entidade_id?: string | null
+          evento: string
+          id?: string
+          tenant_id: string
+          unidade_id?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          data_hora?: string
+          detalhes_json?: Json | null
+          entidade?: string
+          entidade_id?: string | null
+          evento?: string
+          id?: string
+          tenant_id?: string
+          unidade_id?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_epi_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_epi_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -349,6 +464,72 @@ export type Database = {
         }
         Relationships: []
       }
+      colaboradores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string | null
+          funcao: string | null
+          id: string
+          matricula: string | null
+          nome: string
+          setor: string | null
+          tamanho_bota: string | null
+          tamanho_luva: string | null
+          tamanho_uniforme: string | null
+          tenant_id: string
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          funcao?: string | null
+          id?: string
+          matricula?: string | null
+          nome: string
+          setor?: string | null
+          tamanho_bota?: string | null
+          tamanho_luva?: string | null
+          tamanho_uniforme?: string | null
+          tenant_id: string
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          funcao?: string | null
+          id?: string
+          matricula?: string | null
+          nome?: string
+          setor?: string | null
+          tamanho_bota?: string | null
+          tamanho_luva?: string | null
+          tamanho_uniforme?: string | null
+          tenant_id?: string
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaborator_documents: {
         Row: {
           created_at: string
@@ -405,9 +586,13 @@ export type Database = {
           created_at: string | null
           email: string | null
           endereco: Json | null
+          feature_ai: boolean
+          feature_export: boolean
           id: string
           limite_transacoes_mes: number | null
           logo_url: string | null
+          max_units: number
+          max_users: number
           nome_fantasia: string | null
           plano: string | null
           razao_social: string
@@ -421,9 +606,13 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           endereco?: Json | null
+          feature_ai?: boolean
+          feature_export?: boolean
           id?: string
           limite_transacoes_mes?: number | null
           logo_url?: string | null
+          max_units?: number
+          max_users?: number
           nome_fantasia?: string | null
           plano?: string | null
           razao_social: string
@@ -437,9 +626,13 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           endereco?: Json | null
+          feature_ai?: boolean
+          feature_export?: boolean
           id?: string
           limite_transacoes_mes?: number | null
           logo_url?: string | null
+          max_units?: number
+          max_users?: number
           nome_fantasia?: string | null
           plano?: string | null
           razao_social?: string
@@ -510,6 +703,102 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conferencia_estoque: {
+        Row: {
+          conferido_por_usuario_id: string
+          created_at: string
+          data_conferencia: string
+          id: string
+          observacao: string | null
+          status: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Insert: {
+          conferido_por_usuario_id: string
+          created_at?: string
+          data_conferencia?: string
+          id?: string
+          observacao?: string | null
+          status?: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Update: {
+          conferido_por_usuario_id?: string
+          created_at?: string
+          data_conferencia?: string
+          id?: string
+          observacao?: string | null
+          status?: string
+          tenant_id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conferencia_estoque_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conferencia_estoque_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conferencia_item: {
+        Row: {
+          conferencia_id: string
+          contagem_fisica: number
+          created_at: string
+          diferenca: number | null
+          id: string
+          observacao: string | null
+          produto_id: string
+          saldo_sistema: number
+        }
+        Insert: {
+          conferencia_id: string
+          contagem_fisica?: number
+          created_at?: string
+          diferenca?: number | null
+          id?: string
+          observacao?: string | null
+          produto_id: string
+          saldo_sistema?: number
+        }
+        Update: {
+          conferencia_id?: string
+          contagem_fisica?: number
+          created_at?: string
+          diferenca?: number | null
+          id?: string
+          observacao?: string | null
+          produto_id?: string
+          saldo_sistema?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conferencia_item_conferencia_id_fkey"
+            columns: ["conferencia_id"]
+            isOneToOne: false
+            referencedRelation: "conferencia_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conferencia_item_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -814,6 +1103,85 @@ export type Database = {
           },
         ]
       }
+      email_comprovante_log: {
+        Row: {
+          assinatura_data_hora: string | null
+          assunto: string
+          colaborador_id: string
+          corpo_html: string
+          created_at: string
+          destinatario_email: string
+          destinatario_nome: string | null
+          enviado_em: string | null
+          erro_mensagem: string | null
+          id: string
+          itens_json: Json
+          reenviado_por: string | null
+          solicitacao_id: string
+          status: string
+          tenant_id: string
+          tentativas: number
+        }
+        Insert: {
+          assinatura_data_hora?: string | null
+          assunto: string
+          colaborador_id: string
+          corpo_html: string
+          created_at?: string
+          destinatario_email: string
+          destinatario_nome?: string | null
+          enviado_em?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          itens_json?: Json
+          reenviado_por?: string | null
+          solicitacao_id: string
+          status?: string
+          tenant_id: string
+          tentativas?: number
+        }
+        Update: {
+          assinatura_data_hora?: string | null
+          assunto?: string
+          colaborador_id?: string
+          corpo_html?: string
+          created_at?: string
+          destinatario_email?: string
+          destinatario_nome?: string | null
+          enviado_em?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          itens_json?: Json
+          reenviado_por?: string | null
+          solicitacao_id?: string
+          status?: string
+          tenant_id?: string
+          tentativas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_comprovante_log_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_comprovante_log_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_comprovante_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -837,6 +1205,70 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      inspecao_epc: {
+        Row: {
+          checklist_json: Json | null
+          created_at: string
+          data_inspecao: string
+          id: string
+          observacao: string | null
+          produto_id: string
+          proxima_inspecao: string | null
+          responsavel_usuario_id: string | null
+          status: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Insert: {
+          checklist_json?: Json | null
+          created_at?: string
+          data_inspecao?: string
+          id?: string
+          observacao?: string | null
+          produto_id: string
+          proxima_inspecao?: string | null
+          responsavel_usuario_id?: string | null
+          status?: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Update: {
+          checklist_json?: Json | null
+          created_at?: string
+          data_inspecao?: string
+          id?: string
+          observacao?: string | null
+          produto_id?: string
+          proxima_inspecao?: string | null
+          responsavel_usuario_id?: string | null
+          status?: string
+          tenant_id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspecao_epc_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspecao_epc_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspecao_epc_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_settings: {
         Row: {
@@ -1036,6 +1468,134 @@ export type Database = {
             columns: ["asset_id"]
             isOneToOne: false
             referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimentacao_estoque: {
+        Row: {
+          created_at: string
+          data_hora: string
+          id: string
+          motivo: string | null
+          nf: string | null
+          obs: string | null
+          produto_id: string
+          qtde: number
+          solicitacao_id: string | null
+          tenant_id: string
+          tipo: string
+          unidade_id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora?: string
+          id?: string
+          motivo?: string | null
+          nf?: string | null
+          obs?: string | null
+          produto_id: string
+          qtde: number
+          solicitacao_id?: string | null
+          tenant_id: string
+          tipo: string
+          unidade_id: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          data_hora?: string
+          id?: string
+          motivo?: string | null
+          nf?: string | null
+          obs?: string | null
+          produto_id?: string
+          qtde?: number
+          solicitacao_id?: string | null
+          tenant_id?: string
+          tipo?: string
+          unidade_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacao_estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacao_estoque_solicitacao_fk"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacao_estoque_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacao_estoque_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacao_epi: {
+        Row: {
+          data_hora: string
+          id: string
+          lida: boolean
+          mensagem: string
+          solicitacao_id: string | null
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          data_hora?: string
+          id?: string
+          lida?: boolean
+          mensagem: string
+          solicitacao_id?: string | null
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          data_hora?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          solicitacao_id?: string | null
+          tenant_id?: string
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacao_epi_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacao_epi_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1361,6 +1921,120 @@ export type Database = {
           },
         ]
       }
+      produto_unidade: {
+        Row: {
+          ativo_na_unidade: boolean
+          created_at: string
+          estoque_minimo_unidade: number
+          id: string
+          localizacao_fisica_unidade: string | null
+          produto_id: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Insert: {
+          ativo_na_unidade?: boolean
+          created_at?: string
+          estoque_minimo_unidade?: number
+          id?: string
+          localizacao_fisica_unidade?: string | null
+          produto_id: string
+          tenant_id: string
+          unidade_id: string
+        }
+        Update: {
+          ativo_na_unidade?: boolean
+          created_at?: string
+          estoque_minimo_unidade?: number
+          id?: string
+          localizacao_fisica_unidade?: string | null
+          produto_id?: string
+          tenant_id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_unidade_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produto_unidade_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produto_unidade_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          ca: string | null
+          codigo_interno: string | null
+          created_at: string
+          custo_unitario: number | null
+          data_validade: string | null
+          fornecedor: string | null
+          id: string
+          marca: string | null
+          nome: string
+          tamanho: string | null
+          tenant_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          ca?: string | null
+          codigo_interno?: string | null
+          created_at?: string
+          custo_unitario?: number | null
+          data_validade?: string | null
+          fornecedor?: string | null
+          id?: string
+          marca?: string | null
+          nome: string
+          tamanho?: string | null
+          tenant_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          ca?: string | null
+          codigo_interno?: string | null
+          created_at?: string
+          custo_unitario?: number | null
+          data_validade?: string | null
+          fornecedor?: string | null
+          id?: string
+          marca?: string | null
+          nome?: string
+          tamanho?: string | null
+          tenant_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           admission_date: string | null
@@ -1379,6 +2053,7 @@ export type Database = {
           phone: string | null
           position: string | null
           status: string
+          tenant_id: string | null
           unit_id: string | null
           updated_at: string
           user_id: string
@@ -1400,6 +2075,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           status?: string
+          tenant_id?: string | null
           unit_id?: string | null
           updated_at?: string
           user_id: string
@@ -1421,11 +2097,19 @@ export type Database = {
           phone?: string | null
           position?: string | null
           status?: string
+          tenant_id?: string | null
           unit_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_unit_id_fkey"
             columns: ["unit_id"]
@@ -1503,6 +2187,207 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacao_fotos: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          item_id: string | null
+          solicitacao_id: string
+          tenant_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          item_id?: string | null
+          solicitacao_id: string
+          tenant_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          item_id?: string | null
+          solicitacao_id?: string
+          tenant_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacao_fotos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacao_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacao_fotos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacao_fotos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitacao_itens: {
+        Row: {
+          created_at: string
+          foto_obrigatoria: boolean
+          foto_url: string | null
+          id: string
+          motivo: string
+          motivo_descricao: string | null
+          observacao: string | null
+          produto_id: string
+          quantidade: number
+          solicitacao_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          foto_obrigatoria?: boolean
+          foto_url?: string | null
+          id?: string
+          motivo?: string
+          motivo_descricao?: string | null
+          observacao?: string | null
+          produto_id: string
+          quantidade?: number
+          solicitacao_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          foto_obrigatoria?: boolean
+          foto_url?: string | null
+          id?: string
+          motivo?: string
+          motivo_descricao?: string | null
+          observacao?: string | null
+          produto_id?: string
+          quantidade?: number
+          solicitacao_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacao_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacao_itens_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacao_itens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitacoes: {
+        Row: {
+          aprovado_por_usuario_id: string | null
+          codigo: string
+          colaborador_id: string
+          criado_por_usuario_id: string
+          data_aprovacao: string | null
+          data_baixa_estoque: string | null
+          data_confirmacao: string | null
+          data_criacao: string
+          data_envio: string | null
+          id: string
+          observacao_aprovacao: string | null
+          status: string
+          tenant_id: string
+          termo_pdf_hash_sha256: string | null
+          termo_pdf_url: string | null
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_por_usuario_id?: string | null
+          codigo: string
+          colaborador_id: string
+          criado_por_usuario_id: string
+          data_aprovacao?: string | null
+          data_baixa_estoque?: string | null
+          data_confirmacao?: string | null
+          data_criacao?: string
+          data_envio?: string | null
+          id?: string
+          observacao_aprovacao?: string | null
+          status?: string
+          tenant_id: string
+          termo_pdf_hash_sha256?: string | null
+          termo_pdf_url?: string | null
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_por_usuario_id?: string | null
+          codigo?: string
+          colaborador_id?: string
+          criado_por_usuario_id?: string
+          data_aprovacao?: string | null
+          data_baixa_estoque?: string | null
+          data_confirmacao?: string | null
+          data_criacao?: string
+          data_envio?: string | null
+          id?: string
+          observacao_aprovacao?: string | null
+          status?: string
+          tenant_id?: string
+          termo_pdf_hash_sha256?: string | null
+          termo_pdf_url?: string | null
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_config: {
         Row: {
           created_at: string
@@ -1530,6 +2415,41 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           city: string | null
@@ -1539,6 +2459,8 @@ export type Database = {
           is_active: boolean
           name: string
           state: string | null
+          tenant_id: string | null
+          tipo: string
           updated_at: string
         }
         Insert: {
@@ -1549,6 +2471,8 @@ export type Database = {
           is_active?: boolean
           name: string
           state?: string | null
+          tenant_id?: string | null
+          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -1559,9 +2483,19 @@ export type Database = {
           is_active?: boolean
           name?: string
           state?: string | null
+          tenant_id?: string | null
+          tipo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "units_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_module_permissions: {
         Row: {
@@ -1606,22 +2540,32 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          tenant_id: string | null
           unit_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          tenant_id?: string | null
           unit_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          tenant_id?: string | null
           unit_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_unit_access_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_unit_access_unit_id_fkey"
             columns: ["unit_id"]
@@ -1669,7 +2613,33 @@ export type Database = {
         }
         Returns: string
       }
+      get_aprovador_info: {
+        Args: { p_user_id: string }
+        Returns: {
+          email: string
+          full_name: string
+        }[]
+      }
+      get_my_tenant_id: { Args: never; Returns: string }
       get_my_unit_id: { Args: never; Returns: string }
+      get_saldo_estoque: {
+        Args: { p_tenant_id: string; p_unidade_id?: string }
+        Returns: {
+          produto_id: string
+          saldo: number
+          unidade_id: string
+        }[]
+      }
+      get_tenant_config: {
+        Args: never
+        Returns: {
+          feature_ai: boolean
+          feature_export: boolean
+          max_units: number
+          max_users: number
+          plano: string
+        }[]
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_unit_ids: { Args: { _user_id: string }; Returns: string[] }
       has_company_access: {
@@ -1693,6 +2663,18 @@ export type Database = {
         Returns: boolean
       }
       is_same_unit: { Args: { _user_id: string }; Returns: boolean }
+      log_auditoria_epi: {
+        Args: {
+          p_detalhes?: Json
+          p_entidade: string
+          p_entidade_id?: string
+          p_evento: string
+          p_tenant_id: string
+          p_unidade_id?: string
+          p_usuario_id?: string
+        }
+        Returns: string
+      }
       promote_user_to_admin: {
         Args: { user_email: string }
         Returns: undefined
@@ -1711,6 +2693,8 @@ export type Database = {
         | "company_admin"
         | "company_finance"
         | "driver"
+        | "tst"
+        | "almoxarifado"
       asset_status: "operational" | "warning" | "critical" | "maintenance"
       asset_type:
         | "server"
@@ -1898,6 +2882,8 @@ export const Constants = {
         "company_admin",
         "company_finance",
         "driver",
+        "tst",
+        "almoxarifado",
       ],
       asset_status: ["operational", "warning", "critical", "maintenance"],
       asset_type: [

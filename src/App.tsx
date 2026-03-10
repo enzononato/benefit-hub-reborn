@@ -17,6 +17,7 @@ import Auditoria from "./pages/Auditoria";
 import Auth from "./pages/Auth";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
+import { TempPdfUploader } from "./components/TempPdfUploader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <TempPdfUploader />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/acesso-negado" element={<AccessDenied />} />
