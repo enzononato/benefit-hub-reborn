@@ -17,6 +17,7 @@ import Auditoria from "./pages/Auditoria";
 import Auth from "./pages/Auth";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
+import { TempPdfUploader } from "./components/TempPdfUploader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
