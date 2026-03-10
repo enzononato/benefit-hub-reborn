@@ -38,6 +38,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <TempPdfUploader />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/acesso-negado" element={<AccessDenied />} />
