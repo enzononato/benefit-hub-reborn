@@ -19,7 +19,7 @@ const convenioTypes: BenefitType[] = [
 const soltoTypes: BenefitType[] = [
   'alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque',
   'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto', 
-  'relato_anomalia', 'plantao_duvidas'
+  'relato_anomalia', 'plantao_duvidas', 'solides'
 ];
 
 // Benefícios (3 itens)
