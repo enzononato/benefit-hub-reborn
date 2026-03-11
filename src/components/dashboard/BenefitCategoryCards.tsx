@@ -49,6 +49,7 @@ const iconMap: Record<string, React.ElementType> = {
   operacao_domingo: Sun,
   relatorio_ponto: ClipboardList,
   plantao_duvidas: HelpCircle,
+  solides: FileText,
   plano_odontologico: Smile,
   plano_saude: HeartPulse,
   vale_transporte: Bus,
