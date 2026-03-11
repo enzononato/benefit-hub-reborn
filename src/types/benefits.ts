@@ -150,6 +150,7 @@ export const benefitTypeFilterLabels: Record<Exclude<BenefitType, 'outros'>, str
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
   plantao_duvidas: 'Plantão de Dúvidas',
+  solides: 'Solides',
   // Categoria "Outros" - subcategorias
   listagem_funcionarios: 'Listagem de Funcionários',
   listagem_aniversariantes: 'Listagem de Aniversariantes',
