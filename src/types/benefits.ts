@@ -106,6 +106,7 @@ export const benefitTypeLabels: Record<BenefitType, string> = {
   vale_transporte: 'Vale Transporte',
   relato_anomalia: 'Relato de Anomalia',
   plantao_duvidas: 'Plantão de Dúvidas',
+  solides: 'Solides',
   outros: 'Outros',
   // Categoria "Outros" - subcategorias
   listagem_funcionarios: 'Listagem de Funcionários',
