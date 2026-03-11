@@ -19,7 +19,7 @@ const convenioTypes: BenefitType[] = [
 const soltoTypes: BenefitType[] = [
   'alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque',
   'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto', 
-  'relato_anomalia', 'plantao_duvidas'
+  'relato_anomalia', 'plantao_duvidas', 'solides'
 ];
 
 // Benefícios (3 itens)
@@ -49,6 +49,7 @@ const iconMap: Record<string, React.ElementType> = {
   operacao_domingo: Sun,
   relatorio_ponto: ClipboardList,
   plantao_duvidas: HelpCircle,
+  solides: FileText,
   plano_odontologico: Smile,
   plano_saude: HeartPulse,
   vale_transporte: Bus,
@@ -81,6 +82,7 @@ const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
   relatorio_ponto: { iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
   relato_anomalia: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
   plantao_duvidas: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+  solides: { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
   // Benefícios
   plano_odontologico: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
   plano_saude: { iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
