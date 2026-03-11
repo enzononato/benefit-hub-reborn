@@ -1,0 +1,1 @@
+ALTER TYPE benefit_type ADD VALUE IF NOT EXISTS 'solides';
