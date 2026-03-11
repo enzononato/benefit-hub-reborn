@@ -54,7 +54,7 @@ export const dpTypes: BenefitType[] = [
   'alteracao_ferias', 'aviso_folga_falta', 'atestado', 'contracheque',
   'abono_horas', 'alteracao_horario', 'operacao_domingo', 'relatorio_ponto',
   'plano_odontologico', 'plano_saude', 'vale_transporte', 'relato_anomalia',
-  'plantao_duvidas'
+  'plantao_duvidas', 'solides'
 ];
 
 // Benefit types list - Outros
