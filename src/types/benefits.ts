@@ -19,6 +19,7 @@ export type BenefitType =
   | 'vale_transporte'
   | 'relato_anomalia'
   | 'plantao_duvidas'
+  | 'solides'
   | 'outros'
   // Categoria "Outros" - subcategorias
   | 'listagem_funcionarios'
