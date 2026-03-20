@@ -309,20 +309,26 @@ export default function Solicitacoes() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Protocolo', 'Colaborador', 'CPF', 'Telefone', 'Revenda', 'Tipo', 'Status', 'Valor Solicitado', 'Data', 'Detalhes'];
+    const headers = ['Protocolo', 'Colaborador', 'CPF', 'Telefone', 'Revenda', 'Tipo', 'Status', 'Valor Solicitado', 'Valor Aprovado', 'Parcelas', 'Data', 'Detalhes'];
     
-    const rows = filteredRequests.map(request => [
-      request.protocol,
-      request.profile?.full_name || '',
-      request.profile?.cpf || '',
-      request.profile?.phone || '',
-      request.profile?.unit?.name || '',
-      benefitTypeLabels[request.benefit_type] || request.benefit_type,
-      statusLabels[request.status] || request.status,
-      request.requested_value?.toFixed(2) || '',
-      format(new Date(request.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
-      request.details || ''
-    ]);
+    const rows = filteredRequests.map(request => {
+      const valorSolicitado = request.requested_value ?? request.approved_value;
+      const parcelas = request.total_installments ? `${request.paid_installments || 0}/${request.total_installments}` : '';
+      return [
+        request.protocol,
+        request.profile?.full_name || '',
+        request.profile?.cpf || '',
+        request.profile?.phone || '',
+        request.profile?.unit?.name || '',
+        benefitTypeLabels[request.benefit_type] || request.benefit_type,
+        statusLabels[request.status] || request.status,
+        valorSolicitado?.toFixed(2) || '',
+        request.approved_value?.toFixed(2) || '',
+        parcelas,
+        format(new Date(request.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+        request.details || ''
+      ];
+    });
 
     const csvContent = [
       headers.join(';'),
