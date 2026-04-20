@@ -268,6 +268,30 @@ export default function Colaboradores() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={selectedDepartamento || "all"} onValueChange={(value) => {
+            const newValue = value === "all" ? null : value;
+            setSelectedDepartamento(newValue);
+            setCurrentPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            if (newValue) {
+              newParams.set('departamento', newValue);
+            } else {
+              newParams.delete('departamento');
+            }
+            setSearchParams(newParams, { replace: true });
+          }}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Filtrar por departamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os departamentos</SelectItem>
+              {availableDepartamentos.map((dep) => (
+                <SelectItem key={dep} value={dep}>
+                  {DEPARTAMENTOS_LABELS[dep] || dep}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={(value: StatusFilter) => {
             setStatusFilter(value);
             setCurrentPage(1);
