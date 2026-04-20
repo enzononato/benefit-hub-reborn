@@ -73,6 +73,7 @@ export default function Colaboradores() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(searchParams.get('unit') || null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams.get('status') as StatusFilter) || 'ativo');
+  const [selectedDepartamento, setSelectedDepartamento] = useState<string | null>(searchParams.get('departamento') || null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -170,8 +171,13 @@ export default function Colaboradores() {
       (profile.cpf && profile.cpf.includes(search));
     const matchesUnit = !selectedUnitId || profile.unit_id === selectedUnitId;
     const matchesStatus = statusFilter === 'todos' || profile.status === statusFilter;
-    return matchesSearch && matchesUnit && matchesStatus;
+    const matchesDepartamento = !selectedDepartamento || profile.departamento === selectedDepartamento;
+    return matchesSearch && matchesUnit && matchesStatus && matchesDepartamento;
   });
+
+  const availableDepartamentos = Array.from(
+    new Set(profiles.map((p) => p.departamento).filter((d): d is string => !!d))
+  ).sort();
 
   const getRoleLabel = (profile: Profile) => {
     const role = profile.user_roles?.[0]?.role || 'colaborador';
@@ -259,6 +265,30 @@ export default function Colaboradores() {
               <SelectItem value="all">Todas as unidades</SelectItem>
               {units.map((unit) => (
                 <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedDepartamento || "all"} onValueChange={(value) => {
+            const newValue = value === "all" ? null : value;
+            setSelectedDepartamento(newValue);
+            setCurrentPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            if (newValue) {
+              newParams.set('departamento', newValue);
+            } else {
+              newParams.delete('departamento');
+            }
+            setSearchParams(newParams, { replace: true });
+          }}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Filtrar por departamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os departamentos</SelectItem>
+              {availableDepartamentos.map((dep) => (
+                <SelectItem key={dep} value={dep}>
+                  {DEPARTAMENTOS_LABELS[dep] || dep}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
