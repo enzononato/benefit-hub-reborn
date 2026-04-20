@@ -171,8 +171,13 @@ export default function Colaboradores() {
       (profile.cpf && profile.cpf.includes(search));
     const matchesUnit = !selectedUnitId || profile.unit_id === selectedUnitId;
     const matchesStatus = statusFilter === 'todos' || profile.status === statusFilter;
-    return matchesSearch && matchesUnit && matchesStatus;
+    const matchesDepartamento = !selectedDepartamento || profile.departamento === selectedDepartamento;
+    return matchesSearch && matchesUnit && matchesStatus && matchesDepartamento;
   });
+
+  const availableDepartamentos = Array.from(
+    new Set(profiles.map((p) => p.departamento).filter((d): d is string => !!d))
+  ).sort();
 
   const getRoleLabel = (profile: Profile) => {
     const role = profile.user_roles?.[0]?.role || 'colaborador';
