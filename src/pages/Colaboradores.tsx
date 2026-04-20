@@ -73,6 +73,7 @@ export default function Colaboradores() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(searchParams.get('unit') || null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams.get('status') as StatusFilter) || 'ativo');
+  const [selectedDepartamento, setSelectedDepartamento] = useState<string | null>(searchParams.get('departamento') || null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
