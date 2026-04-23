@@ -323,7 +323,9 @@ export default function Solicitacoes() {
         request.approved_value?.toFixed(2) || '',
         '',
         request.total_installments?.toString() || '',
-        format(new Date(request.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+        request.closed_at
+          ? format(new Date(request.closed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+          : format(new Date(request.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
         request.details || ''
       ];
     });
