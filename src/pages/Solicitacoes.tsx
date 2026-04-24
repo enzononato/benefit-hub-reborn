@@ -43,6 +43,15 @@ import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
 import { useBenefitRequests, BenefitRequest, getNewRequestIds, clearNewRequestId } from '@/hooks/useBenefitRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { AnimatedNumber } from '@/components/dashboard/AnimatedNumber';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { exportApprovedPayrollCSV, exportApprovedPayrollXLSX, countApproved } from '@/lib/payrollExport';
 
 interface Unit {
   id: string;
