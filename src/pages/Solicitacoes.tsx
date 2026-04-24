@@ -43,6 +43,15 @@ import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
 import { useBenefitRequests, BenefitRequest, getNewRequestIds, clearNewRequestId } from '@/hooks/useBenefitRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { AnimatedNumber } from '@/components/dashboard/AnimatedNumber';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { exportApprovedPayrollCSV, exportApprovedPayrollXLSX, countApproved } from '@/lib/payrollExport';
 
 interface Unit {
   id: string;
@@ -420,16 +429,47 @@ export default function Solicitacoes() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                onClick={exportToCSV} 
-                disabled={loading || filteredRequests.length === 0}
-                className="bg-white/20 hover:bg-white/30 text-white border-0"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={loading || filteredRequests.length === 0}
+                    className="bg-white/20 hover:bg-white/30 text-white border-0"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Exportação padrão</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={exportToCSV}>
+                    Lista filtrada (CSV)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>
+                    Folha de pagamento — aprovados ({countApproved(filteredRequests)})
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    disabled={countApproved(filteredRequests) === 0}
+                    onClick={() => {
+                      exportApprovedPayrollCSV(filteredRequests);
+                      toast.success('Exportação para folha (CSV) gerada');
+                    }}
+                  >
+                    Exportar para folha (CSV)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={countApproved(filteredRequests) === 0}
+                    onClick={() => {
+                      exportApprovedPayrollXLSX(filteredRequests);
+                      toast.success('Exportação para folha (XLSX) gerada');
+                    }}
+                  >
+                    Exportar para folha (XLSX)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button 
                 variant="secondary" 
                 size="sm" 
