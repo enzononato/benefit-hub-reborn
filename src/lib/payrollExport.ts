@@ -122,6 +122,28 @@ export function exportApprovedPayrollCSV(requests: PayrollRequest[]) {
 export function exportApprovedPayrollXLSX(requests: PayrollRequest[]) {
   const rows = buildRows(requests);
   const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows]);
+
+  // Aplica formato contábil com negativos em vermelho nas colunas Proventos (H) e Descontos (I)
+  const moneyFormat = '#,##0.00;[Red]-#,##0.00;-';
+  const range = XLSX.utils.decode_range(ws['!ref']!);
+  for (let R = 1; R <= range.e.r; R++) {
+    for (const C of [7, 8]) {
+      const ref = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[ref];
+      if (cell && typeof cell.v === 'number') {
+        cell.t = 'n';
+        cell.z = moneyFormat;
+      }
+    }
+  }
+
+  // Larguras de coluna para melhor leitura
+  ws['!cols'] = [
+    { wch: 22 }, { wch: 28 }, { wch: 16 }, { wch: 16 },
+    { wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 14 },
+    { wch: 14 }, { wch: 10 }, { wch: 18 }, { wch: 30 },
+  ];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Aprovados');
   const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });

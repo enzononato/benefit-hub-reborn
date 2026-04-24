@@ -1,32 +1,38 @@
+## Plano: Valores negativos em vermelho no XLSX (Opção B)
 
+Aplicar formatação numérica nativa do Excel na função `exportApprovedPayrollXLSX` em `src/lib/payrollExport.ts`, sem trocar de biblioteca.
 
-## Recusar em massa protocolos abertos (não-convênios)
+### Mudanças
 
-### Situação atual
-Existem **21 protocolos abertos** (`status = 'aberta'`) que NÃO são da categoria Convênios. A maioria é `contracheque` (18), além de `relatorio_ponto` (1), `plantao_duvidas` (1) e `alteracao_ferias` (2).
+**Arquivo único**: `src/lib/payrollExport.ts` — apenas a função `exportApprovedPayrollXLSX`.
 
-Os tipos de Convênios são: `autoescola`, `farmacia`, `oficina`, `vale_gas`, `papelaria`, `otica` — estes NÃO serão afetados.
+1. Após criar o worksheet com `XLSX.utils.aoa_to_sheet`, percorrer as células das colunas **H** (Proventos, índice 7) e **I** (descontos, índice 8), a partir da linha 2.
+2. Aplicar máscara de número com seções para positivo/negativo/zero:
 
-### O que será feito
-
-Executar um UPDATE direto no banco de dados para recusar todos os 21 protocolos:
-
-```sql
-UPDATE benefit_requests
-SET 
-  status = 'recusada',
-  rejection_reason = 'Resolvido e encerrado pelo chatwoot',
-  closed_at = NOW(),
-  updated_at = NOW()
-WHERE status = 'aberta'
-  AND benefit_type NOT IN ('autoescola', 'farmacia', 'oficina', 'vale_gas', 'papelaria', 'otica');
+```ts
+const moneyFormat = '#,##0.00;[Red]-#,##0.00;-';
+const range = XLSX.utils.decode_range(ws['!ref']!);
+for (let R = 1; R <= range.e.r; R++) {
+  for (const C of [7, 8]) {
+    const ref = XLSX.utils.encode_cell({ r: R, c: C });
+    const cell = ws[ref];
+    if (cell && typeof cell.v === 'number') {
+      cell.t = 'n';
+      cell.z = moneyFormat;
+    }
+  }
+}
 ```
 
-### Mensagem ao colaborador
-Nenhuma mensagem será enviada — o envio de WhatsApp acontece apenas pelo frontend, e esta operação será feita diretamente no banco.
+3. Definir larguras de coluna para melhor leitura via `ws['!cols']`.
 
-### Impacto
-- 21 protocolos serão marcados como `recusada`
-- Protocolos de convênios permanecerão inalterados
-- Nenhuma notificação será disparada ao colaborador
+### O que NÃO muda
+- CSV continua igual (formato não suporta cor).
+- Sem nova dependência — `xlsx` já está instalado.
+- Sem mudança na UI nem no banco.
+- Sem mudança no `Solicitacoes.tsx`.
 
+### Resultado esperado
+- Coluna **Proventos**: valores positivos em preto, formato contábil `1.234,56`.
+- Coluna **descontos**: valores negativos em **vermelho** automaticamente, formato `-1.234,56`.
+- Compatível com Excel, LibreOffice e Google Sheets.
