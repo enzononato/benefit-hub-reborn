@@ -332,6 +332,14 @@ export default function Dashboard() {
           <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
         </section>
 
+        {/* Pessoas — top colaboradores */}
+        <section aria-label="Top colaboradores" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Pessoas
+          </h2>
+          <TopCollaboratorsCard data={topCollaborators} loading={loading} />
+        </section>
+
         {/* Operação — agentes e protocolos recentes */}
         <section aria-label="Operação" className="space-y-2">
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
