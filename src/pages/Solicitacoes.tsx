@@ -636,40 +636,41 @@ export default function Solicitacoes() {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-lg border border-border bg-card shadow-elevation-1 overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="font-semibold">Protocolo</TableHead>
-                <TableHead className="font-semibold">Colaborador</TableHead>
-                <TableHead className="font-semibold">Revenda</TableHead>
-                <TableHead className="font-semibold">Tipo</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold">SLA</TableHead>
-                <TableHead className="font-semibold">Data</TableHead>
-                <TableHead className="text-right font-semibold">Ações</TableHead>
+              <TableRow className="hover:bg-muted/40">
+                <TableHead>Protocolo</TableHead>
+                <TableHead>Colaborador</TableHead>
+                <TableHead>Revenda</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>SLA</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
+                Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-7 w-7 ml-auto rounded-md" /></TableCell>
                   </TableRow>
                 ))
               ) : paginatedRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-16 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
-                      <ClipboardList className="h-10 w-10 text-muted-foreground/50" />
-                      <p>Nenhuma solicitação encontrada</p>
+                      <ClipboardList className="h-10 w-10 text-muted-foreground/30" />
+                      <p className="text-sm font-medium text-foreground">Nenhuma solicitação encontrada</p>
+                      <p className="text-[12px] text-muted-foreground">Ajuste os filtros ou aguarde novas solicitações.</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -678,49 +679,36 @@ export default function Solicitacoes() {
                   const Icon = benefitIcons[request.benefit_type] || HelpCircle;
                   const globalIndex = (currentPage - 1) * itemsPerPage + idx;
                   const isNewRequest = highlightedIds.has(request.id);
-                  
-                  // Get benefit color based on type
-                  const getBenefitColor = (type: BenefitType) => {
-                    const colors: Record<string, string> = {
-                      autoescola: 'bg-benefit-autoescola text-benefit-autoescola-icon',
-                      farmacia: 'bg-benefit-farmacia text-benefit-farmacia-icon',
-                      oficina: 'bg-benefit-oficina text-benefit-oficina-icon',
-                      vale_gas: 'bg-benefit-vale-gas text-benefit-vale-gas-icon',
-                      papelaria: 'bg-benefit-papelaria text-benefit-papelaria-icon',
-                      otica: 'bg-benefit-otica text-benefit-otica-icon',
-                    };
-                    return colors[type] || 'bg-muted text-muted-foreground';
-                  };
 
                   return (
-                    <TableRow 
-                      key={request.id} 
+                    <TableRow
+                      key={request.id}
                       className={cn(
-                        "group hover:bg-primary/5 transition-all duration-200 cursor-pointer",
-                        isNewRequest && "animate-pulse bg-success/10 border-l-4 border-l-success"
+                        "group cursor-pointer relative",
+                        isNewRequest && "bg-info/5"
                       )}
                       onClick={() => handleViewDetails(request.id, globalIndex)}
                     >
+                      {isNewRequest && (
+                        <td className="absolute left-0 top-0 bottom-0 w-0.5 bg-info p-0" aria-hidden />
+                      )}
                       <TableCell>
-                        <span className="font-mono text-sm font-medium text-primary">
+                        <span className="font-mono text-[12px] font-medium text-foreground tabular-nums">
                           {request.protocol}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{request.profile?.full_name || 'N/A'}</span>
+                        <span className="font-medium text-foreground">{request.profile?.full_name || 'N/A'}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
+                        <span className="text-[13px] text-muted-foreground">
                           {request.profile?.unit?.name || 'N/A'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className={cn(
-                          "inline-flex items-center gap-2 rounded-full px-2.5 py-1",
-                          getBenefitColor(request.benefit_type)
-                        )}>
-                          <Icon className="h-3.5 w-3.5" />
-                          <span className="text-xs font-medium hidden sm:inline">{benefitTypeLabels[request.benefit_type]}</span>
+                        <div className="inline-flex items-center gap-1.5 text-foreground">
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-[13px]">{benefitTypeLabels[request.benefit_type]}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -731,30 +719,30 @@ export default function Solicitacoes() {
                           const sla = getSlaStatus(request);
                           if (!sla) return <span className="text-muted-foreground">—</span>;
                           return (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               {sla.dotColor && (
-                                <span className={cn("h-2.5 w-2.5 rounded-full", sla.dotColor)} />
+                                <span className={cn("h-1.5 w-1.5 rounded-full", sla.dotColor)} />
                               )}
-                              <span className="text-sm text-muted-foreground">{sla.label}</span>
+                              <span className="text-[12px] text-muted-foreground tabular-nums">{sla.label}</span>
                             </div>
                           );
                         })()}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-[12px] text-muted-foreground tabular-nums">
                         {format(new Date(request.created_at), "dd/MM/yyyy", { locale: ptBR })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
-                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
+                          className="h-7 w-7"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewDetails(request.id, globalIndex);
                           }}
                           title="Ver detalhes"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
                       </TableCell>
                     </TableRow>
