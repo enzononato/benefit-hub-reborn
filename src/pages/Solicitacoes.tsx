@@ -511,19 +511,18 @@ export default function Solicitacoes() {
           })}
         </div>
 
-        {/* Filters */}
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por protocolo, nome ou detalhes..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-background"
-                />
-              </div>
+        {/* Filters — barra compacta */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por protocolo, nome ou detalhes..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
             <Select value={statusFilter} onValueChange={(v) => {
               setStatusFilter(v);
               if (v !== 'all') {
@@ -532,7 +531,7 @@ export default function Solicitacoes() {
                 setSearchParams({});
               }
             }}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36 h-9 text-[13px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -553,7 +552,7 @@ export default function Solicitacoes() {
               }
               setSearchParams(newParams);
             }}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36 h-9 text-[13px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -573,7 +572,7 @@ export default function Solicitacoes() {
               }
               setSearchParams(newParams);
             }}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36 h-9 text-[13px]">
                 <SelectValue placeholder="Revenda" />
               </SelectTrigger>
               <SelectContent>
@@ -587,12 +586,13 @@ export default function Solicitacoes() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
+                  size="sm"
                   className={cn(
-                    "w-full sm:w-[200px] justify-start text-left font-normal",
+                    "w-full sm:w-[180px] h-9 justify-start text-left font-normal text-[13px]",
                     !dateRange && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
                   {dateRange?.from ? (
                     dateRange.to ? (
                       <>
@@ -622,18 +622,17 @@ export default function Solicitacoes() {
           </div>
 
           {hasActiveFilters && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <div className="flex items-center gap-2 px-0.5">
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Filter className="h-3 w-3" />
                 {filteredRequests.length} resultados
               </span>
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-[11px]">
                 <X className="h-3 w-3 mr-1" />
                 Limpar filtros
               </Button>
             </div>
           )}
-          </div>
         </div>
 
         {/* Table */}
