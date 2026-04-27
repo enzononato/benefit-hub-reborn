@@ -664,12 +664,28 @@ export default function Solicitacoes() {
             </Popover>
           </div>
 
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 px-0.5">
+          {(hasActiveFilters || userFilter) && (
+            <div className="flex flex-wrap items-center gap-2 px-0.5">
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Filter className="h-3 w-3" />
                 {filteredRequests.length} resultados
               </span>
+              {userFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserFilter(null);
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('user');
+                    setSearchParams(newParams);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted/70"
+                  title="Remover filtro de colaborador"
+                >
+                  Colaborador: {userFilterName || '...'}
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-[11px]">
                 <X className="h-3 w-3 mr-1" />
                 Limpar filtros
