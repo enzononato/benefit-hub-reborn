@@ -212,8 +212,7 @@ export function ColaboradorHistorySheet({
                 <BenefitTypesFilter
                   selected={typeFilter}
                   onChange={setTypeFilter}
-                  className="flex-1"
-                  showSelectedChips={false}
+                  className="flex-1 min-w-0"
                 />
 
                 {hasActiveFilters && (
