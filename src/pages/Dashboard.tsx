@@ -72,6 +72,7 @@ export default function Dashboard() {
         setAllRequests([]);
         setStats({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
         setBenefitTypeData([]);
+        setTopCollaborators([]);
         setLoading(false);
         return;
       }
