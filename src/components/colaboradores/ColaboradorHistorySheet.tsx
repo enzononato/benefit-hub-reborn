@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BenefitRequest, benefitTypeLabels, BenefitType, BenefitStatus } from '@/types/benefits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, AlertCircle, Clock, History, Filter, Download, CreditCard, Check } from 'lucide-react';
+import { BenefitTypesFilter } from '@/components/solicitacoes/BenefitTypesFilter';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -56,23 +57,24 @@ export function ColaboradorHistorySheet({
   const [requests, setRequests] = useState<(BenefitRequest & { total_installments?: number; paid_installments?: number })[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<BenefitType[]>([]);
   const [updatingInstallment, setUpdatingInstallment] = useState<string | null>(null);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
       const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
-      const matchesType = typeFilter === 'all' || req.benefit_type === typeFilter;
+      const matchesType =
+        typeFilter.length === 0 || typeFilter.includes(req.benefit_type);
       return matchesStatus && matchesType;
     });
   }, [requests, statusFilter, typeFilter]);
 
   const clearFilters = () => {
     setStatusFilter('all');
-    setTypeFilter('all');
+    setTypeFilter([]);
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all';
+  const hasActiveFilters = statusFilter !== 'all' || typeFilter.length > 0;
 
   useEffect(() => {
     if (open && colaborador) {
@@ -194,9 +196,9 @@ export function ColaboradorHistorySheet({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectTrigger className="h-9 text-xs flex-1">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -207,23 +209,17 @@ export function ColaboradorHistorySheet({
                   </SelectContent>
                 </Select>
 
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    {Object.entries(benefitTypeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <BenefitTypesFilter
+                  selected={typeFilter}
+                  onChange={setTypeFilter}
+                  className="flex-1"
+                />
 
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     onClick={clearFilters}
                   >
                     Limpar
