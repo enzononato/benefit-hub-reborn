@@ -57,23 +57,24 @@ export function ColaboradorHistorySheet({
   const [requests, setRequests] = useState<(BenefitRequest & { total_installments?: number; paid_installments?: number })[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<BenefitType[]>([]);
   const [updatingInstallment, setUpdatingInstallment] = useState<string | null>(null);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
       const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
-      const matchesType = typeFilter === 'all' || req.benefit_type === typeFilter;
+      const matchesType =
+        typeFilter.length === 0 || typeFilter.includes(req.benefit_type);
       return matchesStatus && matchesType;
     });
   }, [requests, statusFilter, typeFilter]);
 
   const clearFilters = () => {
     setStatusFilter('all');
-    setTypeFilter('all');
+    setTypeFilter([]);
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all';
+  const hasActiveFilters = statusFilter !== 'all' || typeFilter.length > 0;
 
   useEffect(() => {
     if (open && colaborador) {
