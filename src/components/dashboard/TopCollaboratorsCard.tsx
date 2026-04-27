@@ -14,6 +14,7 @@ interface TopCollaboratorsCardProps {
   data: TopCollaboratorEntry[];
   loading?: boolean;
   limit?: number;
+  onSelect?: (entry: TopCollaboratorEntry) => void;
 }
 
 const initialsOf = (name: string) =>
@@ -28,6 +29,7 @@ const TopCollaboratorsCard: React.FC<TopCollaboratorsCardProps> = ({
   data,
   loading,
   limit = 8,
+  onSelect,
 }) => {
   const items = data.slice(0, limit);
   const max = items[0]?.count ?? 0;
@@ -65,49 +67,59 @@ const TopCollaboratorsCard: React.FC<TopCollaboratorsCardProps> = ({
               const pct = max > 0 ? (item.count / max) * 100 : 0;
               const share = total > 0 ? ((item.count / total) * 100).toFixed(0) : '0';
               return (
-                <li
-                  key={item.userId}
-                  className="group relative flex items-center gap-2.5 rounded-md border border-border bg-card px-2 py-1.5 hover:bg-muted/40 transition-colors"
-                >
-                  <span
+                <li key={item.userId}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect?.(item)}
+                    disabled={!onSelect}
+                    title={onSelect ? `Ver solicitações de ${item.name}` : undefined}
                     className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold tabular-nums',
-                      idx === 0
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-muted-foreground'
+                      'group relative flex w-full items-center gap-2.5 rounded-md border border-border bg-card px-2 py-1.5 text-left transition-colors',
+                      onSelect
+                        ? 'cursor-pointer hover:bg-muted/40 hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                        : 'cursor-default'
                     )}
                   >
-                    {idx + 1}
-                  </span>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground">
-                    {initialsOf(item.name)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-xs font-medium text-foreground">
-                        {item.name}
-                      </p>
-                      <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
-                        {item.count}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-foreground/80 transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                        {share}%
-                      </span>
-                      {item.unitName && (
-                        <span className="shrink-0 truncate max-w-[80px] text-[10px] text-muted-foreground">
-                          · {item.unitName}
-                        </span>
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold tabular-nums',
+                        idx === 0
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted text-muted-foreground'
                       )}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground">
+                      {initialsOf(item.name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-xs font-medium text-foreground">
+                          {item.name}
+                        </p>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">
+                          {item.count}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-foreground/80 transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                          {share}%
+                        </span>
+                        {item.unitName && (
+                          <span className="shrink-0 truncate max-w-[80px] text-[10px] text-muted-foreground">
+                            · {item.unitName}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </button>
                 </li>
               );
             })}

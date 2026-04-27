@@ -37,6 +37,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
+import { BenefitTypesFilter } from '@/components/solicitacoes/BenefitTypesFilter';
 import { toast } from 'sonner';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
 import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
@@ -89,8 +90,13 @@ export default function Solicitacoes() {
   const deferredSearch = useDeferredValue(search); // Debounce search for performance
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
-  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
+  const [typeFilter, setTypeFilter] = useState<BenefitType[]>(() => {
+    const raw = searchParams.get('benefit_type');
+    return raw ? (raw.split(',') as BenefitType[]) : [];
+  });
   const [unitFilter, setUnitFilter] = useState<string>(searchParams.get('unit') || 'all');
+  const [userFilter, setUserFilter] = useState<string | null>(searchParams.get('user'));
+  const [userFilterName, setUserFilterName] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
@@ -199,17 +205,45 @@ export default function Solicitacoes() {
     const urlStatus = searchParams.get('status');
     const urlType = searchParams.get('benefit_type');
     const urlUnit = searchParams.get('unit');
-    
+    const urlUser = searchParams.get('user');
+
     if (urlStatus && urlStatus !== statusFilter) {
       setStatusFilter(urlStatus);
     }
-    if (urlType && urlType !== typeFilter) {
-      setTypeFilter(urlType);
+    if (urlType) {
+      const arr = urlType.split(',') as BenefitType[];
+      const same =
+        arr.length === typeFilter.length &&
+        arr.every((t) => typeFilter.includes(t));
+      if (!same) setTypeFilter(arr);
     }
     if (urlUnit && urlUnit !== unitFilter) {
       setUnitFilter(urlUnit);
     }
+    if (urlUser !== userFilter) {
+      setUserFilter(urlUser);
+    }
   }, [searchParams]);
+
+  // Busca o nome do colaborador quando vem ?user=<id>
+  useEffect(() => {
+    if (!userFilter) {
+      setUserFilterName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', userFilter)
+        .maybeSingle();
+      if (!cancelled) setUserFilterName(data?.full_name || 'Colaborador');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userFilter]);
 
   const fetchUnits = async () => {
     const { data } = await supabase
@@ -310,8 +344,9 @@ export default function Solicitacoes() {
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('all');
-    setTypeFilter('all');
+    setTypeFilter([]);
     setUnitFilter('all');
+    setUserFilter(null);
     setDateRange(undefined);
     setSearchParams({});
     setCurrentPage(1);
@@ -356,7 +391,13 @@ export default function Solicitacoes() {
     toast.success(`${filteredRequests.length} solicitações exportadas`);
   };
 
-  const hasActiveFilters = search || statusFilter !== 'all' || typeFilter !== 'all' || unitFilter !== 'all' || dateRange;
+  const hasActiveFilters =
+    !!search ||
+    statusFilter !== 'all' ||
+    typeFilter.length > 0 ||
+    unitFilter !== 'all' ||
+    !!userFilter ||
+    !!dateRange;
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch =
@@ -371,15 +412,15 @@ export default function Solicitacoes() {
       matchesStatus = statuses.includes(request.status);
     }
 
-    // Handle comma-separated benefit_type values from URL (e.g., from CONVÊNIOS card)
-    let matchesType = typeFilter === 'all';
-    if (!matchesType) {
-      const types = typeFilter.split(',');
-      matchesType = types.includes(request.benefit_type);
-    }
+    // Multi-select benefit type filter (tags)
+    const matchesType =
+      typeFilter.length === 0 || typeFilter.includes(request.benefit_type);
 
     // Unit filter
     const matchesUnit = unitFilter === 'all' || request.profile?.unit_id === unitFilter;
+
+    // User filter (vindo do dashboard "Top colaboradores")
+    const matchesUser = !userFilter || request.user_id === userFilter;
 
     // Date range filter
     let matchesDate = true;
@@ -390,7 +431,7 @@ export default function Solicitacoes() {
       matchesDate = isWithinInterval(requestDate, { start: from, end: to });
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesDate;
+    return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesUser && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
@@ -542,26 +583,28 @@ export default function Solicitacoes() {
                 <SelectItem value="recusada">Recusado</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={typeFilter} onValueChange={(v) => {
-              setTypeFilter(v);
-              const newParams = new URLSearchParams(searchParams);
-              if (v !== 'all') {
-                newParams.set('benefit_type', v);
-              } else {
-                newParams.delete('benefit_type');
+            <BenefitTypesFilter
+              selected={typeFilter}
+              allowedTypes={
+                userModules === null
+                  ? null
+                  : (userModules.filter((m) =>
+                      m in benefitTypeLabels
+                    ) as BenefitType[])
               }
-              setSearchParams(newParams);
-            }}>
-              <SelectTrigger className="w-full sm:w-36 h-9 text-[13px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                {Object.entries(benefitTypeLabels).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(next) => {
+                setTypeFilter(next);
+                const newParams = new URLSearchParams(searchParams);
+                if (next.length > 0) {
+                  newParams.set('benefit_type', next.join(','));
+                } else {
+                  newParams.delete('benefit_type');
+                }
+                setSearchParams(newParams);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-44"
+            />
             <Select value={unitFilter} onValueChange={(v) => {
               setUnitFilter(v);
               const newParams = new URLSearchParams(searchParams);
@@ -621,12 +664,28 @@ export default function Solicitacoes() {
             </Popover>
           </div>
 
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 px-0.5">
+          {(hasActiveFilters || userFilter) && (
+            <div className="flex flex-wrap items-center gap-2 px-0.5">
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Filter className="h-3 w-3" />
                 {filteredRequests.length} resultados
               </span>
+              {userFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserFilter(null);
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('user');
+                    setSearchParams(newParams);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted/70"
+                  title="Remover filtro de colaborador"
+                >
+                  Colaborador: {userFilterName || '...'}
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-[11px]">
                 <X className="h-3 w-3 mr-1" />
                 Limpar filtros
