@@ -13,6 +13,7 @@ import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
 
 import { RecentRequests } from '@/components/dashboard/RecentRequests';
 import { AgentPerformanceChart } from '@/components/dashboard/AgentPerformanceChart';
+import TopCollaboratorsCard, { TopCollaboratorEntry } from '@/components/dashboard/TopCollaboratorsCard';
 import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +53,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
+  const [topCollaborators, setTopCollaborators] = useState<TopCollaboratorEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [filters, setFilters] = useState<DashboardFilters>({
@@ -70,6 +72,7 @@ export default function Dashboard() {
         setAllRequests([]);
         setStats({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
         setBenefitTypeData([]);
+        setTopCollaborators([]);
         setLoading(false);
         return;
       }
@@ -148,6 +151,41 @@ export default function Dashboard() {
         count: filteredData.filter(r => r.benefit_type === type).length,
       }));
       setBenefitTypeData(typeData);
+
+      // Top colaboradores: agrega por user_id e busca nomes/unidades em profiles
+      const countsByUser = new Map<string, number>();
+      filteredData.forEach((r) => {
+        countsByUser.set(r.user_id, (countsByUser.get(r.user_id) || 0) + 1);
+      });
+      const topUserIds = Array.from(countsByUser.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([uid]) => uid);
+
+      if (topUserIds.length === 0) {
+        setTopCollaborators([]);
+      } else {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, unit:units(name)')
+          .in('user_id', topUserIds);
+
+        const profileMap = new Map(
+          (profilesData || []).map((p: any) => [p.user_id, p])
+        );
+
+        const ranking: TopCollaboratorEntry[] = topUserIds.map((uid) => {
+          const p: any = profileMap.get(uid);
+          return {
+            userId: uid,
+            name: p?.full_name || 'Sem nome',
+            unitName: p?.unit?.name ?? null,
+            count: countsByUser.get(uid) || 0,
+          };
+        });
+        setTopCollaborators(ranking);
+      }
+
       setLastUpdate(new Date());
     } catch (err) {
       console.error('Error in fetchDashboardData:', err);
@@ -292,6 +330,14 @@ export default function Dashboard() {
             Solicitações por categoria
           </h2>
           <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
+        </section>
+
+        {/* Pessoas — top colaboradores */}
+        <section aria-label="Top colaboradores" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Pessoas
+          </h2>
+          <TopCollaboratorsCard data={topCollaborators} loading={loading} />
         </section>
 
         {/* Operação — agentes e protocolos recentes */}
