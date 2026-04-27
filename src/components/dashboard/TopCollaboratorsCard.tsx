@@ -29,6 +29,7 @@ const TopCollaboratorsCard: React.FC<TopCollaboratorsCardProps> = ({
   data,
   loading,
   limit = 8,
+  onSelect,
 }) => {
   const items = data.slice(0, limit);
   const max = items[0]?.count ?? 0;
