@@ -26,8 +26,8 @@ interface BenefitsChartProps {
 
 type SeriesKey = 'solicitacoes' | 'aprovadas' | 'recusadas';
 
-const SERIES: { key: SeriesKey; label: string; color: string; type: 'bar' | 'line' }[] = [
-  { key: 'solicitacoes', label: 'Total', color: 'hsl(var(--chart-1))', type: 'bar' },
+const SERIES: { key: SeriesKey; label: string; color: string; type: 'line' }[] = [
+  { key: 'solicitacoes', label: 'Total', color: 'hsl(var(--chart-1))', type: 'line' },
   { key: 'aprovadas', label: 'Aprovadas', color: 'hsl(var(--success))', type: 'line' },
   { key: 'recusadas', label: 'Recusadas', color: 'hsl(var(--destructive))', type: 'line' },
 ];
@@ -126,12 +126,14 @@ const BenefitsChart: React.FC<BenefitsChartProps> = ({ data }) => {
                   labelStyle={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                 />
                 {!hidden.has('solicitacoes') && (
-                  <Bar
+                  <Line
+                    type="monotone"
                     dataKey="solicitacoes"
                     name="Total"
-                    fill="hsl(var(--chart-1))"
-                    radius={[3, 3, 0, 0]}
-                    barSize={28}
+                    stroke="hsl(var(--chart-1))"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: 'hsl(var(--chart-1))', strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
                     animationDuration={500}
                   />
                 )}
