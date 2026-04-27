@@ -583,26 +583,22 @@ export default function Solicitacoes() {
                 <SelectItem value="recusada">Recusado</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={typeFilter} onValueChange={(v) => {
-              setTypeFilter(v);
-              const newParams = new URLSearchParams(searchParams);
-              if (v !== 'all') {
-                newParams.set('benefit_type', v);
-              } else {
-                newParams.delete('benefit_type');
-              }
-              setSearchParams(newParams);
-            }}>
-              <SelectTrigger className="w-full sm:w-36 h-9 text-[13px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                {Object.entries(benefitTypeLabels).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <BenefitTypesFilter
+              selected={typeFilter}
+              allowedTypes={userModules ?? null}
+              onChange={(next) => {
+                setTypeFilter(next);
+                const newParams = new URLSearchParams(searchParams);
+                if (next.length > 0) {
+                  newParams.set('benefit_type', next.join(','));
+                } else {
+                  newParams.delete('benefit_type');
+                }
+                setSearchParams(newParams);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-44"
+            />
             <Select value={unitFilter} onValueChange={(v) => {
               setUnitFilter(v);
               const newParams = new URLSearchParams(searchParams);
