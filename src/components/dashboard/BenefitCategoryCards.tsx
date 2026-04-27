@@ -65,35 +65,35 @@ const iconMap: Record<string, React.ElementType> = {
 
 const colorConfig: Record<string, { iconBg: string; iconColor: string }> = {
   // Convênios
-  autoescola: { iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
-  farmacia: { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-  oficina: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-  vale_gas: { iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-  papelaria: { iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-  otica: { iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
+  autoescola: { iconBg: 'bg-slate-100 dark:bg-slate-800/60', iconColor: 'text-slate-700 dark:text-slate-300' },
+  farmacia: { iconBg: 'bg-emerald-50 dark:bg-emerald-950/40', iconColor: 'text-emerald-700 dark:text-emerald-400' },
+  oficina: { iconBg: 'bg-orange-50 dark:bg-orange-950/40', iconColor: 'text-orange-700 dark:text-orange-400' },
+  vale_gas: { iconBg: 'bg-amber-50 dark:bg-amber-950/40', iconColor: 'text-amber-700 dark:text-amber-400' },
+  papelaria: { iconBg: 'bg-stone-100 dark:bg-stone-800/60', iconColor: 'text-stone-700 dark:text-stone-300' },
+  otica: { iconBg: 'bg-cyan-50 dark:bg-cyan-950/40', iconColor: 'text-cyan-700 dark:text-cyan-400' },
   // Cards Soltos
-  alteracao_ferias: { iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-  aviso_folga_falta: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-  atestado: { iconBg: 'bg-red-100', iconColor: 'text-red-500' },
-  contracheque: { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-  abono_horas: { iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
-  alteracao_horario: { iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
-  operacao_domingo: { iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
-  relatorio_ponto: { iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
-  relato_anomalia: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-  plantao_duvidas: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-  solides: { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+  alteracao_ferias: { iconBg: 'bg-amber-50 dark:bg-amber-950/40', iconColor: 'text-amber-700 dark:text-amber-400' },
+  aviso_folga_falta: { iconBg: 'bg-blue-50 dark:bg-blue-950/40', iconColor: 'text-blue-700 dark:text-blue-400' },
+  atestado: { iconBg: 'bg-red-50 dark:bg-red-950/40', iconColor: 'text-red-700 dark:text-red-400' },
+  contracheque: { iconBg: 'bg-emerald-50 dark:bg-emerald-950/40', iconColor: 'text-emerald-700 dark:text-emerald-400' },
+  abono_horas: { iconBg: 'bg-teal-50 dark:bg-teal-950/40', iconColor: 'text-teal-700 dark:text-teal-400' },
+  alteracao_horario: { iconBg: 'bg-slate-100 dark:bg-slate-800/60', iconColor: 'text-slate-700 dark:text-slate-300' },
+  operacao_domingo: { iconBg: 'bg-yellow-50 dark:bg-yellow-950/40', iconColor: 'text-yellow-700 dark:text-yellow-400' },
+  relatorio_ponto: { iconBg: 'bg-zinc-100 dark:bg-zinc-800/60', iconColor: 'text-zinc-700 dark:text-zinc-300' },
+  relato_anomalia: { iconBg: 'bg-orange-50 dark:bg-orange-950/40', iconColor: 'text-orange-700 dark:text-orange-400' },
+  plantao_duvidas: { iconBg: 'bg-blue-50 dark:bg-blue-950/40', iconColor: 'text-blue-700 dark:text-blue-400' },
+  solides: { iconBg: 'bg-slate-100 dark:bg-slate-800/60', iconColor: 'text-slate-700 dark:text-slate-300' },
   // Benefícios
-  plano_odontologico: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600' },
-  plano_saude: { iconBg: 'bg-rose-100', iconColor: 'text-rose-600' },
-  vale_transporte: { iconBg: 'bg-lime-100', iconColor: 'text-lime-600' },
-  outros: { iconBg: 'bg-gray-100', iconColor: 'text-gray-600' },
+  plano_odontologico: { iconBg: 'bg-pink-50 dark:bg-pink-950/40', iconColor: 'text-pink-700 dark:text-pink-400' },
+  plano_saude: { iconBg: 'bg-rose-50 dark:bg-rose-950/40', iconColor: 'text-rose-700 dark:text-rose-400' },
+  vale_transporte: { iconBg: 'bg-lime-50 dark:bg-lime-950/40', iconColor: 'text-lime-700 dark:text-lime-400' },
+  outros: { iconBg: 'bg-muted', iconColor: 'text-muted-foreground' },
   // Categoria Outros
-  listagem_funcionarios: { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-  listagem_aniversariantes: { iconBg: 'bg-fuchsia-100', iconColor: 'text-fuchsia-600' },
-  listagem_dependentes: { iconBg: 'bg-teal-100', iconColor: 'text-teal-600' },
-  listagem_pdcs: { iconBg: 'bg-stone-100', iconColor: 'text-stone-600' },
-  informacoes_diversas: { iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
+  listagem_funcionarios: { iconBg: 'bg-slate-100 dark:bg-slate-800/60', iconColor: 'text-slate-700 dark:text-slate-300' },
+  listagem_aniversariantes: { iconBg: 'bg-pink-50 dark:bg-pink-950/40', iconColor: 'text-pink-700 dark:text-pink-400' },
+  listagem_dependentes: { iconBg: 'bg-teal-50 dark:bg-teal-950/40', iconColor: 'text-teal-700 dark:text-teal-400' },
+  listagem_pdcs: { iconBg: 'bg-stone-100 dark:bg-stone-800/60', iconColor: 'text-stone-700 dark:text-stone-300' },
+  informacoes_diversas: { iconBg: 'bg-cyan-50 dark:bg-cyan-950/40', iconColor: 'text-cyan-700 dark:text-cyan-400' },
 };
 
 interface BenefitTypeData {
@@ -162,32 +162,27 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
     const config = colorConfig[type] || colorConfig.outros;
     const itemData = data.find(d => d.type === type);
     const count = itemData?.count || 0;
-
-    // Check if there are recent requests (last 2 hours)
     const hasRecent = count > 0;
 
     return (
       <div
         key={type}
         onClick={() => handleCategoryClick(type)}
-        className="relative bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all duration-200 group"
+        className="relative bg-card rounded-lg border border-border shadow-elevation-1 p-3 flex flex-col items-center gap-1.5 cursor-pointer hover:border-foreground/20 hover:bg-muted/30 transition-colors group"
       >
-        {hasRecent && count > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-          </span>
+        {hasRecent && (
+          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-info" />
         )}
         <div className={cn(
-          "rounded-full p-3 transition-transform group-hover:scale-110",
+          "rounded-md p-2 transition-colors",
           config.iconBg
         )}>
-          <Icon className={cn("h-6 w-6", config.iconColor)} />
+          <Icon className={cn("h-5 w-5", config.iconColor)} />
         </div>
-        <span className="text-xs font-medium text-muted-foreground text-center leading-tight group-hover:text-foreground transition-colors">
+        <span className="text-[11px] font-medium text-muted-foreground text-center leading-tight">
           {benefitTypeLabels[type]}
         </span>
-        <span className="text-2xl font-bold text-foreground">{count}</span>
+        <span className="text-xl font-semibold text-foreground tabular-nums leading-none">{count}</span>
       </div>
     );
   };
@@ -203,34 +198,31 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
     onTitleClick: () => void
   ) => {
     return (
-      <div className="relative bg-card rounded-xl border shadow-sm p-4 flex flex-col items-center gap-2 group">
+      <div className="relative bg-card rounded-lg border border-border shadow-elevation-1 p-3 flex flex-col items-center gap-1.5 group">
         {count > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-          </span>
+          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-info" />
         )}
         <div 
           className={cn(
-            "rounded-full p-3 cursor-pointer transition-all group-hover:scale-110",
+            "rounded-md p-2 cursor-pointer transition-colors",
             iconBg
           )}
           onClick={onTitleClick}
         >
-          <Icon className={cn("h-6 w-6", iconColor)} />
+          <Icon className={cn("h-5 w-5", iconColor)} />
         </div>
         <span 
-          className="text-xs font-medium text-muted-foreground text-center leading-tight cursor-pointer hover:text-foreground transition-colors"
+          className="text-[11px] font-medium text-muted-foreground text-center leading-tight cursor-pointer hover:text-foreground transition-colors uppercase tracking-wide"
           onClick={onTitleClick}
         >
           {label}
         </span>
-        <span className="text-2xl font-bold text-foreground">{count}</span>
+        <span className="text-xl font-semibold text-foreground tabular-nums leading-none">{count}</span>
         <button
           onClick={() => onOpenChange(!isOpen)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-0.5"
         >
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen && "rotate-180")} />
+          <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", isOpen && "rotate-180")} />
           {isOpen ? 'Fechar' : 'Ver todos'}
         </button>
       </div>
