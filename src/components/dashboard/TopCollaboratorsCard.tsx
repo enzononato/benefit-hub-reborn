@@ -14,6 +14,7 @@ interface TopCollaboratorsCardProps {
   data: TopCollaboratorEntry[];
   loading?: boolean;
   limit?: number;
+  onSelect?: (entry: TopCollaboratorEntry) => void;
 }
 
 const initialsOf = (name: string) =>
