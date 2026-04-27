@@ -23,6 +23,7 @@ interface BenefitTypesFilterProps {
   onChange: (next: BenefitType[]) => void;
   allowedTypes?: BenefitType[] | null; // null = admin (todos)
   className?: string;
+  showSelectedChips?: boolean;
 }
 
 const GROUPS: { key: string; label: string; types: BenefitType[] }[] = [
@@ -36,6 +37,7 @@ export const BenefitTypesFilter: React.FC<BenefitTypesFilterProps> = ({
   onChange,
   allowedTypes,
   className,
+  showSelectedChips = true,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -209,7 +211,7 @@ export const BenefitTypesFilter: React.FC<BenefitTypesFilterProps> = ({
         </PopoverContent>
       </Popover>
 
-      {selected.length > 0 && (
+      {showSelectedChips && selected.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selected.map((t) => (
             <button
