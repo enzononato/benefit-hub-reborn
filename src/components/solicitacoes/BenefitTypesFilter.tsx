@@ -37,6 +37,7 @@ export const BenefitTypesFilter: React.FC<BenefitTypesFilterProps> = ({
   onChange,
   allowedTypes,
   className,
+  showSelectedChips = true,
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
