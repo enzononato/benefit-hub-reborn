@@ -213,6 +213,7 @@ export function ColaboradorHistorySheet({
                   selected={typeFilter}
                   onChange={setTypeFilter}
                   className="flex-1"
+                  showSelectedChips={false}
                 />
 
                 {hasActiveFilters && (
