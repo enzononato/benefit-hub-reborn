@@ -230,17 +230,17 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Grid principal com cards conforme módulos permitidos */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-2.5">
         {/* Card CONVÊNIOS */}
         {showConvenios &&
           renderGroupCard(
             'CONVÊNIOS',
             totalConvenios,
             Handshake,
-            'bg-violet-100',
-            'text-violet-600',
+            'bg-muted',
+            'text-foreground',
             isConveniosOpen,
             setIsConveniosOpen,
             handleConveniosClick
@@ -255,8 +255,8 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
             'BENEFÍCIOS',
             totalBeneficios,
             Gift,
-            'bg-pink-100',
-            'text-pink-600',
+            'bg-muted',
+            'text-foreground',
             isBeneficiosOpen,
             setIsBeneficiosOpen,
             handleBeneficiosClick
@@ -271,8 +271,8 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
             'OUTROS',
             totalOutros,
             MoreHorizontal,
-            'bg-indigo-100',
-            'text-indigo-600',
+            'bg-muted',
+            'text-foreground',
             isOutrosOpen,
             setIsOutrosOpen,
             handleOutrosClick
@@ -283,12 +283,12 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
       {showConvenios && (
         <Collapsible open={isConveniosOpen} onOpenChange={setIsConveniosOpen}>
           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="bg-muted/30 rounded-xl p-4 border">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Handshake className="h-4 w-4 text-violet-600" />
+            <div className="bg-muted/40 rounded-lg p-3 border border-border">
+              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
+                <Handshake className="h-3.5 w-3.5" />
                 Convênios
               </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
                 {visibleConvenioTypes.map((type) => renderCard(type))}
               </div>
             </div>
@@ -300,12 +300,12 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
       {showBeneficios && (
         <Collapsible open={isBeneficiosOpen} onOpenChange={setIsBeneficiosOpen}>
           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="bg-muted/30 rounded-xl p-4 border">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Gift className="h-4 w-4 text-pink-600" />
+            <div className="bg-muted/40 rounded-lg p-3 border border-border">
+              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
+                <Gift className="h-3.5 w-3.5" />
                 Benefícios
               </h4>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2.5">
                 {visibleBeneficiosTypes.map((type) => renderCard(type))}
               </div>
             </div>
@@ -317,12 +317,12 @@ const BenefitCategoryCards: React.FC<BenefitCategoryCardsProps> = ({ data, allow
       {showOutros && (
         <Collapsible open={isOutrosOpen} onOpenChange={setIsOutrosOpen}>
           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="bg-muted/30 rounded-xl p-4 border">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <MoreHorizontal className="h-4 w-4 text-indigo-600" />
+            <div className="bg-muted/40 rounded-lg p-3 border border-border">
+              <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
+                <MoreHorizontal className="h-3.5 w-3.5" />
                 Outros
               </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                 {visibleOutrosTypes.map((type) => renderCard(type))}
               </div>
             </div>
