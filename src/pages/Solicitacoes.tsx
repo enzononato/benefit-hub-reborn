@@ -343,8 +343,9 @@ export default function Solicitacoes() {
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('all');
-    setTypeFilter('all');
+    setTypeFilter([]);
     setUnitFilter('all');
+    setUserFilter(null);
     setDateRange(undefined);
     setSearchParams({});
     setCurrentPage(1);
