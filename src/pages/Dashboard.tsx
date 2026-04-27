@@ -150,6 +150,41 @@ export default function Dashboard() {
         count: filteredData.filter(r => r.benefit_type === type).length,
       }));
       setBenefitTypeData(typeData);
+
+      // Top colaboradores: agrega por user_id e busca nomes/unidades em profiles
+      const countsByUser = new Map<string, number>();
+      filteredData.forEach((r) => {
+        countsByUser.set(r.user_id, (countsByUser.get(r.user_id) || 0) + 1);
+      });
+      const topUserIds = Array.from(countsByUser.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([uid]) => uid);
+
+      if (topUserIds.length === 0) {
+        setTopCollaborators([]);
+      } else {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, unit:units(name)')
+          .in('user_id', topUserIds);
+
+        const profileMap = new Map(
+          (profilesData || []).map((p: any) => [p.user_id, p])
+        );
+
+        const ranking: TopCollaboratorEntry[] = topUserIds.map((uid) => {
+          const p: any = profileMap.get(uid);
+          return {
+            userId: uid,
+            name: p?.full_name || 'Sem nome',
+            unitName: p?.unit?.name ?? null,
+            count: countsByUser.get(uid) || 0,
+          };
+        });
+        setTopCollaborators(ranking);
+      }
+
       setLastUpdate(new Date());
     } catch (err) {
       console.error('Error in fetchDashboardData:', err);
