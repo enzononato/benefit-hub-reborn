@@ -211,7 +211,7 @@ export const BenefitTypesFilter: React.FC<BenefitTypesFilterProps> = ({
         </PopoverContent>
       </Popover>
 
-      {selected.length > 0 && (
+      {showSelectedChips && selected.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selected.map((t) => (
             <button
