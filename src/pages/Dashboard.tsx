@@ -14,7 +14,7 @@ import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
 import { RecentRequests } from '@/components/dashboard/RecentRequests';
 import { AgentPerformanceChart } from '@/components/dashboard/AgentPerformanceChart';
 import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashboard/DashboardFilters';
-import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp, Percent } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BenefitType } from '@/types/benefits';
 import { benefitTypes } from '@/data/mockData';
@@ -194,8 +194,6 @@ export default function Dashboard() {
 
     return months;
   }, [allRequests, filters.startDate, filters.endDate]);
-
-  const taxaAprovacao = stats.total > 0 ? Math.round((stats.aprovados / stats.total) * 100) : 0;
 
   return (
     <MainLayout>
