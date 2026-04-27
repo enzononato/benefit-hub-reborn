@@ -337,7 +337,13 @@ export default function Dashboard() {
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
             Pessoas
           </h2>
-          <TopCollaboratorsCard data={topCollaborators} loading={loading} />
+          <TopCollaboratorsCard
+            data={topCollaborators}
+            loading={loading}
+            onSelect={(entry) =>
+              navigate(`/solicitacoes?user=${entry.userId}`)
+            }
+          />
         </section>
 
         {/* Operação — agentes e protocolos recentes */}
