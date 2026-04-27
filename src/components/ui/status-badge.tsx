@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { BenefitStatus, statusLabels } from '@/types/benefits';
-import { Clock, Search, CheckCircle, XCircle } from 'lucide-react';
 
 interface StatusBadgeProps {
   status: BenefitStatus;
@@ -8,39 +7,42 @@ interface StatusBadgeProps {
   showIcon?: boolean;
 }
 
-const statusConfig: Record<BenefitStatus, {
-  styles: string;
-  icon: React.ElementType;
-}> = {
+const statusConfig: Record<BenefitStatus, { dot: string; text: string; bg: string }> = {
   aberta: {
-    styles: 'bg-info/15 text-info border-info/30',
-    icon: Clock,
+    dot: 'bg-info',
+    text: 'text-info',
+    bg: 'bg-info/10 border-info/20',
   },
   em_analise: {
-    styles: 'bg-warning/15 text-warning border-warning/30',
-    icon: Search,
+    dot: 'bg-warning',
+    text: 'text-warning',
+    bg: 'bg-warning/10 border-warning/20',
   },
   aprovada: {
-    styles: 'bg-success/15 text-success border-success/30',
-    icon: CheckCircle,
+    dot: 'bg-success',
+    text: 'text-success',
+    bg: 'bg-success/10 border-success/20',
   },
   recusada: {
-    styles: 'bg-destructive/15 text-destructive border-destructive/30',
-    icon: XCircle,
+    dot: 'bg-destructive',
+    text: 'text-destructive',
+    bg: 'bg-destructive/10 border-destructive/20',
   },
 };
 
 export function StatusBadge({ status, className, showIcon = true }: StatusBadgeProps) {
   const config = statusConfig[status];
-  const Icon = config.icon;
 
   return (
-    <span className={cn(
-      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-      config.styles,
-      className
-    )}>
-      {showIcon && <Icon className="h-3 w-3" />}
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums',
+        config.bg,
+        config.text,
+        className
+      )}
+    >
+      {showIcon && <span className={cn('h-1.5 w-1.5 rounded-full', config.dot)} />}
       {statusLabels[status]}
     </span>
   );
