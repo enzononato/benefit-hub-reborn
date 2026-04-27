@@ -196,9 +196,9 @@ export function ColaboradorHistorySheet({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-start gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectTrigger className="h-9 text-xs flex-1">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -209,23 +209,17 @@ export function ColaboradorHistorySheet({
                   </SelectContent>
                 </Select>
 
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-8 text-xs flex-1">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    {Object.entries(benefitTypeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <BenefitTypesFilter
+                  selected={typeFilter}
+                  onChange={setTypeFilter}
+                  className="flex-1"
+                />
 
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2 text-xs"
                     onClick={clearFilters}
                   >
                     Limpar
