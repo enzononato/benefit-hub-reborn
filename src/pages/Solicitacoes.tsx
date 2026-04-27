@@ -204,17 +204,45 @@ export default function Solicitacoes() {
     const urlStatus = searchParams.get('status');
     const urlType = searchParams.get('benefit_type');
     const urlUnit = searchParams.get('unit');
-    
+    const urlUser = searchParams.get('user');
+
     if (urlStatus && urlStatus !== statusFilter) {
       setStatusFilter(urlStatus);
     }
-    if (urlType && urlType !== typeFilter) {
-      setTypeFilter(urlType);
+    if (urlType) {
+      const arr = urlType.split(',') as BenefitType[];
+      const same =
+        arr.length === typeFilter.length &&
+        arr.every((t) => typeFilter.includes(t));
+      if (!same) setTypeFilter(arr);
     }
     if (urlUnit && urlUnit !== unitFilter) {
       setUnitFilter(urlUnit);
     }
+    if (urlUser !== userFilter) {
+      setUserFilter(urlUser);
+    }
   }, [searchParams]);
+
+  // Busca o nome do colaborador quando vem ?user=<id>
+  useEffect(() => {
+    if (!userFilter) {
+      setUserFilterName(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', userFilter)
+        .maybeSingle();
+      if (!cancelled) setUserFilterName(data?.full_name || 'Colaborador');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userFilter]);
 
   const fetchUnits = async () => {
     const { data } = await supabase
