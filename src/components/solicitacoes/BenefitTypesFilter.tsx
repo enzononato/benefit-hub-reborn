@@ -23,6 +23,7 @@ interface BenefitTypesFilterProps {
   onChange: (next: BenefitType[]) => void;
   allowedTypes?: BenefitType[] | null; // null = admin (todos)
   className?: string;
+  showSelectedChips?: boolean;
 }
 
 const GROUPS: { key: string; label: string; types: BenefitType[] }[] = [
