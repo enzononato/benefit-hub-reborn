@@ -212,13 +212,13 @@ export const BenefitTypesFilter: React.FC<BenefitTypesFilterProps> = ({
       </Popover>
 
       {showSelectedChips && selected.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex gap-1 overflow-x-auto whitespace-nowrap pb-1 -mx-0.5 px-0.5 scrollbar-thin">
           {selected.map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => toggle(t)}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted/70"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted/70"
               title="Remover filtro"
             >
               {benefitTypeLabels[t]}
