@@ -4,6 +4,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import BenefitsChart from '@/components/dashboard/BenefitsChart';
+import StatusDonutChart from '@/components/dashboard/StatusDonutChart';
+import TopBenefitTypesChart from '@/components/dashboard/TopBenefitTypesChart';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -195,77 +197,113 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="space-y-4 sm:space-y-6">
-        <DashboardHeader 
-          userName={userName || undefined} 
-          onRefresh={fetchDashboardData} 
+      <div className="space-y-4 sm:space-y-5">
+        <DashboardHeader
+          userName={userName || undefined}
+          onRefresh={fetchDashboardData}
           isLoading={loading}
           lastUpdate={lastUpdate}
         />
 
         <DashboardFiltersComponent filters={filters} onFiltersChange={setFilters} allowedTypes={allowedBenefitTypes} />
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard 
-            title="Total" 
-            value={stats.total} 
-            icon={FileText} 
-            onClick={() => navigate('/solicitacoes')} 
-            loading={loading}
-            tooltip="Total de solicitações no período"
-          />
-          <StatCard 
-            title="Hoje" 
-            value={stats.today} 
-            icon={TrendingUp} 
-            onClick={() => navigate('/solicitacoes')} 
-            loading={loading}
-            tooltip="Novas solicitações criadas hoje"
-          />
-          <StatCard 
-            title="Aberto" 
-            value={stats.abertos} 
-            icon={FolderOpen} 
-            variant="info" 
-            onClick={() => navigate('/solicitacoes?status=aberta')} 
-            loading={loading}
-            tooltip="Aguardando atendimento"
-          />
-          <StatCard 
-            title="Análise" 
-            value={stats.emAnalise} 
-            icon={Clock} 
-            variant="warning" 
-            onClick={() => navigate('/solicitacoes?status=em_analise')} 
-            loading={loading}
-            tooltip="Em análise pelo agente"
-          />
-          <StatCard 
-            title="Aprovadas" 
-            value={stats.aprovados} 
-            icon={CheckCircle} 
-            variant="success" 
-            onClick={() => navigate('/solicitacoes?status=aprovada')} 
-            loading={loading}
-            tooltip="Solicitações aprovadas"
-          />
-          <StatCard 
-            title="Reprovadas" 
-            value={stats.reprovados} 
-            icon={XCircle} 
-            variant="destructive" 
-            onClick={() => navigate('/solicitacoes?status=recusada')} 
-            loading={loading}
-            tooltip="Solicitações recusadas"
-          />
-        </div>
+        {/* KPIs principais — visão executiva */}
+        <section aria-label="Indicadores principais" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Visão geral
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <StatCard
+              title="Total"
+              value={stats.total}
+              icon={FileText}
+              variant="primary"
+              onClick={() => navigate('/solicitacoes')}
+              loading={loading}
+              tooltip="Total de solicitações no período"
+            />
+            <StatCard
+              title="Hoje"
+              value={stats.today}
+              icon={TrendingUp}
+              onClick={() => navigate('/solicitacoes')}
+              loading={loading}
+              tooltip="Novas solicitações criadas hoje"
+            />
+            <StatCard
+              title="Aberto"
+              value={stats.abertos}
+              icon={FolderOpen}
+              variant="info"
+              onClick={() => navigate('/solicitacoes?status=aberta')}
+              loading={loading}
+              tooltip="Aguardando atendimento"
+            />
+            <StatCard
+              title="Análise"
+              value={stats.emAnalise}
+              icon={Clock}
+              variant="warning"
+              onClick={() => navigate('/solicitacoes?status=em_analise')}
+              loading={loading}
+              tooltip="Em análise pelo agente"
+            />
+            <StatCard
+              title="Aprovadas"
+              value={stats.aprovados}
+              icon={CheckCircle}
+              variant="success"
+              onClick={() => navigate('/solicitacoes?status=aprovada')}
+              loading={loading}
+              tooltip="Solicitações aprovadas"
+            />
+            <StatCard
+              title="Reprovadas"
+              value={stats.reprovados}
+              icon={XCircle}
+              variant="destructive"
+              onClick={() => navigate('/solicitacoes?status=recusada')}
+              loading={loading}
+              tooltip="Solicitações recusadas"
+            />
+          </div>
+        </section>
 
-        <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
+        {/* Análise — distribuição e top tipos */}
+        <section aria-label="Análise de solicitações" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Análise
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <StatusDonutChart
+              abertos={stats.abertos}
+              emAnalise={stats.emAnalise}
+              aprovados={stats.aprovados}
+              reprovados={stats.reprovados}
+            />
+            <TopBenefitTypesChart data={benefitTypeData} />
+          </div>
+          <BenefitsChart data={monthlyData} />
+        </section>
 
-        <BenefitsChart data={monthlyData} />
+        {/* Categorias detalhadas */}
+        <section aria-label="Categorias de benefícios" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Solicitações por categoria
+          </h2>
+          <BenefitCategoryCards data={benefitTypeData} allowedTypes={allowedBenefitTypes} />
+        </section>
 
-        <AgentPerformanceChart />
-        <RecentRequests />
+        {/* Operação — agentes e protocolos recentes */}
+        <section aria-label="Operação" className="space-y-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+            Operação
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <AgentPerformanceChart />
+            <RecentRequests />
+          </div>
+        </section>
       </div>
     </MainLayout>
   );
