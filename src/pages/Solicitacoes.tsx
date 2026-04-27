@@ -37,6 +37,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { SolicitacaoDetailsSheet } from '@/components/solicitacoes/SolicitacaoDetailsSheet';
+import { BenefitTypesFilter } from '@/components/solicitacoes/BenefitTypesFilter';
 import { toast } from 'sonner';
 import { useSlaConfigs } from '@/hooks/useSlaConfigs';
 import { useHolidays, getHolidayDatesSet } from '@/hooks/useHolidays';
