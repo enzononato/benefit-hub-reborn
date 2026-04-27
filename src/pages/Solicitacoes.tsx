@@ -430,7 +430,7 @@ export default function Solicitacoes() {
       matchesDate = isWithinInterval(requestDate, { start: from, end: to });
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesDate;
+    return matchesSearch && matchesStatus && matchesType && matchesUnit && matchesUser && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
