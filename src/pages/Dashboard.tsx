@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({ total: 0, today: 0, abertos: 0, emAnalise: 0, aprovados: 0, reprovados: 0 });
   const [benefitTypeData, setBenefitTypeData] = useState<{ type: BenefitType; count: number }[]>([]);
   const [allRequests, setAllRequests] = useState<RequestData[]>([]);
+  const [topCollaborators, setTopCollaborators] = useState<TopCollaboratorEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [filters, setFilters] = useState<DashboardFilters>({
