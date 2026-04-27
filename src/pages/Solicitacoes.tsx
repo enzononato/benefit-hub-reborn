@@ -410,165 +410,105 @@ export default function Solicitacoes() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Header with gradient */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <ClipboardList className="h-7 w-7" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">
-                  Solicitações
-                </h1>
-                <p className="mt-1 text-sm text-white/80">
-                  Gerencie todas as solicitações de benefícios
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={loading || filteredRequests.length === 0}
-                    className="bg-white/20 hover:bg-white/30 text-white border-0"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuLabel>Exportação padrão</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={exportToCSV}>
-                    Lista filtrada (CSV)
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>
-                    Folha de pagamento — aprovados ({countApproved(filteredRequests)})
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    disabled={countApproved(filteredRequests) === 0}
-                    onClick={() => {
-                      exportApprovedPayrollCSV(filteredRequests);
-                      toast.success('Exportação para folha (CSV) gerada');
-                    }}
-                  >
-                    Exportar para folha (CSV)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={countApproved(filteredRequests) === 0}
-                    onClick={() => {
-                      exportApprovedPayrollXLSX(filteredRequests);
-                      toast.success('Exportação para folha (XLSX) gerada');
-                    }}
-                  >
-                    Exportar para folha (XLSX)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                onClick={() => refetch()} 
-                disabled={loading}
-                className="bg-white/20 hover:bg-white/30 text-white border-0"
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-                Atualizar
-              </Button>
-            </div>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div className="space-y-0.5">
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-muted-foreground" />
+              Solicitações
+            </h1>
+            <p className="text-[13px] text-muted-foreground">
+              Gerencie todas as solicitações de benefícios
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={loading || filteredRequests.length === 0}
+                  className="gap-1.5"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Exportação padrão</DropdownMenuLabel>
+                <DropdownMenuItem onClick={exportToCSV}>
+                  Lista filtrada (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>
+                  Folha de pagamento — aprovados ({countApproved(filteredRequests)})
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  disabled={countApproved(filteredRequests) === 0}
+                  onClick={() => {
+                    exportApprovedPayrollCSV(filteredRequests);
+                    toast.success('Exportação para folha (CSV) gerada');
+                  }}
+                >
+                  Exportar para folha (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={countApproved(filteredRequests) === 0}
+                  onClick={() => {
+                    exportApprovedPayrollXLSX(filteredRequests);
+                    toast.success('Exportação para folha (XLSX) gerada');
+                  }}
+                >
+                  Exportar para folha (XLSX)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={loading}
+              className="gap-1.5"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              Atualizar
+            </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div 
-            className={cn(
-              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
-              "bg-gradient-to-br from-info/10 to-info/5 border border-info/20"
-            )}
-            onClick={() => { setStatusFilter('aberta'); setSearchParams({ status: 'aberta' }); }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Abertas</p>
-                <p className="text-2xl font-bold text-info">
-                  <AnimatedNumber value={statsData.aberta} duration={400} />
-                </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {[
+            { key: 'aberta', label: 'Abertas', value: statsData.aberta, icon: Clock, dot: 'bg-info', text: 'text-info' },
+            { key: 'em_analise', label: 'Em Análise', value: statsData.em_analise, icon: Search, dot: 'bg-warning', text: 'text-warning' },
+            { key: 'aprovada', label: 'Aprovadas', value: statsData.aprovada, icon: CheckCircle2, dot: 'bg-success', text: 'text-success' },
+            { key: 'recusada', label: 'Recusadas', value: statsData.recusada, icon: XCircle, dot: 'bg-destructive', text: 'text-destructive' },
+          ].map((s) => {
+            const Icon = s.icon;
+            return (
+              <div
+                key={s.key}
+                className="rounded-lg border border-border bg-card p-3.5 shadow-elevation-1 cursor-pointer transition-colors hover:border-foreground/20 hover:bg-muted/30"
+                onClick={() => { setStatusFilter(s.key); setSearchParams({ status: s.key }); }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', s.dot)} />
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate">{s.label}</p>
+                    </div>
+                    <div className="mt-1.5 text-[28px] font-semibold tabular-nums text-foreground leading-none">
+                      <AnimatedNumber value={s.value} duration={400} />
+                    </div>
+                  </div>
+                  <div className="rounded-md p-1.5 shrink-0 bg-muted text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                </div>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
-                <Clock className="h-5 w-5 text-info" />
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-info to-info/50" />
-          </div>
-
-          <div 
-            className={cn(
-              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
-              "bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20"
-            )}
-            onClick={() => { setStatusFilter('em_analise'); setSearchParams({ status: 'em_analise' }); }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Em Análise</p>
-                <p className="text-2xl font-bold text-warning">
-                  <AnimatedNumber value={statsData.em_analise} duration={400} />
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
-                <Search className="h-5 w-5 text-warning" />
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-warning to-warning/50" />
-          </div>
-
-          <div 
-            className={cn(
-              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
-              "bg-gradient-to-br from-success/10 to-success/5 border border-success/20"
-            )}
-            onClick={() => { setStatusFilter('aprovada'); setSearchParams({ status: 'aprovada' }); }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Aprovadas</p>
-                <p className="text-2xl font-bold text-success">
-                  <AnimatedNumber value={statsData.aprovada} duration={400} />
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-success to-success/50" />
-          </div>
-
-          <div 
-            className={cn(
-              "group relative overflow-hidden rounded-xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer",
-              "bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20"
-            )}
-            onClick={() => { setStatusFilter('recusada'); setSearchParams({ status: 'recusada' }); }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Recusadas</p>
-                <p className="text-2xl font-bold text-destructive">
-                  <AnimatedNumber value={statsData.recusada} duration={400} />
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <XCircle className="h-5 w-5 text-destructive" />
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-destructive to-destructive/50" />
-          </div>
+            );
+          })}
         </div>
 
         {/* Filters */}
