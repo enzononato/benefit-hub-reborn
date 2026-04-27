@@ -18,37 +18,25 @@ interface StatCardProps {
   loading?: boolean;
 }
 
-const variantStyles = {
-  default: 'bg-card border-border',
-  primary: 'bg-primary/10 border-primary/20',
-  success: 'bg-success/10 border-success/20',
-  warning: 'bg-warning/10 border-warning/20',
-  info: 'bg-info/10 border-info/20',
-  destructive: 'bg-destructive/10 border-destructive/20',
-};
-
-const iconStyles = {
-  default: 'bg-muted text-muted-foreground',
-  primary: 'bg-primary text-primary-foreground',
-  success: 'bg-success text-success-foreground',
-  warning: 'bg-warning text-warning-foreground',
-  info: 'bg-info text-info-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
+const dotColor: Record<NonNullable<StatCardProps['variant']>, string> = {
+  default: 'bg-muted-foreground/40',
+  primary: 'bg-foreground',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  info: 'bg-info',
+  destructive: 'bg-destructive',
 };
 
 export function StatCard({ title, value, icon: Icon, trend, variant = 'default', onClick, tooltip, loading }: StatCardProps) {
   if (loading) {
     return (
-      <div className={cn(
-        'rounded-xl border p-4 sm:p-5 lg:p-6 animate-shimmer',
-        variantStyles[variant]
-      )}>
+      <div className="rounded-lg border border-border bg-card p-3.5 shadow-elevation-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-8 w-12" />
+            <Skeleton className="h-7 w-12" />
           </div>
-          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-7 w-7 rounded-md" />
         </div>
       </div>
     );
@@ -57,37 +45,32 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
   const content = (
     <div
       className={cn(
-        'rounded-xl border p-4 sm:p-5 lg:p-6 transition-all duration-200 hover:shadow-md hover:border-primary/30 animate-fade-in group',
-        variantStyles[variant],
-        onClick && 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]'
+        'rounded-lg border border-border bg-card p-3.5 shadow-elevation-1 transition-colors',
+        onClick && 'cursor-pointer hover:border-foreground/20 hover:bg-muted/30'
       )}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{title}</p>
-          <div className="mt-1 sm:mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
-            {typeof value === 'number' ? (
-              <AnimatedNumber value={value} />
-            ) : (
-              value
-            )}
+          <div className="flex items-center gap-1.5">
+            <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', dotColor[variant])} />
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate">{title}</p>
+          </div>
+          <div className="mt-1.5 text-2xl sm:text-[28px] font-semibold tabular-nums text-foreground leading-none">
+            {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
           </div>
           {trend && (
             <p className={cn(
-              'mt-1 text-xs sm:text-sm font-semibold truncate',
+              'mt-1.5 text-[11px] font-medium tabular-nums',
               trend.isPositive ? 'text-success' : 'text-destructive'
             )}>
               {trend.isPositive ? '+' : ''}{trend.value}%
-              <span className="hidden sm:inline"> vs mês anterior</span>
+              <span className="hidden sm:inline text-muted-foreground font-normal ml-1">vs mês anterior</span>
             </p>
           )}
         </div>
-        <div className={cn(
-          'rounded-md sm:rounded-lg lg:rounded-xl p-1.5 sm:p-2 lg:p-3 shrink-0 transition-transform group-hover:scale-110',
-          iconStyles[variant]
-        )}>
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 shrink-0" />
+        <div className="rounded-md p-1.5 shrink-0 bg-muted text-muted-foreground">
+          <Icon className="h-4 w-4 shrink-0" />
         </div>
       </div>
     </div>
