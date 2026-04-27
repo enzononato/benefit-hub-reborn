@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BenefitRequest, benefitTypeLabels, BenefitType, BenefitStatus } from '@/types/benefits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, AlertCircle, Clock, History, Filter, Download, CreditCard, Check } from 'lucide-react';
+import { BenefitTypesFilter } from '@/components/solicitacoes/BenefitTypesFilter';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
