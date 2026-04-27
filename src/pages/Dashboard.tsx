@@ -13,6 +13,7 @@ import BenefitCategoryCards from '@/components/dashboard/BenefitCategoryCards';
 
 import { RecentRequests } from '@/components/dashboard/RecentRequests';
 import { AgentPerformanceChart } from '@/components/dashboard/AgentPerformanceChart';
+import TopCollaboratorsCard, { TopCollaboratorEntry } from '@/components/dashboard/TopCollaboratorsCard';
 import { DashboardFiltersComponent, DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { FileText, Clock, CheckCircle, XCircle, FolderOpen, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
