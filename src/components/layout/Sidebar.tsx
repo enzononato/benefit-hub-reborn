@@ -164,19 +164,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   });
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border lg:block">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-60 bg-sidebar border-r border-sidebar-border lg:block">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-          <img src={revalleLogo} alt="Revalle" className="h-9 w-9 object-cover rounded-lg" />
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-sidebar-foreground truncate">Revalle</h1>
-            <p className="text-xs text-sidebar-muted truncate">Gestão de Protocolos</p>
-          </div>
+        <div className="flex h-14 items-center gap-2.5 px-4 border-b border-sidebar-border">
+          <img src={revalleLogo} alt="Revalle" className="h-7 w-7 object-cover rounded-md" />
+          <h1 className="text-[15px] font-semibold text-sidebar-foreground tracking-tight">Revalle</h1>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-0.5 px-2 py-3">
           {filteredNavigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -187,21 +184,24 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 onMouseEnter={() => handlePrefetch(item.href)}
                 onFocus={() => handlePrefetch(item.href)}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 relative',
+                  'group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors relative',
                   isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                {isActive && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-foreground" />
+                )}
+                <item.icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 truncate">{item.name}</span>
                 {item.showOpenCount && openProtocolsCount > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-primary/20 text-primary border border-primary/30">
+                  <span className="px-1.5 h-5 inline-flex items-center text-[10px] font-semibold rounded-md bg-sidebar-foreground/10 text-sidebar-foreground tabular-nums">
                     {openProtocolsCount}
                   </span>
                 )}
                 {item.badge && (
-                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-warning/20 text-warning border border-warning/30">
+                  <span className="px-1.5 h-5 inline-flex items-center text-[9px] font-semibold uppercase tracking-wide rounded-md bg-warning/15 text-warning">
                     {item.badge}
                   </span>
                 )}
@@ -211,41 +211,38 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </nav>
 
         {/* User section */}
-        <div className="border-t border-sidebar-border p-4 space-y-3">
-          <div className="flex items-center justify-between px-2">
+        <div className="border-t border-sidebar-border p-3 space-y-2">
+          <div className="flex items-center justify-between px-1">
             <NotificationDropdown />
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-sidebar-muted">Tema</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="h-8 w-8 text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                title={theme === 'light' ? 'Modo escuro' : 'Modo claro'}
-              >
-                {theme === 'light' ? (
-                  <Moon className="h-4 w-4 shrink-0" />
-                ) : (
-                  <Sun className="h-4 w-4 shrink-0" />
-                )}
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-8 w-8 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              title={theme === 'light' ? 'Modo escuro' : 'Modo claro'}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-4 w-4 shrink-0" />
+              ) : (
+                <Sun className="h-4 w-4 shrink-0" />
+              )}
+            </Button>
           </div>
 
-          <div className="flex items-center gap-3 rounded-lg p-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground text-sm font-semibold">
+          <div className="flex items-center gap-2.5 rounded-md p-1.5 hover:bg-sidebar-accent/40 transition-colors">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground text-[11px] font-semibold">
               {userInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName}</p>
-              <p className="text-xs text-sidebar-muted truncate">{displayRole}</p>
+              <p className="text-[13px] font-medium text-sidebar-foreground truncate leading-tight">{displayName}</p>
+              <p className="text-[11px] text-sidebar-muted truncate leading-tight">{displayRole}</p>
             </div>
             <button
               onClick={handleSignOut}
               className="p-1.5 shrink-0 rounded-md hover:bg-sidebar-accent text-sidebar-muted hover:text-sidebar-foreground transition-colors"
               title="Sair"
             >
-              <LogOut className="h-4 w-4 shrink-0" />
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
             </button>
           </div>
         </div>
