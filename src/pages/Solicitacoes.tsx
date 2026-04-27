@@ -89,8 +89,13 @@ export default function Solicitacoes() {
   const deferredSearch = useDeferredValue(search); // Debounce search for performance
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
-  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('benefit_type') || 'all');
+  const [typeFilter, setTypeFilter] = useState<BenefitType[]>(() => {
+    const raw = searchParams.get('benefit_type');
+    return raw ? (raw.split(',') as BenefitType[]) : [];
+  });
   const [unitFilter, setUnitFilter] = useState<string>(searchParams.get('unit') || 'all');
+  const [userFilter, setUserFilter] = useState<string | null>(searchParams.get('user'));
+  const [userFilterName, setUserFilterName] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
