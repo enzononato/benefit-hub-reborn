@@ -585,7 +585,13 @@ export default function Solicitacoes() {
             </Select>
             <BenefitTypesFilter
               selected={typeFilter}
-              allowedTypes={userModules ?? null}
+              allowedTypes={
+                userModules === null
+                  ? null
+                  : (userModules.filter((m) =>
+                      m in benefitTypeLabels
+                    ) as BenefitType[])
+              }
               onChange={(next) => {
                 setTypeFilter(next);
                 const newParams = new URLSearchParams(searchParams);
