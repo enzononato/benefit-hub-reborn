@@ -390,7 +390,13 @@ export default function Solicitacoes() {
     toast.success(`${filteredRequests.length} solicitações exportadas`);
   };
 
-  const hasActiveFilters = search || statusFilter !== 'all' || typeFilter !== 'all' || unitFilter !== 'all' || dateRange;
+  const hasActiveFilters =
+    !!search ||
+    statusFilter !== 'all' ||
+    typeFilter.length > 0 ||
+    unitFilter !== 'all' ||
+    !!userFilter ||
+    !!dateRange;
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch =
@@ -405,15 +411,15 @@ export default function Solicitacoes() {
       matchesStatus = statuses.includes(request.status);
     }
 
-    // Handle comma-separated benefit_type values from URL (e.g., from CONVÊNIOS card)
-    let matchesType = typeFilter === 'all';
-    if (!matchesType) {
-      const types = typeFilter.split(',');
-      matchesType = types.includes(request.benefit_type);
-    }
+    // Multi-select benefit type filter (tags)
+    const matchesType =
+      typeFilter.length === 0 || typeFilter.includes(request.benefit_type);
 
     // Unit filter
     const matchesUnit = unitFilter === 'all' || request.profile?.unit_id === unitFilter;
+
+    // User filter (vindo do dashboard "Top colaboradores")
+    const matchesUser = !userFilter || request.user_id === userFilter;
 
     // Date range filter
     let matchesDate = true;
