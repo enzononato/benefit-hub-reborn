@@ -64,7 +64,7 @@ interface Profile {
   user_roles: { role: UserRole }[];
 }
 
-type StatusFilter = 'ativo' | 'demitido' | 'afastado' | 'ferias' | 'todos';
+type StatusFilter = 'ativo' | 'demitido' | 'afastado' | 'ferias' | 'limite_excedido' | 'todos';
 
 export default function Colaboradores() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -199,6 +199,7 @@ export default function Colaboradores() {
   const terminatedCount = profiles.filter(p => p.status === 'demitido').length;
   const leaveCount = profiles.filter(p => p.status === 'afastado').length;
   const vacationCount = profiles.filter(p => p.status === 'ferias').length;
+  const limitExceededCount = profiles.filter(p => p.status === 'limite_excedido').length;
 
   return (
     <MainLayout>
@@ -209,7 +210,7 @@ export default function Colaboradores() {
             <p className="mt-1 text-muted-foreground">
               Gerencie os colaboradores cadastrados
               <span className="ml-2 text-sm">
-                ({activeCount} ativos, {vacationCount} férias, {leaveCount} afastados, {terminatedCount} demitidos)
+                ({activeCount} ativos, {vacationCount} férias, {leaveCount} afastados, {limitExceededCount} limite excedido, {terminatedCount} demitidos)
               </span>
             </p>
           </div>
@@ -310,6 +311,7 @@ export default function Colaboradores() {
               <SelectItem value="ativo">Ativos</SelectItem>
               <SelectItem value="ferias">Férias</SelectItem>
               <SelectItem value="afastado">Afastados</SelectItem>
+              <SelectItem value="limite_excedido">Limite Excedido</SelectItem>
               <SelectItem value="demitido">Demitidos</SelectItem>
               <SelectItem value="todos">Todos</SelectItem>
             </SelectContent>
@@ -338,7 +340,8 @@ export default function Colaboradores() {
               const isTerminated = profile.status === 'demitido';
               const isOnLeave = profile.status === 'afastado';
               const isOnVacation = profile.status === 'ferias';
-              const isInactive = isTerminated || isOnLeave || isOnVacation;
+              const isLimitExceeded = profile.status === 'limite_excedido';
+              const isInactive = isTerminated || isOnLeave || isOnVacation || isLimitExceeded;
               return (
                 <div 
                   key={profile.id} 
@@ -347,6 +350,7 @@ export default function Colaboradores() {
                     isTerminated && "border-destructive/30 opacity-70",
                     isOnLeave && "border-warning/30 opacity-80",
                     isOnVacation && "border-info/30 opacity-85",
+                    isLimitExceeded && "border-rose-500/30 opacity-85",
                     !isInactive && "border-border"
                   )}
                 >
@@ -356,6 +360,7 @@ export default function Colaboradores() {
                       isTerminated && "bg-destructive/10 text-destructive",
                       isOnLeave && "bg-yellow-500/10 text-yellow-600",
                       isOnVacation && "bg-info/10 text-info",
+                      isLimitExceeded && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
                       !isInactive && "bg-primary/10 text-primary"
                     )}>
                       {profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -376,6 +381,11 @@ export default function Colaboradores() {
                         {isOnVacation && (
                           <Badge className="shrink-0 text-xs bg-info/20 text-info border-info/30">
                             Férias
+                          </Badge>
+                        )}
+                        {isLimitExceeded && (
+                          <Badge className="shrink-0 text-xs bg-rose-500/15 text-rose-700 border-rose-500/30 dark:text-rose-300">
+                            Limite Excedido
                           </Badge>
                         )}
                       </div>

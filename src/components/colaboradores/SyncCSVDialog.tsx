@@ -143,7 +143,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
       const { data: dbProfiles } = await supabase
         .from('profiles')
         .select('id, user_id, full_name, cpf, status')
-        .in('status', ['ativo', 'ferias', 'afastado']);
+        .in('status', ['ativo', 'ferias', 'afastado', 'limite_excedido']);
 
       const { data: rolesData } = await supabase
         .from('user_roles')
@@ -266,7 +266,7 @@ export function SyncCSVDialog({ onSuccess }: SyncCSVDialogProps) {
               departamento: departamento || null,
               codigo_empresa: codigoEmpresa || null,
               codigo_empregador: codigoEmpregador || null,
-              status: (cpfToStatus.get(cpf) === 'ferias' || cpfToStatus.get(cpf) === 'afastado') ? cpfToStatus.get(cpf) : 'ativo',
+              status: (['ferias', 'afastado', 'limite_excedido'].includes(cpfToStatus.get(cpf) as string)) ? cpfToStatus.get(cpf) : 'ativo',
             }
           });
         } else {
