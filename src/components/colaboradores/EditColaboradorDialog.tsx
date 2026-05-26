@@ -35,6 +35,7 @@ const STATUS_OPTIONS = [
   { value: 'ativo', label: 'Ativo' },
   { value: 'ferias', label: 'Férias' },
   { value: 'afastado', label: 'Afastado' },
+  { value: 'limite_excedido', label: 'Limite Excedido' },
   { value: 'demitido', label: 'Demitido' },
 ];
 
