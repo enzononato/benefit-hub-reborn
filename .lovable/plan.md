@@ -1,52 +1,37 @@
-## Objetivo
+# Regra: 1 chamado em aberto por colaborador
 
-Criar uma nova situação para o colaborador, no mesmo modelo de `ferias` e `afastado`, indicando que ele estourou o limite e não pode abrir solicitações até o próximo mês. A função `create_request_from_bot` retornará um JSON no mesmo formato dos demais bloqueios para o n8n entregar a mensagem ao WhatsApp.
+Bloqueia novas solicitações (qualquer tipo) quando o colaborador já tem um protocolo com status `aberta` ou `em_analise`. Valida no Bot (WhatsApp) e no Painel.
 
-## Decisões propostas (ajustáveis)
+## 1. Banco — `create_request_from_bot`
 
-- **Chave interna:** `limite_excedido`
-- **Rótulo na UI:** "Limite Excedido"
-- **Cor do badge:** vermelho/rosé (`bg-rose-100 text-rose-700` / dark `bg-rose-500/15 text-rose-300`) — distinta de férias (azul) e afastado (amarelo), respeitando a paleta neutra da marca
-- **Permissão:** Admin e Gestor (igual aos outros status)
-- **Mensagem do bot:** "Limite excedido, peça novamente no mês seguinte"
-- **Comportamento:** bloqueia criação de qualquer solicitação (igual a férias/afastado). Não há reset automático nessa entrega — RH/Gestor volta o status manualmente para `ativo` quando o ciclo virar (se quiser automação mensal, posso planejar em separado).
+Adicionar bloco de validação antes da criação do protocolo, retornando o mesmo formato JSON dos outros bloqueios:
 
-## Mudanças
-
-### 1. Banco (migration)
-
-- Acrescentar o valor `'limite_excedido'` onde o status do colaborador é controlado. Hoje `profiles.status` é texto livre (não há enum), então basta atualizar a função do bot e o sync.
-- Atualizar `public.create_request_from_bot` para incluir o novo bloqueio antes da validação de admissão:
-
-```sql
-IF v_user_status = 'limite_excedido' THEN
-  RETURN jsonb_build_object(
-    'success', false,
-    'error', 'user_limit_exceeded',
-    'message', 'Limite excedido, peça novamente no mês seguinte'
-  );
-END IF;
+```json
+{
+  "success": false,
+  "error": "duplicate_open_request",
+  "message": "Você já possui uma solicitação em aberto (protocolo XYZ). Aguarde o atendimento antes de abrir outra.",
+  "existing_protocol": "REVALLE-..."
+}
 ```
 
-Formato idêntico aos retornos de `user_on_leave` / `user_on_vacation`, então o n8n só precisa mapear o novo `error`.
+Lógica: `SELECT protocol FROM benefit_requests WHERE user_id = v_user_id AND status IN ('aberta','em_analise') LIMIT 1`. Se existir → retorna o erro acima.
 
-### 2. Frontend
+## 2. Painel — Nova Solicitação manual
 
-- `src/components/colaboradores/EditColaboradorDialog.tsx`: adicionar `{ value: 'limite_excedido', label: 'Limite Excedido' }` na lista de status.
-- `src/pages/Colaboradores.tsx`:
-  - Novo card/contador (junto com "Férias" e "Afastados").
-  - Badge `Limite Excedido` com a cor rosé via tokens.
-  - Bloquear ação "Nova solicitação" (mesmo tratamento de `isOnLeave` / `isOnVacation`).
-- `src/components/colaboradores/SyncCSVDialog.tsx`: incluir `limite_excedido` na lista de status preservados durante o sync de CSV (para não voltar a `ativo` indevidamente).
-- Qualquer outra tela que filtre por `ferias`/`afastado` (Dashboard, Solicitações) recebe o mesmo tratamento de "não pode solicitar".
+Em `NewBenefitDialog.tsx`: ao selecionar colaborador, consultar se já existe protocolo `aberta`/`em_analise` e, em caso afirmativo, desabilitar o botão "Criar" exibindo aviso com o protocolo existente (link clicável que abre o sheet do protocolo).
 
-### 3. Memória
+## 3. Relatório de duplicados existentes
 
-- Atualizar `mem://features/colaboradores-management/collaborator-statuses` incluindo `limite_excedido`.
-- Atualizar `mem://infrastructure/database-functions/bot-request-validation-logic` com o novo retorno.
+Gerar CSV em `/mnt/documents/colaboradores_chamados_duplicados.csv` listando: nome, CPF, qtd em aberto, protocolos. Já identifiquei 8 colaboradores hoje (1 com 5 abertos, 7 com 2 abertos). Você revisa manualmente e fecha os duplicados pelo painel — a regra não toca em dados existentes.
 
-## Confirmação antes de implementar
+## 4. Memória
 
-1. OK chamar a chave de `limite_excedido` e rótulo "Limite Excedido"?
-2. OK usar **rosé/vermelho suave** como cor? (alternativas: âmbar, laranja queimado, grafite)
-3. Quer que eu já planeje um job mensal pra zerar automaticamente esse status no dia 1º, ou deixa manual por enquanto?
+Atualizar `mem://infrastructure/database-functions/bot-request-validation-logic` adicionando `duplicate_open_request` à lista de erros que o n8n deve mapear.
+
+## Detalhes técnicos
+
+- **Migration:** `CREATE OR REPLACE FUNCTION public.create_request_from_bot(...)` com o novo bloco posicionado depois das validações de status (`limite_excedido`, `ferias`, etc.) e antes do mapeamento de `benefit_type`.
+- **Frontend:** hook ou query pontual em `NewBenefitDialog` (`supabase.from('benefit_requests').select('protocol').eq('user_id', x).in('status', ['aberta','em_analise']).maybeSingle()`).
+- **Sem mudança de schema** (não adiciona coluna nem índice — `user_id` já está indexado implicitamente via uso).
+- **Status `alteracao_ferias` pendente HR** não conta como bloqueio (conforme escolha de só usar `aberta`/`em_analise`).
