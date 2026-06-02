@@ -206,6 +206,17 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
               )}
             />
 
+            {existingProtocol && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Este colaborador já possui um chamado em aberto (<strong>{existingProtocol}</strong>). Finalize-o antes de abrir outro.
+                </AlertDescription>
+              </Alert>
+            )}
+
+
+
             <FormField
               control={form.control}
               name="benefitType"
