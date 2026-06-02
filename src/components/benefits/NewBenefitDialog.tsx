@@ -124,7 +124,14 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
   }, [open]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (existingProtocol) {
+      toast.error('Colaborador já possui solicitação em aberto', {
+        description: `Protocolo ${existingProtocol}. Finalize-o antes de abrir outro.`,
+      });
+      return;
+    }
     setLoading(true);
+
 
     const protocol = `BEN-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
 
