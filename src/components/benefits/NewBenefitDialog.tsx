@@ -269,8 +269,8 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Criando...' : 'Criar Solicitação'}
+              <Button type="submit" disabled={loading || checkingOpen || !!existingProtocol}>
+                {loading ? 'Criando...' : checkingOpen ? 'Verificando...' : 'Criar Solicitação'}
               </Button>
             </div>
           </form>
