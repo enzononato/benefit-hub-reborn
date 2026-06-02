@@ -27,10 +27,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { benefitTypeLabels, BenefitType } from '@/types/benefits';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Profile {
   id: string;
@@ -49,6 +50,8 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [existingProtocol, setExistingProtocol] = useState<string | null>(null);
+  const [checkingOpen, setCheckingOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,6 +61,33 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
       details: '',
     },
   });
+
+  const selectedUserId = form.watch('userId');
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setExistingProtocol(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingOpen(true);
+    supabase
+      .from('benefit_requests')
+      .select('protocol')
+      .eq('user_id', selectedUserId)
+      .in('status', ['aberta', 'em_analise'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setExistingProtocol(data?.protocol ?? null);
+        setCheckingOpen(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedUserId]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -94,7 +124,14 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
   }, [open]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (existingProtocol) {
+      toast.error('Colaborador já possui solicitação em aberto', {
+        description: `Protocolo ${existingProtocol}. Finalize-o antes de abrir outro.`,
+      });
+      return;
+    }
     setLoading(true);
+
 
     const protocol = `BEN-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`;
 
@@ -169,6 +206,17 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
               )}
             />
 
+            {existingProtocol && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Este colaborador já possui um chamado em aberto (<strong>{existingProtocol}</strong>). Finalize-o antes de abrir outro.
+                </AlertDescription>
+              </Alert>
+            )}
+
+
+
             <FormField
               control={form.control}
               name="benefitType"
@@ -221,8 +269,8 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Criando...' : 'Criar Solicitação'}
+              <Button type="submit" disabled={loading || checkingOpen || !!existingProtocol}>
+                {loading ? 'Criando...' : checkingOpen ? 'Verificando...' : 'Criar Solicitação'}
               </Button>
             </div>
           </form>
