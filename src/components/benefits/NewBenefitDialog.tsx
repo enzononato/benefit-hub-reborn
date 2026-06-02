@@ -50,6 +50,8 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [existingProtocol, setExistingProtocol] = useState<string | null>(null);
+  const [checkingOpen, setCheckingOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,6 +61,33 @@ export function NewBenefitDialog({ onSuccess }: { onSuccess?: () => void }) {
       details: '',
     },
   });
+
+  const selectedUserId = form.watch('userId');
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setExistingProtocol(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingOpen(true);
+    supabase
+      .from('benefit_requests')
+      .select('protocol')
+      .eq('user_id', selectedUserId)
+      .in('status', ['aberta', 'em_analise'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setExistingProtocol(data?.protocol ?? null);
+        setCheckingOpen(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedUserId]);
 
   useEffect(() => {
     const fetchProfiles = async () => {
