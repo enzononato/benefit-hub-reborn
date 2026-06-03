@@ -51,6 +51,8 @@ export function AuditLogSheet({
   const detailLabels: Record<string, string> = {
     protocol: 'Protocolo',
     benefit_type: 'Tipo de Benefício',
+    benefit_label: 'Benefício',
+    benefit_text: 'Texto recebido',
     status: 'Status',
     old_status: 'Status Anterior',
     new_status: 'Novo Status',
@@ -63,6 +65,18 @@ export function AuditLogSheet({
     document_name: 'Nome do Documento',
     profile_id: 'ID do Perfil',
     user_id: 'ID do Usuário',
+    reason: 'Motivo da rejeição',
+    message: 'Mensagem',
+    cpf: 'CPF',
+    conversation_id: 'ID da Conversa',
+    account_id: 'ID da Conta',
+    whatsapp_jid: 'WhatsApp',
+    existing_protocol: 'Protocolo existente',
+    required_days: 'Dias necessários',
+    current_days: 'Dias atuais',
+    user_status: 'Status do colaborador',
+    name_provided: 'Nome informado',
+    admission_raw: 'Data de admissão (bruta)',
   };
 
   return (
