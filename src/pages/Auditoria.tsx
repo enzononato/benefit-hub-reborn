@@ -36,7 +36,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, RefreshCw, FileText, CalendarIcon, X, Filter, Download,
-  Plus, Trash2, Edit, UserCog, FileX, Clock
+  Plus, Trash2, Edit, UserCog, FileX, Clock, Ban
 } from 'lucide-react';
 import { format, isWithinInterval, startOfDay, endOfDay, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -49,6 +49,7 @@ const actionLabels: Record<string, string> = {
   benefit_request_created: 'Solicitação criada',
   benefit_request_status_changed: 'Status alterado',
   benefit_request_deleted: 'Solicitação excluída',
+  bot_request_rejected: 'Tentativa de bot rejeitada',
   profile_updated_by_admin: 'Perfil atualizado',
   profile_deleted: 'Perfil excluído',
   user_role_assigned: 'Papel atribuído',
@@ -61,7 +62,8 @@ const actionColors: Record<string, string> = {
   benefit_request_created: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   benefit_request_status_changed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   benefit_request_deleted: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  profile_updated_by_admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  bot_request_rejected: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  profile_updated_by_admin: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-300',
   profile_deleted: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   user_role_assigned: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   user_role_changed: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
@@ -73,6 +75,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   benefit_request_created: <Plus className="h-3 w-3" />,
   benefit_request_status_changed: <Edit className="h-3 w-3" />,
   benefit_request_deleted: <Trash2 className="h-3 w-3" />,
+  bot_request_rejected: <Ban className="h-3 w-3" />,
   profile_updated_by_admin: <UserCog className="h-3 w-3" />,
   profile_deleted: <Trash2 className="h-3 w-3" />,
   user_role_assigned: <UserCog className="h-3 w-3" />,
@@ -83,6 +86,7 @@ const actionIcons: Record<string, React.ReactNode> = {
 
 const entityTypeLabels: Record<string, string> = {
   benefit_request: 'Solicitação',
+  benefit_request_attempt: 'Tentativa de Solicitação',
   profile: 'Perfil',
   user_role: 'Papel de Usuário',
   collaborator_document: 'Documento',
