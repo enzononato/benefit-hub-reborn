@@ -1,18 +1,40 @@
-# Substituir PDF do protocolo REVALLE-26052610312573
+# Encerramento em massa de protocolos não-convênio
 
-## Passos
+## Objetivo
+Encerrar todos os protocolos em aberto (status `aberta` ou `em_analise`) que **não** sejam de convênios, marcando-os como `recusada` com a mensagem "Encerrado pelo Chatwoot", **sem disparar o webhook do n8n**.
 
-1. Localizar o registro em `benefit_requests` pelo protocolo `REVALLE-26052610312573` e ler o `pdf_url` / `pdf_file_name` atuais.
-2. Fazer upload do arquivo anexado (`termo_de_opcao_por_beneficio_se-vale_gas-jeferson_lima_basto_freitas-20260603090546434_assinado.pdf`) para o bucket público `benefit-pdfs` (mesmo bucket dos demais PDFs assinados).
-3. Atualizar o registro do protocolo no banco com:
-   - `pdf_url` = URL pública do novo arquivo
-   - `pdf_file_name` = novo nome do arquivo
-4. (Opcional) Remover o PDF antigo do storage para não deixar lixo.
-5. Registrar um log em `logs` (`create_system_log`) indicando a substituição manual do PDF para fins de auditoria.
+## Escopo (35 protocolos identificados)
+Tipos considerados **convênios** (mantidos intactos): `autoescola`, `farmacia`, `oficina`, `vale_gas`, `papelaria`, `otica`.
 
-## Observações técnicas
+Todos os demais tipos com status `aberta`/`em_analise` serão encerrados. Quantitativo atual:
 
-- O upload para storage e o `UPDATE` em `benefit_requests` precisam ser feitos via migration/SQL + chamada de storage, pois é uma operação pontual administrativa.
-- Confirmar antes que o protocolo existe e qual `pdf_file_name` atual está vinculado.
+- alteracao_ferias: 2
+- aviso_folga_falta: 1
+- atestado: 1
+- contracheque: 13
+- abono_horas: 3
+- alteracao_horario: 1
+- relatorio_ponto: 1
+- plantao_duvidas: 13
 
-Confirme para eu executar.
+**Total: 35 protocolos**
+
+## Ação
+Operação única de `UPDATE` no banco (sem código/edge function, sem chamada de webhook):
+
+- `status` → `recusada`
+- `rejection_reason` → `Encerrado pelo Chatwoot`
+- `closing_message` → `Encerrado pelo Chatwoot`
+- `closed_at` → `now()`
+- `updated_at` → `now()`
+
+Filtro:
+```sql
+WHERE status IN ('aberta','em_analise')
+  AND benefit_type NOT IN ('autoescola','farmacia','oficina','vale_gas','papelaria','otica')
+```
+
+Como é um UPDATE direto no banco, **nenhum webhook é disparado** (o webhook só é chamado pelo frontend em `BenefitDetailsSheet`).
+
+## Confirmação
+Posso prosseguir com o UPDATE nos 35 protocolos listados?
