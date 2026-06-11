@@ -1,40 +1,48 @@
-# Encerramento em massa de protocolos não-convênio
-
 ## Objetivo
-Encerrar todos os protocolos em aberto (status `aberta` ou `em_analise`) que **não** sejam de convênios, marcando-os como `recusada` com a mensagem "Encerrado pelo Chatwoot", **sem disparar o webhook do n8n**.
 
-## Escopo (35 protocolos identificados)
-Tipos considerados **convênios** (mantidos intactos): `autoescola`, `farmacia`, `oficina`, `vale_gas`, `papelaria`, `otica`.
+Eliminar duplicidade de protocolos em requisições simultâneas do bot serializando por `p_conversation_id` via advisory lock transacional.
 
-Todos os demais tipos com status `aberta`/`em_analise` serão encerrados. Quantitativo atual:
+## Mudança
 
-- alteracao_ferias: 2
-- aviso_folga_falta: 1
-- atestado: 1
-- contracheque: 13
-- abono_horas: 3
-- alteracao_horario: 1
-- relatorio_ponto: 1
-- plantao_duvidas: 13
+Atualizar a função `public.create_request_from_bot` adicionando, como **primeira instrução após o `BEGIN`**, um advisory lock transacional escopado pela conversa.
 
-**Total: 35 protocolos**
+### Detalhes técnicos
 
-## Ação
-Operação única de `UPDATE` no banco (sem código/edge function, sem chamada de webhook):
+- `p_conversation_id` é `bigint`, então usaremos `hashtext(p_conversation_id::text)` para gerar o chave de lock (retorna `int4`, aceito por `pg_advisory_xact_lock`).
+- Envolver em guarda `IF p_conversation_id IS NOT NULL THEN ... END IF;` para não travar globalmente quando a conversa não for informada (chamadas manuais/testes).
+- O lock é **transacional** (`_xact_`): liberado automaticamente no COMMIT/ROLLBACK, sem necessidade de unlock manual.
+- Nenhuma outra lógica da função é alterada — o `SELECT` de idempotência por `conversation_id` (janela de 3 minutos) já existente passa a ver o protocolo recém-commitado pela primeira requisição e retorna `idempotent_replay: true` para a segunda.
 
-- `status` → `recusada`
-- `rejection_reason` → `Encerrado pelo Chatwoot`
-- `closing_message` → `Encerrado pelo Chatwoot`
-- `closed_at` → `now()`
-- `updated_at` → `now()`
+### SQL da migration
 
-Filtro:
 ```sql
-WHERE status IN ('aberta','em_analise')
-  AND benefit_type NOT IN ('autoescola','farmacia','oficina','vale_gas','papelaria','otica')
+CREATE OR REPLACE FUNCTION public.create_request_from_bot(
+  p_cpf text,
+  p_protocol text DEFAULT NULL,
+  p_name text DEFAULT NULL,
+  p_benefit_text text DEFAULT 'outros',
+  p_whatsapp_jid text DEFAULT NULL,
+  p_account_id bigint DEFAULT NULL,
+  p_conversation_id bigint DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  -- (mesmas variáveis da versão atual)
+BEGIN
+  -- Serialize concurrent bot requests per conversation to prevent race conditions
+  IF p_conversation_id IS NOT NULL THEN
+    PERFORM pg_advisory_xact_lock(hashtext(p_conversation_id::text));
+  END IF;
+
+  -- ... restante do corpo atual permanece idêntico ...
+END;
+$function$;
 ```
 
-Como é um UPDATE direto no banco, **nenhum webhook é disparado** (o webhook só é chamado pelo frontend em `BenefitDetailsSheet`).
+## Resultado esperado
 
-## Confirmação
-Posso prosseguir com o UPDATE nos 35 protocolos listados?
+Duas mensagens simultâneas da mesma conversa: a segunda fica em espera até o COMMIT da primeira, então o bloco de idempotência detecta o protocolo recém-criado e devolve o mesmo `protocol` com `idempotent_replay: true`, sem inserir novo registro.
